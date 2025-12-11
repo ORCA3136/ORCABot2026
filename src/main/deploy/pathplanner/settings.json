@@ -1,0 +1,37 @@
+{
+  "robotWidth": 0.889,
+  "robotLength": 0.889,
+  "holonomicMode": true,
+  "pathFolders": [
+    "Center Barge Auto Paths",
+    "Pre Districts 1.0"
+  ],
+  "autoFolders": [
+    "Pre Districts"
+  ],
+  "defaultMaxVel": 1.0,
+  "defaultMaxAccel": 3.0,
+  "defaultMaxAngVel": 100.0,
+  "defaultMaxAngAccel": 200.0,
+  "defaultNominalVoltage": 12.0,
+  "robotMass": 61.0,
+  "robotMOI": 6.883,
+  "robotTrackwidth": 0.546,
+  "driveWheelRadius": 0.038,
+  "driveGearing": 4.0,
+  "maxDriveSpeed": 5.451,
+  "driveMotorType": "NEO",
+  "driveCurrentLimit": 40.0,
+  "wheelCOF": 1.19,
+  "flModuleX": 0.311,
+  "flModuleY": 0.311,
+  "frModuleX": 0.311,
+  "frModuleY": -0.311,
+  "blModuleX": -0.311,
+  "blModuleY": 0.311,
+  "brModuleX": -0.311,
+  "brModuleY": -0.311,
+  "bumperOffsetX": 0.0,
+  "bumperOffsetY": 0.0,
+  "robotFeatures": []
+}

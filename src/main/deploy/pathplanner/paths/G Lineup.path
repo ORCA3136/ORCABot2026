@@ -1,0 +1,54 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 6.145,
+        "y": 3.905640725701541
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 5.895345542666872,
+        "y": 3.9187804339822314
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 5.755073817451821,
+        "y": 3.905640725701541
+      },
+      "prevControl": {
+        "x": 6.00681562073051,
+        "y": 3.893653020783508
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 1.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 100.0,
+    "maxAngularAcceleration": 200.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": -179.78214637490285
+  },
+  "reversed": false,
+  "folder": "Pre Districts 1.0",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -179.71352348972292
+  },
+  "useDefaultConstraints": true
+}

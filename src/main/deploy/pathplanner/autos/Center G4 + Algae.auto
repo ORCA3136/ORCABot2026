@@ -1,0 +1,110 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Center G"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Elevator L4"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "G Lineup"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.25
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake score"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "After G"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Elevator Bottom Algae"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.2
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "G algae lineup"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Hold Algae"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "G Algae Backup"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Elevator Processor"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "G to processor"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Release Algae"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": "Pre Districts",
+  "choreoAuto": false
+}

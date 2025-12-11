@@ -1,0 +1,16 @@
+no, I don't avoid double negatives
+
+zero the wheels with rev client and calibate with the calibration short square prism
+
+rotate all bevelgears to face left
+
+plug in the values from shuffleboard (raw absolute encoder values)
+
+to update encoders to 25.0.1: power the robot down, then plug in to the encoder
+then update individually :sad:
+
+old properties, in case the new ones are wrong as, I suspect:
+FR - 27 (AEC)
+FL - 30  -> 0.08333
+BL - 289 -> 0.802777
+BR - 74  -> 0.20555
