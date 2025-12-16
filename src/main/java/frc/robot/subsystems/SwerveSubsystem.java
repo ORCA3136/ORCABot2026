@@ -19,49 +19,38 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.pathfinding.Pathfinding;
-
 import edu.wpi.first.wpilibj.DriverStation;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 import swervelib.SwerveDrive;
 import swervelib.math.SwerveMath;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants;
-import frc.robot.LimelightHelpers;
-import frc.robot.Constants.PathPlannerConstants;
-
 import static edu.wpi.first.units.Units.Meter;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class SwerveSubsystem extends SubsystemBase {
   
   SwerveDrive swerveDrive;
 
-  VisionSubsystem vision;
   
-  private final Pigeon2 pigeon2 = new Pigeon2(9, "rio"); // Pigeon is on roboRIO CAN Bus with device ID 9
+  private final Pigeon2 pigeon2 = new Pigeon2(9, "rio");
 
-  public SwerveSubsystem(File directory, VisionSubsystem vision) {
+  public SwerveSubsystem(File directory) {
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.LOW;
-    this.vision = vision;
 
     try
     {
-      swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.Limits.MAX_SPEED,
+      swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.kDriveMaxSpeedMps,
                                                                   new Pose2d(new Translation2d(Meter.of(0),
                                                                                                Meter.of(0)),
                                                                              Rotation2d.fromDegrees(0)));
@@ -155,7 +144,7 @@ public class SwerveSubsystem extends SubsystemBase {
                                                         headingX,
                                                         headingY,
                                                         getHeadingRadians(),
-                                                        Constants.Limits.MAX_SPEED);
+                                                        Constants.kDriveMaxSpeedMps);
   }
 
   /**
@@ -175,7 +164,7 @@ public class SwerveSubsystem extends SubsystemBase {
                                                         scaledInputs.getY(),
                                                         angle.getRadians(),
                                                         getHeadingRadians(),
-                                                        Constants.Limits.MAX_SPEED);
+                                                        Constants.kDriveMaxSpeedMps);
   }
 
   public ChassisSpeeds getTargetSpeeds(double xInput, double yInput, Rotation2d angle, double maxSpeed)
@@ -252,16 +241,7 @@ public class SwerveSubsystem extends SubsystemBase {
     });
   }
 
-  public Command driveFieldOrientedElevatorSpeed(Supplier<ChassisSpeeds> velocity, ElevatorSubsystem elevator)
-  {
-    return run(()->{
-      double elevatorHeight = elevator.getElevatorPosition();
-      if (elevatorHeight > Constants.ElevatorConstants.ElevatorSetpoints.kElevatorSlowdownThreshhold)
-          swerveDrive.driveFieldOriented(velocity.get().times(Constants.Limits.ELEVATOR_SPEED_FACTOR));
-      else
-          swerveDrive.driveFieldOriented(velocity.get());
-    });
-  }
+ 
 
   /**
    * Gets the current pose (position and rotation) of the robot, as reported by odometry.
@@ -313,13 +293,7 @@ public class SwerveSubsystem extends SubsystemBase {
       );
   }
 
-  public double distanceToReef() {
-    if (!isRedSide()) {
-      return Math.abs(swerveDrive.getPose().getTranslation().getDistance(Constants.FieldPoses.blueCenterOfReef.getTranslation()));
-    } else {
-      return Math.abs(swerveDrive.getPose().getTranslation().getDistance(Constants.FieldPoses.redCenterOfReef.getTranslation()));
-    }
-  }
+  
 
   /**
    * Returns a Command that drives the swerve drive to a specific distance at a given speed.
@@ -354,13 +328,8 @@ public class SwerveSubsystem extends SubsystemBase {
     NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Robot Velocity x").setNumber(swerveDrive.getRobotVelocity().vxMetersPerSecond);
     NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Robot Velocity y").setNumber(swerveDrive.getRobotVelocity().vyMetersPerSecond);
 
-
-    vision.updateLimelightYaw(this);
-    // vision.updatePosesEstimator(swerveDrive);
-    vision.updatePosesEstimatorMT2(swerveDrive);
     swerveDrive.updateOdometry(); // Might be redundant
 
-    ElevatorSubsystem.updateDistanceToReef(distanceToReef());
 
     // String[] limelights = {"limelight-left", "limelight-right", "limelight-rear"};
     // PoseEstimate[] poses = vision.getEstimatedGlobalPose(limelights);
@@ -442,14 +411,6 @@ public class SwerveSubsystem extends SubsystemBase {
     PathfindingCommand.warmupCommand().schedule();
   }
 
-  public boolean isRedSide() {
-    var alliance = DriverStation.getAlliance();
-      if (alliance.isPresent())
-      {
-        return alliance.get() == DriverStation.Alliance.Red;
-      }
-      return false;
-  }
 
   /**
    * Use PathPlanner Path finding to go to a point on the field.
