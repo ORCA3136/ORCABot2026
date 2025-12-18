@@ -1,9 +1,5 @@
 package frc.robot;
 
-import java.security.PublicKey;
-
-import edu.wpi.first.units.PerUnit;
-
 public final class Constants {
 
     // Drive controller port numbers
