@@ -9,22 +9,19 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /*
  * 
- * This subsystem is for all on the fly pathplanner operations
+ * This subsystem is for all turret/shooter operations
  * Including:
- *    Creating paths 
- *    Creating Pathplanner commands
+ *    Turning turret/shooter and keeping track of angles 
+ *    Managing the speeds of the flywheels
  * 
  */
 
 
-public class TeleopPathplanner extends SubsystemBase {
+public class ShooterSubsystem extends SubsystemBase {
+  /** Creates a new ExampleSubsystem. */
+  public ShooterSubsystem() {}
 
   
-  /** Creates a new ExampleSubsystem. */
-  public TeleopPathplanner() 
-  {
-
-  }
 
   @Override
   public void periodic() {

@@ -38,10 +38,20 @@ import static edu.wpi.first.units.Units.Meter;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+
+/*
+ * 
+ * This subsystem is for all swerve drive operations
+ * Including:
+ *    Managing the swerve modules
+ *    Keeping track of positioning
+ * 
+ */
+
+
 public class SwerveSubsystem extends SubsystemBase {
   
   SwerveDrive swerveDrive;
-
   
   private final Pigeon2 pigeon2 = new Pigeon2(9, "rio");
 

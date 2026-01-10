@@ -7,6 +7,17 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.LimelightHelpers;
 
+
+/*
+ * 
+ * This subsystem is for all vision operations
+ * Including:
+ *    Limelight 
+ *    Any distance or beam break sensors
+ * 
+ */
+
+
 public class VisionSubsystem extends SubsystemBase {
 
   public VisionSubsystem() {

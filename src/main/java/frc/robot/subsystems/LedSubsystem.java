@@ -1,15 +1,30 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.LedColors;
+
+
+/*
+ * 
+ * This subsystem is for all LED and lighting operations
+ * Including:
+ *    Managing the LED strip colors
+ *    Any other lights
+ *    Limelight lights
+ * 
+ */
+
 
 public class LedSubsystem extends SubsystemBase {
   //Creates a new subsystem for the LEDs
 
   Spark blinkin;
   boolean discoOn = false;
+  double discoTiming = 0.5; // Seconds
+  double time = -0.5;
 
   public LedSubsystem() {
     blinkin = new Spark(0);
@@ -22,9 +37,11 @@ public class LedSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
 
-    
     if (discoOn) {
-      setRandomColor();
+      if (Timer.getTimestamp() > time + discoTiming) {
+        time = Timer.getTimestamp();
+        setRandomColor();
+      }
     }
   }
 

@@ -9,22 +9,19 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /*
  * 
- * This subsystem is for all on the fly pathplanner operations
+ * This subsystem is for fuel interactions
  * Including:
- *    Creating paths 
- *    Creating Pathplanner commands
+ *    Intaking/outaking fuel from the floor
+ *    Transporting fuel to the shooter
  * 
  */
 
 
-public class TeleopPathplanner extends SubsystemBase {
+public class IntakeSubsystem extends SubsystemBase {
+  /** Creates a new ExampleSubsystem. */
+  public IntakeSubsystem() {}
 
   
-  /** Creates a new ExampleSubsystem. */
-  public TeleopPathplanner() 
-  {
-
-  }
 
   @Override
   public void periodic() {

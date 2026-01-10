@@ -9,22 +9,19 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /*
  * 
- * This subsystem is for all on the fly pathplanner operations
+ * This subsystem is for climbing the tower
  * Including:
- *    Creating paths 
- *    Creating Pathplanner commands
+ *    Managing any hooks 
+ *    Managing any elevators/climbing poles
  * 
  */
 
 
-public class TeleopPathplanner extends SubsystemBase {
+public class ClimberSubsystem extends SubsystemBase {
+  /** Creates a new ExampleSubsystem. */
+  public ClimberSubsystem() {}
 
   
-  /** Creates a new ExampleSubsystem. */
-  public TeleopPathplanner() 
-  {
-
-  }
 
   @Override
   public void periodic() {
