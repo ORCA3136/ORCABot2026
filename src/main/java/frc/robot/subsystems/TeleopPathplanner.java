@@ -4,28 +4,17 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.LimelightHelpers;
 
-public class VisionSubsystem extends SubsystemBase {
+public class TeleopPathplanner extends SubsystemBase {
 
-  public VisionSubsystem() {
-    
+  
+  /** Creates a new ExampleSubsystem. */
+  public TeleopPathplanner() 
+  {
+
   }
-
-  public boolean getLeftTV() {
-    return LimelightHelpers.getTV("limelight-left");
-  }
-  public boolean getRightTV() {
-    return LimelightHelpers.getTV("limelight-right");
-  }
-  public boolean getTV() {
-    return getLeftTV() || getRightTV();
-  }
-
-  // public void updatePoseEstimator(SwerveDrive swerve) {
-
-  // }
 
   @Override
   public void periodic() {
