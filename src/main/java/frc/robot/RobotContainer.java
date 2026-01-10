@@ -56,7 +56,10 @@ public class RobotContainer {
                                                            .deadband(Constants.kStickDeadband)
                                                            .allianceRelativeControl(true);
     
+  // Transformations for controller input for different driving commands
+
   Command defaultDriveCommand = driveBase.driveFieldOriented(controllerInput);
+  // Make more driving commands
   
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
@@ -68,14 +71,15 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-
     driveBase.setDefaultCommand(defaultDriveCommand);
 
+    // Buttons
+    // D pad
+    // Axis/Triggers
   }
 
   private void configureNamedCommands() {
-    
-    
+    // Pathplanner commands
   }
 
   /**

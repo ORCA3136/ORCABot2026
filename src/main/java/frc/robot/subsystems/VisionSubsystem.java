@@ -6,6 +6,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.LimelightHelpers;
+import frc.robot.Robot;
 
 
 /*
@@ -20,23 +21,33 @@ import frc.robot.LimelightHelpers;
 
 public class VisionSubsystem extends SubsystemBase {
 
+  String limelightOne = "limelight-left";
+  String limelightTwo = "limelight-right";
+
   public VisionSubsystem() {
     
   }
 
+  /**
+   * @return True if limelightOne sees a valid tag
+   */
   public boolean getLeftTV() {
     return LimelightHelpers.getTV("limelight-left");
   }
+  /**
+   * @return True if limelightTwo sees a valid tag
+   */
   public boolean getRightTV() {
     return LimelightHelpers.getTV("limelight-right");
   }
+  /**
+   * @return True if any limelight sees a valid tag
+   */
   public boolean getTV() {
     return getLeftTV() || getRightTV();
   }
 
-  // public void updatePoseEstimator(SwerveDrive swerve) {
-
-  // }
+  
 
   @Override
   public void periodic() {

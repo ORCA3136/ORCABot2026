@@ -17,6 +17,15 @@ public final class Constants {
 
 
 
+    public static final class OperatorConstants {
+      // Controller and button constants
+    }
+
+    public static final class SparkConstants {
+      // Motor controller ids
+    }
+
+
 
     public static final class LedColors {
         //These are all the led optios, if you want more you will have to go to a REV website called "LED BLINKIN DRIVER"
