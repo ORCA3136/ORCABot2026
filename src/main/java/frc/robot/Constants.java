@@ -2,33 +2,51 @@ package frc.robot;
 
 public final class Constants {
 
-    // Drive controller port numbers
-    public static final int kPrimaryDriverControler = 0;
-    public static final int kSecondaryDriverControler = 1;
+
 
     // Robot max speed
     public static final double kDriveMaxSpeedMps = 3.05; // Meeters per second
     // public static final double kDriveMaxSpeedFps = 10; // Feet per second
 
-    public static final double kStickDeadband = .05;
 
 
 
-
-
-
+    
     public static final class OperatorConstants {
       // Controller and button constants
+
+      // Drive controller port numbers
+      public static final int kDriverControler = 0;
+      public static final int kSecondaryDriverControler = 1;
+
+      public static final double kStickDeadband = 0.05;
+      public static final double kTriggerDeadband = 0.05;
     }
 
-    public static final class SparkConstants {
-      // Motor controller ids
+    public static final class CanIdConstants {
+
+      // Drive Vortexes
+      public static final int kRearRightDrivingCanId = 1;
+      public static final int kFrontLeftDrivingCanId = 3;
+      public static final int kFrontRightDrivingCanId = 5;
+      public static final int kRearLeftDrivingCanId = 7;
+
+      // Drive 550s
+      public static final int kRearRightTurningCanId = 2;
+      public static final int kFrontLeftTurningCanId = 4;
+      public static final int kFrontRightTurningCanId = 6;
+      public static final int kRearLeftTurningCanId = 8;
+
+      // Lidars
+      public static final int kLidarCanId = 25;
+
     }
 
 
 
     public static final class LedColors {
-        //These are all the led optios, if you want more you will have to go to a REV website called "LED BLINKIN DRIVER"
+
+        //These are all the led options, if you want more you will have to go to a REV website called "LED BLINKIN DRIVER"
     
         //Patterns:
         public static final double Rainbow_Rainbow_Pallet = -0.99;

@@ -31,7 +31,7 @@ public class RobotContainer {
   
   private final SendableChooser<Command> autoChooser;
 
-  private final CommandXboxController m_primaryController = new CommandXboxController(Constants.kPrimaryDriverControler);
+  private final CommandXboxController m_primaryController = new CommandXboxController(Constants.OperatorConstants.kDriverControler);
 
   
 
@@ -53,7 +53,7 @@ public class RobotContainer {
                                                            () -> m_primaryController.getLeftY(),
                                                            () -> m_primaryController.getLeftX())
                                                            .withControllerRotationAxis(() -> m_primaryController.getRightX())
-                                                           .deadband(Constants.kStickDeadband)
+                                                           .deadband(Constants.OperatorConstants.kStickDeadband)
                                                            .allianceRelativeControl(true);
     
   // Transformations for controller input for different driving commands
