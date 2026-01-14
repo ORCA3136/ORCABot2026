@@ -21,6 +21,7 @@ import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.DriverStation;
 import swervelib.parser.SwerveParser;
+import swervelib.simulation.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 import swervelib.SwerveDrive;
@@ -273,13 +274,13 @@ public class SwerveSubsystem extends SubsystemBase {
     return swerveDrive.getPose();
   }
 
-  // public Optional<SwerveDriveSimulation> getMapleSimDrive(){
-  //   return swerveDrive.getMapleSimDrive();
-  // }
+  public Optional<SwerveDriveSimulation> getMapleSimDrive(){
+    return swerveDrive.getMapleSimDrive();
+  }
 
-  // public Pose2d getMapleSimPose(){
-  //   return getMapleSimDrive().get().getSimulatedDriveTrainPose();
-  // }
+  public Pose2d getMapleSimPose(){
+    return getMapleSimDrive().get().getSimulatedDriveTrainPose();
+  }
  
   /**
    * Resets the gyro angle to zero and resets odometry to the same position, but facing toward 0.
