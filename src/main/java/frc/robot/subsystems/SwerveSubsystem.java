@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
+// import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -263,13 +263,13 @@ public class SwerveSubsystem extends SubsystemBase {
     return swerveDrive.getPose();
   }
 
-  public Optional<SwerveDriveSimulation>getMapleSimDrive(){
-    return swerveDrive.getMapleSimDrive();
-  }
+  // public Optional<SwerveDriveSimulation> getMapleSimDrive(){
+  //   return swerveDrive.getMapleSimDrive();
+  // }
 
-  public Pose2d getMapleSimPose(){
-    return getMapleSimDrive().get().getSimulatedDriveTrainPose();
-  }
+  // public Pose2d getMapleSimPose(){
+  //   return getMapleSimDrive().get().getSimulatedDriveTrainPose();
+  // }
  
   /**
    * Resets the gyro angle to zero and resets odometry to the same position, but facing toward 0.
