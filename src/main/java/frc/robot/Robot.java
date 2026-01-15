@@ -6,7 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.DataLogManager;
-
+import edu.wpi.first.wpilibj.TimedRobot;
 
 import org.littletonrobotics.junction.LogFileUtil;
 
@@ -32,7 +32,7 @@ import au.grapplerobotics.CanBridge;
  * the TimedRobot documentation. If you change the name of this class or the package after creating
  * this project, you must also update the Main.java file in the project.
  */
-public class Robot extends LoggedRobot {
+public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
@@ -43,23 +43,6 @@ public class Robot extends LoggedRobot {
    * initialization code.
    */
   public Robot() {
-    // Initialization for AdvantageKit
-    // --- Starts here --- 
-    Logger.recordMetadata("ProjectName", "MyProject"); // Set a metadata value
-
-    if (isReal()) {
-      Logger.addDataReceiver(new WPILOGWriter()); // Log to a USB stick ("/U/logs")
-      Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
-    } else {
-      setUseTiming(false); // Run as fast as possible
-      String logPath = LogFileUtil.findReplayLog(); // Pull the replay log from AdvantageScope (or prompt the user)
-      Logger.setReplaySource(new WPILOGReader(logPath)); // Read replay log
-      Logger.addDataReceiver(new WPILOGWriter(LogFileUtil.addPathSuffix(logPath, "_sim"))); // Save outputs to a new log
-    }
-
-    Logger.start();
-    // --- Ends here --- 
-
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();

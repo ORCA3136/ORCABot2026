@@ -8,6 +8,7 @@ import java.io.File;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import frc.robot.subsystems.SwerveSubsystem;
+import frc.robot.subsystems.VisionSubsystem;
 import swervelib.SwerveInputStream;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -15,8 +16,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 // import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-
-
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 
 /**
@@ -27,7 +27,8 @@ import edu.wpi.first.wpilibj.DriverStation;
  */
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
-  private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026")); // where to configure the robot or "choose" it
+  private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
+  private final VisionSubsystem visionSubsystem = new VisionSubsystem();
   
   private final SendableChooser<Command> autoChooser;
 
