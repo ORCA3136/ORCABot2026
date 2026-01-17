@@ -5,7 +5,7 @@ public final class Constants {
 
 
     // Robot max speed
-    public static final double kDriveMaxSpeedMps = 3.05; // Meeters per second
+    public static final double kDriveMaxSpeedMps = 3.05; // Meters per second
     // public static final double kDriveMaxSpeedFps = 10; // Feet per second
 
 
@@ -25,16 +25,18 @@ public final class Constants {
 
     public static final class CanIdConstants {
 
+      //NOTE: CAN ID 9 is reserved by the pigeon in SwerveSubsystem
+
       // Drive Vortexes
-      public static final int kRearRightDrivingCanId = 1;
+      public static final int kFrontRightDrivingCanId = 1;
       public static final int kFrontLeftDrivingCanId = 3;
-      public static final int kFrontRightDrivingCanId = 5;
+      public static final int kRearRightDrivingCanId = 5;
       public static final int kRearLeftDrivingCanId = 7;
 
       // Drive 550s
-      public static final int kRearRightTurningCanId = 2;
+      public static final int kFrontRightTurningCanId = 2;
       public static final int kFrontLeftTurningCanId = 4;
-      public static final int kFrontRightTurningCanId = 6;
+      public static final int kRearRightTurningCanId = 6;
       public static final int kRearLeftTurningCanId = 8;
 
       // Lidars
