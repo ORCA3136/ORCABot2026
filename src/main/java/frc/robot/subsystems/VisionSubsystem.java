@@ -10,6 +10,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.LimelightHelpers;
+// import frc.robot.Robot;
 
 /*
  * 
@@ -33,7 +34,7 @@ public class VisionSubsystem extends SubsystemBase {
   public VisionSubsystem() {
     // name of constant may need to change
     lidar = new LaserCan(Constants.CanIdConstants.kLidarCanId);
-
+    
   }
 
   /**
@@ -42,14 +43,12 @@ public class VisionSubsystem extends SubsystemBase {
   public boolean getLeftTV() {
     return LimelightHelpers.getTV("limelight-left");
   }
-
   /**
    * @return True if limelightTwo sees a valid tag
    */
   public boolean getRightTV() {
     return LimelightHelpers.getTV("limelight-right");
   }
-
   /**
    * @return True if any limelight sees a valid tag
    */

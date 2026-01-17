@@ -26,15 +26,11 @@ import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 import swervelib.SwerveDrive;
 import swervelib.math.SwerveMath;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import static edu.wpi.first.units.Units.MetersPerSecond;
-
-import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants;
 import static edu.wpi.first.units.Units.Meter;
@@ -56,12 +52,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class SwerveSubsystem extends SubsystemBase {
   
   SwerveDrive swerveDrive;
-
-  NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  NetworkTable odometryTable = networkTable.getTable(Constants.NetworkTableNames.Odometry.kOdometry);
-
-  StructPublisher<Pose2d> robotPose2dPublisher = networkTable
-      .getStructTopic(Constants.NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();
   
   private final Pigeon2 pigeon2 = new Pigeon2(9, "rio");
 
@@ -273,7 +263,7 @@ public class SwerveSubsystem extends SubsystemBase {
     return swerveDrive.getPose();
   }
 
-  // public Optional<SwerveDriveSimulation> getMapleSimDrive(){
+  // public Optional<SwerveDriveSimulation>getMapleSimDrive(){
   //   return swerveDrive.getMapleSimDrive();
   // }
 
@@ -340,21 +330,26 @@ public class SwerveSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
 
-    robotPose2dPublisher.set(swerveDrive.getPose());
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionX)
-        .setNumber(swerveDrive.getPose().getX());
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionY)
-        .setNumber(swerveDrive.getPose().getY());
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionYaw)
-        .setNumber(swerveDrive.getPose().getRotation().getRadians());
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityX)
-        .setNumber(swerveDrive.getRobotVelocity().vxMetersPerSecond);
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityY)
-        .setNumber(swerveDrive.getRobotVelocity().vyMetersPerSecond);
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityYaw)
-        .setNumber(swerveDrive.getRobotVelocity().omegaRadiansPerSecond);
+    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Rotation").setNumber(swerveDrive.getPose().getRotation().getDegrees());
+    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Position x").setNumber(swerveDrive.getPose().getX());
+    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Position y").setNumber(swerveDrive.getPose().getY());
+    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("PoseYaw").setNumber(swerveDrive.getPose().getRotation().getDegrees());
+    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Robot Velocity Rotation").setNumber(swerveDrive.getRobotVelocity().omegaRadiansPerSecond);
+    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Robot Velocity x").setNumber(swerveDrive.getRobotVelocity().vxMetersPerSecond);
+    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Robot Velocity y").setNumber(swerveDrive.getRobotVelocity().vyMetersPerSecond);
 
-    swerveDrive.updateOdometry();
+    swerveDrive.updateOdometry(); // Might be redundant
+
+
+    // String[] limelights = {"limelight-left", "limelight-right", "limelight-rear"};
+    // PoseEstimate[] poses = vision.getEstimatedGlobalPose(limelights);
+    
+
+    // LimelightHelpers.SetRobotOrientation("limelight-left",getHeading().getDegrees(),0,0,0,0,0);
+    // LimelightHelpers.SetRobotOrientation("limelight-left",swerveDrive.getPose().getRotation().getDegrees(),0,0,0,0,0);
+    // LimelightHelpers.SetRobotOrientation("limelight-three",getHeading().getDegrees(),0,0,0,0,0);
+
+    
   }
 
 

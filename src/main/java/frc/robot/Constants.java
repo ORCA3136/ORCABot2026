@@ -5,7 +5,7 @@ public final class Constants {
 
 
     // Robot max speed
-    public static final double kDriveMaxSpeedMps = 3.05; // Meters per second
+    public static final double kDriveMaxSpeedMps = 3.05; // Meeters per second
     // public static final double kDriveMaxSpeedFps = 10; // Feet per second
 
 
@@ -25,18 +25,16 @@ public final class Constants {
 
     public static final class CanIdConstants {
 
-      //NOTE: CAN ID 9 is reserved by the pigeon in SwerveSubsystem
-
       // Drive Vortexes
-      public static final int kFrontRightDrivingCanId = 1;
+      public static final int kRearRightDrivingCanId = 1;
       public static final int kFrontLeftDrivingCanId = 3;
-      public static final int kRearRightDrivingCanId = 5;
+      public static final int kFrontRightDrivingCanId = 5;
       public static final int kRearLeftDrivingCanId = 7;
 
       // Drive 550s
-      public static final int kFrontRightTurningCanId = 2;
+      public static final int kRearRightTurningCanId = 2;
       public static final int kFrontLeftTurningCanId = 4;
-      public static final int kRearRightTurningCanId = 6;
+      public static final int kFrontRightTurningCanId = 6;
       public static final int kRearLeftTurningCanId = 8;
 
       // Lidars
@@ -80,19 +78,5 @@ public final class Constants {
         public static final double Gray = 0.95;
         public static final double Dark_Gray = 0.97;
         public static final double Black = 0.99;
-    }
-
-    public static final class NetworkTableNames {
-        
-        public static final class Odometry {
-            public static final String kOdometry = "Odometry";
-            public static final String kRobotPose2d = "Robot Field Position";
-            public static final String kPositionX = "Position X Meters";
-            public static final String kPositionY = "Position Y Meters";
-            public static final String kPositionYaw = "Position Yaw Radians";
-            public static final String kVelocityX = "Velocity X Meters per Second";
-            public static final String kVelocityY = "Velocity Y Meters per Second";
-            public static final String kVelocityYaw = "Velocity Yaw Degrees per Second";
-        }
-    }
+      }
 }
