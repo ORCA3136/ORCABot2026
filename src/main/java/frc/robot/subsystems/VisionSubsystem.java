@@ -6,6 +6,7 @@ package frc.robot.subsystems;
 
 import au.grapplerobotics.LaserCan;
 import au.grapplerobotics.interfaces.LaserCanInterface.Measurement;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.LimelightHelpers;
@@ -56,9 +57,32 @@ public class VisionSubsystem extends SubsystemBase {
     return getLeftTV() || getRightTV();
   }
 
+  /**
+   * @return The distance before the lidar sees something
+   */
+  public double getLidarMeasurement() {
+    Measurement it = lidar.getMeasurement();
+
+    NetworkTableInstance.getDefault().getTable("Lidar").getEntry("Lidar status").setDouble(it.status);
+    
+    if (it == null) 
+      return 999999;
+    return it.distance_mm;
+  }
+
+
+
+
+
+  
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+
+
+    NetworkTableInstance.getDefault().getTable("Lidar").getEntry("Lidar distance").setDouble(getLidarMeasurement());
+
   }
 
   @Override
