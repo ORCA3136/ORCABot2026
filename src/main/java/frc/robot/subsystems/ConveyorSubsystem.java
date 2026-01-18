@@ -36,10 +36,9 @@ public class ConveyorSubsystem extends SubsystemBase {
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   NetworkTable conveyorTable = networkTable.getTable(Constants.NetworkTableNames.Conveyor.kConveyor);
 
-  /** Creates a new ExampleSubsystem. */
   public ConveyorSubsystem() {
 
-    conveyorMotor.configure(Configs.ShooterConfigs.primaryMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    conveyorMotor.configure(Configs.ConveyorConfigs.conveyorMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 
@@ -60,6 +59,8 @@ public class ConveyorSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    conveyorTable.getEntry(Constants.NetworkTableNames.Conveyor.kVelocityRPM)
+      .setNumber(getConveyorVelocity());
   }
 
   @Override

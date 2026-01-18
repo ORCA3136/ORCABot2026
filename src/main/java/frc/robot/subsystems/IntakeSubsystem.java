@@ -4,9 +4,12 @@
 
 package frc.robot.subsystems;
 
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
@@ -22,16 +25,35 @@ import frc.robot.Constants;
 
 
 public class IntakeSubsystem extends SubsystemBase {
-  //
+  SparkFlex intakeMotor = new SparkFlex(Constants.CanIdConstants.kIntakeCanId, MotorType.kBrushless);
 
-  SparkFlex intakeDeploymentPrimaryMotor = new SparkFlex(Constants.CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
-  SparkFlex intakeDeploymentSecondaryMotor = new SparkFlex(Constants.CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
+  SparkFlex intakeDeploymentPrimaryMotor = new SparkFlex(Constants.CanIdConstants.kDeploymentPrimaryCanId, MotorType.kBrushless);
+  SparkFlex intakeDeploymentSecondaryMotor = new SparkFlex(Constants.CanIdConstants.kDeploymentSecondaryCanId, MotorType.kBrushless);
 
-  // encoder(S)
+  RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
+  RelativeEncoder intakeDeploymentEncoder = intakeDeploymentPrimaryMotor.getEncoder();
 
-  public IntakeSubsystem() {}
+  NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
+  NetworkTable intakeTable = networkTable.getTable(Constants.NetworkTableNames.Intake.kIntake);
+  NetworkTable intakeDeploymentTable = networkTable.getTable(Constants.NetworkTableNames.IntakeDeployment.kIntakeDeployment);
 
-  
+  public IntakeSubsystem() {
+
+  }
+
+  /**
+   * @param Velocity is in RPM
+   */
+  public void setIntakeVelocity(double velocity) {
+    intakeMotor.set(velocity);
+  }
+
+  /**
+   * @return Velocity in RPM
+   */
+  public double getShooterVelocity() {
+    return intakeEncoder.getVelocity();
+  }
 
   @Override
   public void periodic() {

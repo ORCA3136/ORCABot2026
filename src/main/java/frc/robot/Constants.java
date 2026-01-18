@@ -34,26 +34,46 @@ public final class Constants {
     public static final class CanIdConstants {
 
       // Drive Vortexes
-      public static final int kRearRightDrivingCanId = 1;
+      public static final int kFrontRightDrivingCanId = 1;
       public static final int kFrontLeftDrivingCanId = 3;
-      public static final int kFrontRightDrivingCanId = 5;
+      public static final int kRearRightDrivingCanId = 5;
       public static final int kRearLeftDrivingCanId = 7;
 
-      // Drive 550s
-      public static final int kRearRightTurningCanId = 2;
+      // Drive Turning 550s
+      public static final int kFrontRightTurningCanId = 2;
       public static final int kFrontLeftTurningCanId = 4;
-      public static final int kFrontRightTurningCanId = 6;
+      public static final int kRearRightTurningCanId = 6;
       public static final int kRearLeftTurningCanId = 8;
+
+      // Pigeon
+      public static final int kPigeonCanId = 9;
 
       // Shooter Vortexes
       public static final int kShooterPrimaryCanId = 11;
       public static final int kShooterSecondaryCanId = 12;
 
+      // Kicker Vortex
+      public static final int kKickerCanId = 13;
+
+      // Hood 550s
+      public static final int kHoodPrimaryCanId = 14;
+      public static final int kHoodSecondaryCanId = 15;
+
       // Conveyor Vortex
-      public static final int kConveyorCanId = 15;
+      public static final int kConveyorCanId = 16;
+
+      // Intake Vortex
+      public static final int kIntakeCanId = 17;
+
+      // Intake Deployment Vortexes 
+      public static final int kDeploymentPrimaryCanId = 18;
+      public static final int kDeploymentSecondaryCanId = 19;
 
       // Lidars
       public static final int kLidarCanId = 25;
+
+      // PDH
+      public static final int kPDHCanId = 63;
 
     }
 
@@ -113,8 +133,29 @@ public final class Constants {
         public static final String kVelocityRPM = "Velocity RPM";
       }
 
+      public static final class Hood {
+        public static final String kHood = "Hood";
+        public static final String kVelocityRPM = "Velocity RPM";
+      }
+
       public static final class Conveyor {
         public static final String kConveyor = "Conveyor";
+        public static final String kVelocityRPM = "Velocity RPM";
+      }
+
+      public static final class Intake {
+        public static final String kIntake = "Intake";
+        public static final String kVelocityRPM = "Velocity RPM";
+      }
+
+      public static final class IntakeDeployment {
+        public static final String kIntakeDeployment = "IntakeDeployment";
+        public static final String kVelocityRPM = "Velocity RPM";
+      }
+
+      public static final class Climber {
+        public static final String kClimber = "Climber";
+        public static final String kVelocityRPM = "Velocity RPM";
       }
     }
 }

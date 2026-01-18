@@ -28,21 +28,24 @@ import frc.robot.Constants;
 
 
 public class ShooterSubsystem extends SubsystemBase {
-
+  
   SparkFlex shooterPrimaryMotor = new SparkFlex(Constants.CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
   SparkFlex shooterSecondaryMotor = new SparkFlex(Constants.CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
 
+  SparkFlex hoodPrimaryMotor = new SparkFlex(Constants.CanIdConstants.kHoodPrimaryCanId, MotorType.kBrushless);
+  SparkFlex hoodSecondaryMotor = new SparkFlex(Constants.CanIdConstants.kHoodSecondaryCanId, MotorType.kBrushless);
+
   RelativeEncoder shooterEncoder = shooterPrimaryMotor.getEncoder();
+  RelativeEncoder hoodEncoder = shooterPrimaryMotor.getEncoder();
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   NetworkTable shooterTable = networkTable.getTable(Constants.NetworkTableNames.Shooter.kShooter);
+  NetworkTable hoodTable = networkTable.getTable(Constants.NetworkTableNames.Hood.kHood);
 
-
-  /** Creates a new ExampleSubsystem. */
   public ShooterSubsystem() {
 
-    shooterPrimaryMotor.configure(Configs.ShooterConfigs.primaryMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    shooterSecondaryMotor.configure(Configs.ShooterConfigs.secondaryMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    shooterPrimaryMotor.configure(Configs.ShooterConfigs.primaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    shooterSecondaryMotor.configure(Configs.ShooterConfigs.secondaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 
@@ -60,11 +63,27 @@ public class ShooterSubsystem extends SubsystemBase {
     return shooterEncoder.getVelocity();
   }
 
+  /**
+   * @param Velocity is in RPM
+   */
+  public void setHoodVelocity(double velocity) {
+    hoodPrimaryMotor.set(velocity);
+  }
+
+  /**
+   * @return Velocity in RPM
+   */
+  public double getHoodVelocity() {
+    return hoodEncoder.getVelocity();
+  }
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
     shooterTable.getEntry(Constants.NetworkTableNames.Shooter.kVelocityRPM)
       .setNumber(getShooterVelocity());
+    hoodTable.getEntry(Constants.NetworkTableNames.Hood.kVelocityRPM)
+      .setNumber(getHoodVelocity());
   }
 
   @Override

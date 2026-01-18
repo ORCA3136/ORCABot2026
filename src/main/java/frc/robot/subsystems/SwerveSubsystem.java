@@ -58,7 +58,7 @@ public class SwerveSubsystem extends SubsystemBase {
   
   SwerveDrive swerveDrive;
   
-  private final Pigeon2 pigeon2 = new Pigeon2(9, "rio");
+  private final Pigeon2 pigeon2 = new Pigeon2(Constants.CanIdConstants.kPigeonCanId, "rio");
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   NetworkTable odometryTable = networkTable.getTable(Constants.NetworkTableNames.Odometry.kOdometry);
