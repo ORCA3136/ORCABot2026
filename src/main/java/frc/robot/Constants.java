@@ -78,19 +78,5 @@ public final class Constants {
         public static final double Gray = 0.95;
         public static final double Dark_Gray = 0.97;
         public static final double Black = 0.99;
-    }
-
-    public static final class NetworkTableNames {
-        
-        public static final class Odometry {
-            public static final String kOdometry = "Odometry";
-            public static final String kRobotPose2d = "Robot Field Position";
-            public static final String kPositionX = "Position X Meters";
-            public static final String kPositionY = "Position Y Meters";
-            public static final String kPositionYaw = "Position Yaw Radians";
-            public static final String kVelocityX = "Velocity X Meters per Second";
-            public static final String kVelocityY = "Velocity Y Meters per Second";
-            public static final String kVelocityYaw = "Velocity Yaw Degrees per Second";
-        }
-    }
+      }
 }
