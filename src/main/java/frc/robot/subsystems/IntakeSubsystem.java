@@ -4,7 +4,11 @@
 
 package frc.robot.subsystems;
 
+import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 
 /*
@@ -18,7 +22,13 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 
 public class IntakeSubsystem extends SubsystemBase {
-  /** Creates a new ExampleSubsystem. */
+  //
+
+  SparkFlex intakeDeploymentPrimaryMotor = new SparkFlex(Constants.CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
+  SparkFlex intakeDeploymentSecondaryMotor = new SparkFlex(Constants.CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
+
+  // encoder(S)
+
   public IntakeSubsystem() {}
 
   

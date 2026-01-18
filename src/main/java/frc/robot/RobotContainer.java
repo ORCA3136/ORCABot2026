@@ -7,12 +7,16 @@ package frc.robot;
 import java.io.File;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+
+import frc.robot.commands.RunShooterCommand;
+import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import swervelib.SwerveInputStream;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 // import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -28,7 +32,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
-  private final VisionSubsystem visionSubsystem = new VisionSubsystem();
+  // private final VisionSubsystem visionSubsystem = new VisionSubsystem();
+  // private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   
   private final SendableChooser<Command> autoChooser;
 
@@ -75,6 +80,11 @@ public class RobotContainer {
     driveBase.setDefaultCommand(defaultDriveCommand);
 
     // Buttons
+    // m_primaryController.a().whileTrue(new RunShooterCommand(shooterSubsystem, Constants.ShooterConstants.kVelocityLow));
+    // m_primaryController.b().whileTrue(new RunShooterCommand(shooterSubsystem, Constants.ShooterConstants.kVelocityMedium));
+    // m_primaryController.x().whileTrue(new RunShooterCommand(shooterSubsystem, Constants.ShooterConstants.kVelocityHigh));
+    // m_primaryController.y().whileTrue(new RunShooterCommand(shooterSubsystem, Constants.ShooterConstants.kVelocityMax));
+
     // D pad
     // Axis/Triggers
   }

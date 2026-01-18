@@ -3,7 +3,7 @@
 // the WPILib BSD license file in the root directory of this project.
 
 package frc.robot.subsystems;
-import java.io.Console;
+
 import java.io.File;
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
@@ -57,12 +57,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class SwerveSubsystem extends SubsystemBase {
   
   SwerveDrive swerveDrive;
-
-  NetworkTableInstance networkTable = NetworkTableInstance.getDefault();//
-  NetworkTable odometryTable = networkTable.getTable(Constants.NetworkTableNames.Odometry.kOdometry);//
-
-  StructPublisher<Pose2d> robotPose2dPublisher = networkTable//
-      .getStructTopic(Constants.NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();//
   
   private final Pigeon2 pigeon2 = new Pigeon2(9, "rio");
 
@@ -493,17 +487,17 @@ public class SwerveSubsystem extends SubsystemBase {
 
     robotPose2dPublisher.set(swerveDrive.getPose());
     odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionX)
-        .setNumber(swerveDrive.getPose().getX());
+      .setNumber(swerveDrive.getPose().getX());
     odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionY)
-        .setNumber(swerveDrive.getPose().getY());
+      .setNumber(swerveDrive.getPose().getY());
     odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionYaw)
-        .setNumber(swerveDrive.getPose().getRotation().getRadians());
+      .setNumber(swerveDrive.getPose().getRotation().getRadians());
     odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityX)
-        .setNumber(swerveDrive.getRobotVelocity().vxMetersPerSecond);
+      .setNumber(swerveDrive.getRobotVelocity().vxMetersPerSecond);
     odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityY)
-        .setNumber(swerveDrive.getRobotVelocity().vyMetersPerSecond);
+      .setNumber(swerveDrive.getRobotVelocity().vyMetersPerSecond);
     odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityYaw)
-        .setNumber(swerveDrive.getRobotVelocity().omegaRadiansPerSecond);
+      .setNumber(swerveDrive.getRobotVelocity().omegaRadiansPerSecond);
 
     swerveDrive.updateOdometry();
   }

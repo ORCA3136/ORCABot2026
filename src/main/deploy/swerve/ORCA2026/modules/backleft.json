@@ -10,11 +10,11 @@
     "canbus": null
   },
   "inverted": {
-    "drive": true,
+    "drive": false,
     "angle": false
   },
   "angle": {
-    "type": "sparkmax_neo550",
+    "type": "sparkflex_neo550",
     "id": 8,
     "canbus": null
   },

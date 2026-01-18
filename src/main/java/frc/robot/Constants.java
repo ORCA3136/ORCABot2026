@@ -23,6 +23,14 @@ public final class Constants {
       public static final double kTriggerDeadband = 0.05;
     }
 
+    public static final class ShooterConstants {
+      // Shooter speeds, RPM
+      public static final double kVelocityLow = 2000;
+      public static final double kVelocityMedium = 3500;
+      public static final double kVelocityHigh = 5000;
+      public static final double kVelocityMax = 6500;
+    }
+
     public static final class CanIdConstants {
 
       // Drive Vortexes
@@ -36,6 +44,13 @@ public final class Constants {
       public static final int kFrontLeftTurningCanId = 4;
       public static final int kFrontRightTurningCanId = 6;
       public static final int kRearLeftTurningCanId = 8;
+
+      // Shooter Vortexes
+      public static final int kShooterPrimaryCanId = 11;
+      public static final int kShooterSecondaryCanId = 12;
+
+      // Conveyor Vortex
+      public static final int kConveyorCanId = 15;
 
       // Lidars
       public static final int kLidarCanId = 25;
@@ -91,6 +106,15 @@ public final class Constants {
         public static final String kVelocityX = "Velocity X Meters per Second";
         public static final String kVelocityY = "Velocity Y Meters per Second";
         public static final String kVelocityYaw = "Velocity Yaw Degrees per Second";
+      }
+
+      public static final class Shooter {
+        public static final String kShooter = "Shooter";
+        public static final String kVelocityRPM = "Velocity RPM";
+      }
+
+      public static final class Conveyor {
+        public static final String kConveyor = "Conveyor";
       }
     }
 }
