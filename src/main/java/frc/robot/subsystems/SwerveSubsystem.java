@@ -3,6 +3,7 @@
 // the WPILib BSD license file in the root directory of this project.
 
 package frc.robot.subsystems;
+import java.io.Console;
 import java.io.File;
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
@@ -21,6 +22,7 @@ import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.DriverStation;
 import swervelib.parser.SwerveParser;
+import swervelib.simulation.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 import swervelib.SwerveDrive;
@@ -263,13 +265,13 @@ public class SwerveSubsystem extends SubsystemBase {
     return swerveDrive.getPose();
   }
 
-  // public Optional<SwerveDriveSimulation>getMapleSimDrive(){
-  //   return swerveDrive.getMapleSimDrive();
-  // }
+  public Optional<SwerveDriveSimulation> getMapleSimDrive(){
+    return swerveDrive.getMapleSimDrive();
+  }
 
-  // public Pose2d getMapleSimPose(){
-  //   return getMapleSimDrive().get().getSimulatedDriveTrainPose();
-  // }
+  public Pose2d getMapleSimPose(){
+    return getMapleSimDrive().get().getSimulatedDriveTrainPose();
+  }
  
   /**
    * Resets the gyro angle to zero and resets odometry to the same position, but facing toward 0.
@@ -323,33 +325,6 @@ public class SwerveSubsystem extends SubsystemBase {
   {
     return run(() -> drive(new ChassisSpeeds(speedInMetersPerSecond, 0, 0)))
         .withTimeout(time);
-  }
-  
-
-  @Override
-  public void periodic() {
-    // This method will be called once per scheduler run
-
-    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Rotation").setNumber(swerveDrive.getPose().getRotation().getDegrees());
-    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Position x").setNumber(swerveDrive.getPose().getX());
-    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Position y").setNumber(swerveDrive.getPose().getY());
-    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("PoseYaw").setNumber(swerveDrive.getPose().getRotation().getDegrees());
-    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Robot Velocity Rotation").setNumber(swerveDrive.getRobotVelocity().omegaRadiansPerSecond);
-    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Robot Velocity x").setNumber(swerveDrive.getRobotVelocity().vxMetersPerSecond);
-    NetworkTableInstance.getDefault().getTable("Odometry").getEntry("Robot Velocity y").setNumber(swerveDrive.getRobotVelocity().vyMetersPerSecond);
-
-    swerveDrive.updateOdometry(); // Might be redundant
-
-
-    // String[] limelights = {"limelight-left", "limelight-right", "limelight-rear"};
-    // PoseEstimate[] poses = vision.getEstimatedGlobalPose(limelights);
-    
-
-    // LimelightHelpers.SetRobotOrientation("limelight-left",getHeading().getDegrees(),0,0,0,0,0);
-    // LimelightHelpers.SetRobotOrientation("limelight-left",swerveDrive.getPose().getRotation().getDegrees(),0,0,0,0,0);
-    // LimelightHelpers.SetRobotOrientation("limelight-three",getHeading().getDegrees(),0,0,0,0,0);
-
-    
   }
 
 
@@ -484,11 +459,6 @@ public class SwerveSubsystem extends SubsystemBase {
     return MetersPerSecond.of(new Translation2d(cs.vxMetersPerSecond, cs.vyMetersPerSecond).getNorm());
   }
 
-  @Override
-  public void simulationPeriodic() {
-    // This method will be called once per scheduler run during simulation
-  }
-
   /**
    * Get the path follower with events.
    *
@@ -500,5 +470,31 @@ public class SwerveSubsystem extends SubsystemBase {
     // Create a path following command using AutoBuilder. This will also trigger event markers.
     return new PathPlannerAuto(pathName);
   }
-}
+  
 
+  @Override
+  public void periodic() {
+    // This method will be called once per scheduler run
+
+    robotPose2dPublisher.set(swerveDrive.getPose());
+    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionX)
+        .setNumber(swerveDrive.getPose().getX());
+    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionY)
+        .setNumber(swerveDrive.getPose().getY());
+    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionYaw)
+        .setNumber(swerveDrive.getPose().getRotation().getRadians());
+    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityX)
+        .setNumber(swerveDrive.getRobotVelocity().vxMetersPerSecond);
+    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityY)
+        .setNumber(swerveDrive.getRobotVelocity().vyMetersPerSecond);
+    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityYaw)
+        .setNumber(swerveDrive.getRobotVelocity().omegaRadiansPerSecond);
+
+    swerveDrive.updateOdometry();
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    // This method will be called once per scheduler run during simulation
+  }
+}

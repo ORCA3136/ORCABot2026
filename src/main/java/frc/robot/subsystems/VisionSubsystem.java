@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import au.grapplerobotics.LaserCan;
 import au.grapplerobotics.interfaces.LaserCanInterface.Measurement;
+import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -36,6 +37,11 @@ public class VisionSubsystem extends SubsystemBase {
   private LaserCan.Measurement intakeLidar;
 
   private boolean intakeStatus;
+
+  NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
+  NetworkTable odometryTable = networkTable.getTable(Constants.NetworkTableNames.Odometry.kOdometry);
+
+  double robotPositionX, robotPositionY;
 
   public VisionSubsystem() {
     // name of constant may need to change
@@ -86,6 +92,10 @@ public class VisionSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
 
+    robotPositionX = odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionX)
+        .getDouble(0);
+    robotPositionY = odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionY)
+        .getDouble(0);
 
     NetworkTableInstance.getDefault().getTable("Lidar").getEntry("Lidar distance").setDouble(getLidarMeasurement());
 
