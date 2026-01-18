@@ -4,13 +4,19 @@
 
 package frc.robot.subsystems;
 
+import java.util.Optional;
+
 import au.grapplerobotics.LaserCan;
 import au.grapplerobotics.interfaces.LaserCanInterface.Measurement;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.LimelightHelpers;
+import limelight.Limelight;
+import limelight.networktables.AngularVelocity3d;
+import limelight.networktables.Orientation3d;
 // import frc.robot.Robot;
+import limelight.networktables.PoseEstimate;
 
 /*
  * 
@@ -23,8 +29,8 @@ import frc.robot.LimelightHelpers;
 
 public class VisionSubsystem extends SubsystemBase {
 
-  String limelightOne = "limelight-left";
-  String limelightTwo = "limelight-right";
+  Limelight leftLimelight = new Limelight("limelight-left");
+  Limelight rightLimelight = new Limelight("limelight-right");
 
   private LaserCan lidar;
   private LaserCan.Measurement intakeLidar;
@@ -34,8 +40,9 @@ public class VisionSubsystem extends SubsystemBase {
   public VisionSubsystem() {
     // name of constant may need to change
     lidar = new LaserCan(Constants.CanIdConstants.kLidarCanId);
-    
   }
+
+  // Required for megatag2 in periodic() function before fetching pose.
 
   /**
    * @return True if limelightOne sees a valid tag
@@ -69,7 +76,7 @@ public class VisionSubsystem extends SubsystemBase {
     return it.distance_mm;
   }
 
-
+  
 
 
 
