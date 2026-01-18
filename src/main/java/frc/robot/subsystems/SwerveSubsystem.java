@@ -57,6 +57,12 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class SwerveSubsystem extends SubsystemBase {
   
   SwerveDrive swerveDrive;
+
+  NetworkTableInstance networkTable = NetworkTableInstance.getDefault();//
+  NetworkTable odometryTable = networkTable.getTable(Constants.NetworkTableNames.Odometry.kOdometry);//
+
+  StructPublisher<Pose2d> robotPose2dPublisher = networkTable//
+      .getStructTopic(Constants.NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();//
   
   private final Pigeon2 pigeon2 = new Pigeon2(9, "rio");
 
