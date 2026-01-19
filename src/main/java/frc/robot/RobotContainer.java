@@ -101,11 +101,21 @@ public class RobotContainer {
     return autoChooser.getSelected();
   }
 
-public Command getLLSeedCommand() {
-    return visionSubsystem.getLLSeedCommand();
-}
+  /**
+   * Use this to pass the limelight command to the main {@link Robot} class.
+   *
+   * @return the command to run in disabled
+   */
+  public Command getLLSeedCommand() {
+      return visionSubsystem.getLLSeedCommand();
+  }
 
-public Command getLLInternalCommand() {
-    return visionSubsystem.getLLInternalCommand();
-}
+  /**
+   * Use this to pass the limelight command to the main {@link Robot} class.
+   *
+   * @return the command to run in auto and teleop
+   */
+  public Command getLLInternalCommand() {
+      return visionSubsystem.getLLInternalCommand();
+  }
 }

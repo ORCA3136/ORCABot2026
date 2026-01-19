@@ -38,6 +38,7 @@ import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.*;
@@ -66,6 +67,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kOdometry);
+  NetworkTable visionTable = networkTable.getTable(NetworkTableNames.Vision.kVision);
 
   Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
   Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
@@ -79,6 +81,10 @@ public class SwerveSubsystem extends SubsystemBase {
       .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotVelocity).publish();
   DoubleArrayPublisher robotAngularVelocity3dPublisher = odometryTable
       .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotAngularVelocity3d).publish();
+
+  double lastVisionUpdateTime = 0;
+  StructSubscriber<Pose2d> visionEstimateSubscriber = visionTable
+      .getStructTopic(NetworkTableNames.Vision.kVisionEstimatePose2d, Pose2d.struct).subscribe(new Pose2d());
 
     /*
       public static final String kRobotAngularVelocity3d = "Robot Pitch, Roll, Yaw Velocities";
@@ -498,6 +504,21 @@ public class SwerveSubsystem extends SubsystemBase {
     // Create a path following command using AutoBuilder. This will also trigger event markers.
     return new PathPlannerAuto(pathName);
   }
+
+  /**
+   * Update swervedrive when a new pose estimate is available
+   */
+  public void getVisionUpdate() {
+    double visionTimestamp = visionTable.getEntry(NetworkTableNames.Vision.kVisionEstimateTimestamp).getDouble(0);
+    if (visionTimestamp == 0) 
+      return;
+
+    if (lastVisionUpdateTime == visionTimestamp)
+      return;
+
+    Pose2d visionEstimate = visionEstimateSubscriber.get();
+    swerveDrive.addVisionMeasurement(visionEstimate, visionTimestamp);
+  }
   
 
   @Override
@@ -515,6 +536,7 @@ public class SwerveSubsystem extends SubsystemBase {
                                                       yawSupplier.get().baseUnitMagnitude()}, 0);
 
     swerveDrive.updateOdometry();
+    getVisionUpdate();
   }
 
   @Override

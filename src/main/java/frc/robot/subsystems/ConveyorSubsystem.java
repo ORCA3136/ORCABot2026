@@ -13,8 +13,8 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Configs;
-import frc.robot.Constants;
+import frc.robot.Configs.*;
+import frc.robot.Constants.*;
 
 
 /*
@@ -29,16 +29,16 @@ import frc.robot.Constants;
 
 public class ConveyorSubsystem extends SubsystemBase {
 
-  SparkFlex conveyorMotor = new SparkFlex(Constants.CanIdConstants.kConveyorCanId, MotorType.kBrushless);
+  SparkFlex conveyorMotor = new SparkFlex(CanIdConstants.kConveyorCanId, MotorType.kBrushless);
 
   RelativeEncoder conveyorEncoder = conveyorMotor.getEncoder();
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  NetworkTable conveyorTable = networkTable.getTable(Constants.NetworkTableNames.Conveyor.kConveyor);
+  NetworkTable conveyorTable = networkTable.getTable(NetworkTableNames.Conveyor.kConveyor);
 
   public ConveyorSubsystem() {
 
-    conveyorMotor.configure(Configs.ConveyorConfigs.conveyorMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    conveyorMotor.configure(ConveyorConfigs.conveyorMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 
@@ -59,7 +59,7 @@ public class ConveyorSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    conveyorTable.getEntry(Constants.NetworkTableNames.Conveyor.kVelocityRPM)
+    conveyorTable.getEntry(NetworkTableNames.Conveyor.kVelocityRPM)
       .setNumber(getConveyorVelocity());
   }
 
