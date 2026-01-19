@@ -8,13 +8,23 @@ import java.util.Optional;
 
 import au.grapplerobotics.LaserCan;
 import au.grapplerobotics.interfaces.LaserCanInterface.Measurement;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.networktables.DoubleArrayPublisher;
+import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.LimelightHelpers;
 import limelight.Limelight;
 import limelight.networktables.AngularVelocity3d;
+import limelight.networktables.LimelightPoseEstimator.EstimationMode;
+import limelight.networktables.LimelightResults;
+import limelight.networktables.LimelightSettings.ImuMode;
+import limelight.networktables.LimelightSettings.LEDMode;
 import limelight.networktables.Orientation3d;
 // import frc.robot.Robot;
 import limelight.networktables.PoseEstimate;
@@ -30,43 +40,37 @@ import limelight.networktables.PoseEstimate;
 
 public class VisionSubsystem extends SubsystemBase {
 
-  Limelight leftLimelight = new Limelight("limelight-left");
-  Limelight rightLimelight = new Limelight("limelight-right");
+  Limelight limelightOne = new Limelight(Constants.VisionConstants.limelightOneName);
+  Limelight limelightTwo = new Limelight(Constants.VisionConstants.limelightTwoName);
 
   private LaserCan lidar;
   private LaserCan.Measurement intakeLidar;
-
   private boolean intakeStatus;
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   NetworkTable odometryTable = networkTable.getTable(Constants.NetworkTableNames.Odometry.kOdometry);
 
-  double robotPositionX, robotPositionY;
+  StructSubscriber<Pose2d> robotPositionSubscriber = networkTable
+      .getStructTopic(Constants.NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).subscribe(new Pose2d());
+
+  StructSubscriber<Rotation3d> robotRotation3dSubscriber = odometryTable
+      .getStructTopic(Constants.NetworkTableNames.Odometry.kRobotRotation3d, Rotation3d.struct).subscribe(new Rotation3d());
+  DoubleArraySubscriber robotAngularVelocity3dSubscriber = odometryTable
+      .getDoubleArrayTopic(Constants.NetworkTableNames.Odometry.kRobotAngularVelocity3d).subscribe(new double[] {});
 
   public VisionSubsystem() {
-    // name of constant may need to change
-    lidar = new LaserCan(Constants.CanIdConstants.kLidarCanId);
-  }
+    // lidar = new LaserCan(Constants.CanIdConstants.kLidarCanId);
 
-  // Required for megatag2 in periodic() function before fetching pose.
-
-  /**
-   * @return True if limelightOne sees a valid tag
-   */
-  public boolean getLeftTV() {
-    return LimelightHelpers.getTV("limelight-left");
-  }
-  /**
-   * @return True if limelightTwo sees a valid tag
-   */
-  public boolean getRightTV() {
-    return LimelightHelpers.getTV("limelight-right");
-  }
-  /**
-   * @return True if any limelight sees a valid tag
-   */
-  public boolean getTV() {
-    return getLeftTV() || getRightTV();
+    limelightOne.getSettings()
+         .withLimelightLEDMode(LEDMode.PipelineControl)
+         .withCameraOffset(Pose3d.kZero)
+         .withImuMode(ImuMode.SyncInternalImu)
+         .save();
+    limelightTwo.getSettings()
+         .withLimelightLEDMode(LEDMode.PipelineControl)
+         .withCameraOffset(Pose3d.kZero)
+         .withImuMode(ImuMode.SyncInternalImu)
+         .save();
   }
 
   /**
@@ -75,29 +79,90 @@ public class VisionSubsystem extends SubsystemBase {
   public double getLidarMeasurement() {
     Measurement it = lidar.getMeasurement();
 
+    /*
+    MOVE TO CONSTANTS
     NetworkTableInstance.getDefault().getTable("Lidar").getEntry("Lidar status").setDouble(it.status);
+    */
     
     if (it == null) 
       return 999999;
     return it.distance_mm;
   }
 
+  /**
+   * @return True if limelightOne sees a valid tag
+   */
+  public boolean getLeftTV() {
+    return false; // limelightOne.getData().get;
+  }
+  /**
+   * @return True if limelightTwo sees a valid tag
+   */
+  public boolean getRightTV() {
+    return false;
+  }
+  /**
+   * @return True if any limelight sees a valid tag
+   */
+  public boolean getTV() {
+    return getLeftTV() || getRightTV();
+  }
+
   
 
 
+  /**
+   * 
+   */
+  public void updateRobotPosition() {
+    // Get current robot position
+      robotPositionSubscriber.get();
+    // Get limelight position estimate
+      Optional<PoseEstimate> visionEstimateOne = limelightOne
+        .createPoseEstimator(EstimationMode.MEGATAG2).getPoseEstimate();
+      Optional<PoseEstimate> visionEstimateTwo = limelightTwo
+        .createPoseEstimator(EstimationMode.MEGATAG2).getPoseEstimate();
+    // Get limelight STD DEVs X, Y, Yaw
+      Optional<LimelightResults> resultsOne = limelightOne.getLatestResults();
+      if (resultsOne.isEmpty())
+      resultsOne.get().
 
-  
+    // Check for each limelight
+      // If no valid target -- continue
+
+      // If current position is outside of STD DEVs update position
+
+      // If STD DEVs are less than default value scaled update position
+        // Scaling includes:
+          // User influence
+          // Time since last update
+          // Odometry (jostling)
+
+      // 
+
+
+
+      // robot_orientation_set
+      // stddevs
+      // botpose_orb_wpiblue
+      // imumode_set -- 1 use external and calibrate internal -- 2 use internal
+
+      // setVisionMeasurementStdDevs;
+      // addVisionMeasurement
+  }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
 
-    robotPositionX = odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionX)
-        .getDouble(0);
-    robotPositionY = odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionY)
-        .getDouble(0);
+    limelight.getSettings()
+		 .withRobotOrientation(new Orientation3d(robotRotation3dSubscriber.get(),
+				new AngularVelocity3d(DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]),
+															DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]),
+															DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]))))
+		 .save();
 
-    NetworkTableInstance.getDefault().getTable("Lidar").getEntry("Lidar distance").setDouble(getLidarMeasurement());
+    // NetworkTableInstance.getDefault().getTable("Lidar").getEntry("Lidar distance").setDouble(getLidarMeasurement());
 
   }
 

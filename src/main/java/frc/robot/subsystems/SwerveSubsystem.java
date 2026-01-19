@@ -29,15 +29,21 @@ import swervelib.SwerveDrive;
 import swervelib.math.SwerveMath;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
+import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Velocity;
 import frc.robot.Constants;
+import limelight.networktables.AngularVelocity3d;
+
 import static edu.wpi.first.units.Units.Meter;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -63,8 +69,23 @@ public class SwerveSubsystem extends SubsystemBase {
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   NetworkTable odometryTable = networkTable.getTable(Constants.NetworkTableNames.Odometry.kOdometry);
 
-  StructPublisher<Pose2d> robotPose2dPublisher = networkTable
+  Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
+  Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
+  Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
+
+  StructPublisher<Pose2d> robotPose2dPublisher = odometryTable
       .getStructTopic(Constants.NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();
+  StructPublisher<Rotation3d> robotRotation3dPublisher = odometryTable
+      .getStructTopic(Constants.NetworkTableNames.Odometry.kRobotRotation3d, Rotation3d.struct).publish();
+  DoubleArrayPublisher robotVelocityPublisher = odometryTable
+      .getDoubleArrayTopic(Constants.NetworkTableNames.Odometry.kRobotVelocity).publish();
+  DoubleArrayPublisher robotAngularVelocity3dPublisher = odometryTable
+      .getDoubleArrayTopic(Constants.NetworkTableNames.Odometry.kRobotAngularVelocity3d).publish();
+
+    /*
+      public static final String kRobotAngularVelocity3d = "Robot Pitch, Roll, Yaw Velocities";
+      public static final String kRobotVelocity = "Robot X, Y, Z Velocities";
+     */
 
   public SwerveSubsystem(File directory) {
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.LOW;
@@ -486,18 +507,14 @@ public class SwerveSubsystem extends SubsystemBase {
     // This method will be called once per scheduler run
 
     robotPose2dPublisher.set(swerveDrive.getPose());
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionX)
-      .setNumber(swerveDrive.getPose().getX());
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionY)
-      .setNumber(swerveDrive.getPose().getY());
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kPositionYaw)
-      .setNumber(swerveDrive.getPose().getRotation().getRadians());
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityX)
-      .setNumber(swerveDrive.getRobotVelocity().vxMetersPerSecond);
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityY)
-      .setNumber(swerveDrive.getRobotVelocity().vyMetersPerSecond);
-    odometryTable.getEntry(Constants.NetworkTableNames.Odometry.kVelocityYaw)
-      .setNumber(swerveDrive.getRobotVelocity().omegaRadiansPerSecond);
+    robotRotation3dPublisher.set(swerveDrive.getGyroRotation3d());
+    
+    robotVelocityPublisher.set(new double[] {swerveDrive.getRobotVelocity().vxMetersPerSecond,
+                                             swerveDrive.getRobotVelocity().vyMetersPerSecond,
+                                             0}, 0);
+    robotAngularVelocity3dPublisher.set(new double[] {pitchSupplier.get().baseUnitMagnitude(), 
+                                                      rollSupplier.get().baseUnitMagnitude(), 
+                                                      yawSupplier.get().baseUnitMagnitude()}, 0);
 
     swerveDrive.updateOdometry();
   }
