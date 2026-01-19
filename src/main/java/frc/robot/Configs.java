@@ -3,6 +3,7 @@ package frc.robot;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import frc.robot.Constants.*;
 
 public class Configs {
     
@@ -19,9 +20,9 @@ public class Configs {
                 .inverted(false)
                 .idleMode(IdleMode.kCoast);
             secondaryShooterConfig
-                .inverted(false)
+                .inverted(true)
                 .idleMode(IdleMode.kCoast)
-                .follow(Constants.CanIdConstants.kShooterPrimaryCanId);
+                .follow(CanIdConstants.kShooterPrimaryCanId);
             kickerMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kBrake);
@@ -29,9 +30,17 @@ public class Configs {
                 .inverted(false)
                 .idleMode(IdleMode.kBrake);
             secondaryHoodConfig
-                .inverted(false)
+                .inverted(true)
                 .idleMode(IdleMode.kBrake)
-                .follow(Constants.CanIdConstants.kShooterPrimaryCanId);
+                .follow(CanIdConstants.kShooterPrimaryCanId);
+
+            primaryHoodConfig.encoder
+                .positionConversionFactor(1 / HoodConstants.kGearRatio)
+                .velocityConversionFactor(1 / HoodConstants.kGearRatio);
+            primaryHoodConfig.closedLoop
+                .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD);
+            primaryHoodConfig.closedLoop.feedForward
+                .kG(HoodConstants.kG);
         }
     }
 
@@ -58,7 +67,7 @@ public class Configs {
             secondaryIntakeDeploymentMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kBrake)
-                .follow(Constants.CanIdConstants.kShooterPrimaryCanId);
+                .follow(CanIdConstants.kShooterPrimaryCanId);
         }
     }
 
