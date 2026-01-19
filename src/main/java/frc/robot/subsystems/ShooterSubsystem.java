@@ -17,8 +17,8 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Configs;
-import frc.robot.Constants;
+import frc.robot.Configs.*;
+import frc.robot.Constants.*;
 import frc.robot.Constants.HoodConstants;
 
 
@@ -36,11 +36,11 @@ public class ShooterSubsystem extends SubsystemBase {
 
   double shooterVelocity = 0;
   
-  final SparkFlex shooterPrimaryMotor = new SparkFlex(Constants.CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
-  final SparkFlex shooterSecondaryMotor = new SparkFlex(Constants.CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
+  final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
+  final SparkFlex shooterSecondaryMotor = new SparkFlex(CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
 
-  final SparkFlex hoodPrimaryMotor = new SparkFlex(Constants.CanIdConstants.kHoodPrimaryCanId, MotorType.kBrushless);
-  final SparkFlex hoodSecondaryMotor = new SparkFlex(Constants.CanIdConstants.kHoodSecondaryCanId, MotorType.kBrushless);
+  final SparkFlex hoodPrimaryMotor = new SparkFlex(CanIdConstants.kHoodPrimaryCanId, MotorType.kBrushless);
+  final SparkFlex hoodSecondaryMotor = new SparkFlex(CanIdConstants.kHoodSecondaryCanId, MotorType.kBrushless);
 
   final RelativeEncoder shooterEncoder = shooterPrimaryMotor.getEncoder();
   final RelativeEncoder hoodEncoder = shooterPrimaryMotor.getEncoder();
@@ -48,13 +48,13 @@ public class ShooterSubsystem extends SubsystemBase {
   final SparkClosedLoopController hoodPIDController = hoodPrimaryMotor.getClosedLoopController();
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  final NetworkTable shooterTable = networkTable.getTable(Constants.NetworkTableNames.Shooter.kShooter);
-  final NetworkTable hoodTable = networkTable.getTable(Constants.NetworkTableNames.Hood.kHood);
+  final NetworkTable shooterTable = networkTable.getTable(NetworkTableNames.Shooter.kShooter);
+  final NetworkTable hoodTable = networkTable.getTable(NetworkTableNames.Hood.kHood);
 
   public ShooterSubsystem() {
 
-    shooterPrimaryMotor.configure(Configs.ShooterConfigs.primaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    shooterSecondaryMotor.configure(Configs.ShooterConfigs.secondaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    shooterPrimaryMotor.configure(ShooterConfigs.primaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    shooterSecondaryMotor.configure(ShooterConfigs.secondaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 
@@ -96,7 +96,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * @param Velocity is in RPM
    */
   public void setShooterVelocityHigh() {
-    shooterPrimaryMotor.set(Constants.ShooterConstants.kVelocityHigh);
+    shooterPrimaryMotor.set(ShooterConstants.kVelocityHigh);
   }
 
   /**
@@ -144,11 +144,11 @@ public class ShooterSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    shooterTable.getEntry(Constants.NetworkTableNames.Shooter.kVelocityRPM)
+    shooterTable.getEntry(NetworkTableNames.Shooter.kVelocityRPM)
       .setNumber(getShooterVelocity());
-    hoodTable.getEntry(Constants.NetworkTableNames.Hood.kVelocityRPM)
+    hoodTable.getEntry(NetworkTableNames.Hood.kVelocityRPM)
       .setNumber(getHoodVelocity());
-    hoodTable.getEntry(Constants.NetworkTableNames.Hood.kPositionRotations)
+    hoodTable.getEntry(NetworkTableNames.Hood.kPositionRotations)
       .setNumber(getHoodPosition());
   }
 

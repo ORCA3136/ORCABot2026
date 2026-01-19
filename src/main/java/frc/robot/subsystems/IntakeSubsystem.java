@@ -11,7 +11,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
+import frc.robot.Constants.*;
 
 
 /*
@@ -25,17 +25,17 @@ import frc.robot.Constants;
 
 
 public class IntakeSubsystem extends SubsystemBase {
-  SparkFlex intakeMotor = new SparkFlex(Constants.CanIdConstants.kIntakeCanId, MotorType.kBrushless);
+  SparkFlex intakeMotor = new SparkFlex(CanIdConstants.kIntakeCanId, MotorType.kBrushless);
 
-  SparkFlex intakeDeployPrimaryMotor = new SparkFlex(Constants.CanIdConstants.kDeployPrimaryCanId, MotorType.kBrushless);
-  SparkFlex intakeDeploySecondaryMotor = new SparkFlex(Constants.CanIdConstants.kDeploySecondaryCanId, MotorType.kBrushless);
+  SparkFlex intakeDeployPrimaryMotor = new SparkFlex(CanIdConstants.kDeployPrimaryCanId, MotorType.kBrushless);
+  SparkFlex intakeDeploySecondaryMotor = new SparkFlex(CanIdConstants.kDeploySecondaryCanId, MotorType.kBrushless);
 
   RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
   RelativeEncoder intakeDeployEncoder = intakeDeployPrimaryMotor.getEncoder();
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  NetworkTable intakeTable = networkTable.getTable(Constants.NetworkTableNames.Intake.kIntake);
-  NetworkTable intakeDeployTable = networkTable.getTable(Constants.NetworkTableNames.IntakeDeploy.kIntakeDeploy);
+  NetworkTable intakeTable = networkTable.getTable(NetworkTableNames.Intake.kIntake);
+  NetworkTable intakeDeployTable = networkTable.getTable(NetworkTableNames.IntakeDeploy.kIntakeDeploy);
 
   public IntakeSubsystem() {
 
@@ -72,9 +72,9 @@ public class IntakeSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    intakeTable.getEntry(Constants.NetworkTableNames.Intake.kVelocityRPM)
+    intakeTable.getEntry(NetworkTableNames.Intake.kVelocityRPM)
       .setNumber(getIntakeVelocity());
-    intakeDeployTable.getEntry(Constants.NetworkTableNames.IntakeDeploy.kVelocityRPM)
+    intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM)
       .setNumber(getIntakeDeployVelocity());
   }
 

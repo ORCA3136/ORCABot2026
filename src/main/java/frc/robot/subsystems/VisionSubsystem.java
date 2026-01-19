@@ -94,31 +94,10 @@ public class VisionSubsystem extends SubsystemBase {
       return 999999;
     return it.distance_mm;
   }
-
-  /**
-   * @return True if limelightOne sees a valid tag
-   */
-  public boolean getLeftTV() {
-    return false; // limelightOne.getData().get;
-  }
-  /**
-   * @return True if limelightTwo sees a valid tag
-   */
-  public boolean getRightTV() {
-    return false;
-  }
-  /**
-   * @return True if any limelight sees a valid tag
-   */
-  public boolean getTV() {
-    return getLeftTV() || getRightTV();
-  }
-
   
-
-
   /**
-   * 
+   * Checks for the limelight with the best / most accurate estimate
+   * If the estimate is accurate enough the odometry is updated
    */
   public void updateRobotPosition() {
     // Get current robot position
