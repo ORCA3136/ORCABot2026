@@ -40,9 +40,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.units.measure.Velocity;
-import frc.robot.Constants;
-import limelight.networktables.AngularVelocity3d;
+import frc.robot.Constants.*;
 
 import static edu.wpi.first.units.Units.Meter;
 
@@ -64,23 +62,23 @@ public class SwerveSubsystem extends SubsystemBase {
   
   SwerveDrive swerveDrive;
   
-  private final Pigeon2 pigeon2 = new Pigeon2(Constants.CanIdConstants.kPigeonCanId, "rio");
+  private final Pigeon2 pigeon2 = new Pigeon2(CanIdConstants.kPigeonCanId, "rio");
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  NetworkTable odometryTable = networkTable.getTable(Constants.NetworkTableNames.Odometry.kOdometry);
+  NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kOdometry);
 
   Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
   Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
   Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
 
   StructPublisher<Pose2d> robotPose2dPublisher = odometryTable
-      .getStructTopic(Constants.NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();
+      .getStructTopic(NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();
   StructPublisher<Rotation3d> robotRotation3dPublisher = odometryTable
-      .getStructTopic(Constants.NetworkTableNames.Odometry.kRobotRotation3d, Rotation3d.struct).publish();
+      .getStructTopic(NetworkTableNames.Odometry.kRobotRotation3d, Rotation3d.struct).publish();
   DoubleArrayPublisher robotVelocityPublisher = odometryTable
-      .getDoubleArrayTopic(Constants.NetworkTableNames.Odometry.kRobotVelocity).publish();
+      .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotVelocity).publish();
   DoubleArrayPublisher robotAngularVelocity3dPublisher = odometryTable
-      .getDoubleArrayTopic(Constants.NetworkTableNames.Odometry.kRobotAngularVelocity3d).publish();
+      .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotAngularVelocity3d).publish();
 
     /*
       public static final String kRobotAngularVelocity3d = "Robot Pitch, Roll, Yaw Velocities";
@@ -92,7 +90,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     try
     {
-      swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.kDriveMaxSpeedMps,
+      swerveDrive = new SwerveParser(directory).createSwerveDrive(RobotConstants.kDriveMaxSpeedMps,
                                                                   new Pose2d(new Translation2d(Meter.of(0),
                                                                                                Meter.of(0)),
                                                                              Rotation2d.fromDegrees(0)));
@@ -186,7 +184,7 @@ public class SwerveSubsystem extends SubsystemBase {
                                                         headingX,
                                                         headingY,
                                                         getHeadingRadians(),
-                                                        Constants.kDriveMaxSpeedMps);
+                                                        RobotConstants.kDriveMaxSpeedMps);
   }
 
   /**
@@ -206,7 +204,7 @@ public class SwerveSubsystem extends SubsystemBase {
                                                         scaledInputs.getY(),
                                                         angle.getRadians(),
                                                         getHeadingRadians(),
-                                                        Constants.kDriveMaxSpeedMps);
+                                                        RobotConstants.kDriveMaxSpeedMps);
   }
 
   public ChassisSpeeds getTargetSpeeds(double xInput, double yInput, Rotation2d angle, double maxSpeed)

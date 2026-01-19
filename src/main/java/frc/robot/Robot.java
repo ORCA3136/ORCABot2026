@@ -20,6 +20,10 @@ import au.grapplerobotics.CanBridge;
  */
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
+  private Command LLSeedModeCommand;
+  private Command LLInternalModeCommand;
+
+  private final CommandScheduler commandScheduler;
 
   private final RobotContainer m_robotContainer;
 
@@ -31,10 +35,15 @@ public class Robot extends TimedRobot {
   public Robot() {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
+    commandScheduler = CommandScheduler.getInstance();
     m_robotContainer = new RobotContainer();
     CanBridge.runTCP();
     CameraServer.startAutomaticCapture();
     DataLogManager.start();
+    LLSeedModeCommand = m_robotContainer.getLLSeedCommand();
+    LLInternalModeCommand = m_robotContainer.getLLInternalCommand();
+
+    commandScheduler.schedule(LLSeedModeCommand);
   }
 
   /**
@@ -50,12 +59,14 @@ public class Robot extends TimedRobot {
     // commands, running already-scheduled commands, removing finished or interrupted commands,
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
-    CommandScheduler.getInstance().run();
+    commandScheduler.run();
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    commandScheduler.schedule(LLSeedModeCommand);
+  }
 
   @Override
   public void disabledPeriodic() {}
@@ -63,11 +74,13 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
+    commandScheduler.schedule(LLInternalModeCommand);
+
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
-      m_autonomousCommand.schedule();
+      commandScheduler.schedule(m_autonomousCommand);
     }
   }
 
@@ -81,6 +94,8 @@ public class Robot extends TimedRobot {
     // teleop starts running. If you want the autonomous to
     // continue until interrupted by another command, remove
     // this line or comment it out.
+    commandScheduler.schedule(LLInternalModeCommand);
+
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }

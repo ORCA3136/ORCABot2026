@@ -5,8 +5,10 @@ public final class Constants {
 
 
   // Robot max speed
-  public static final double kDriveMaxSpeedMps = 3.05; // Meeters per second
-  public static final double kDriveMaxSpeedFps = 10; // Feet per second
+  public static final class RobotConstants {
+    public static final double kDriveMaxSpeedMps = 3.05; // Meeters per second
+    public static final double kDriveMaxSpeedFps = 10; // Feet per second
+  }
 
 
 
@@ -87,6 +89,12 @@ public final class Constants {
       public static final String kRobotRotation3d = "Robot Pitch, Roll, Yaw Rotations";
       public static final String kRobotAngularVelocity3d = "Robot Pitch, Roll, Yaw Velocities";
       public static final String kRobotVelocity = "Robot X, Y, Z Velocities";
+    }
+
+    public static final class Vision {
+      public static final String kVision = "Vision";
+      public static final String kVisionEstimatePose2d = "Vision Estimate Pose 2d";
+      public static final String kVisionEstimateTimestamp = "Vision Estimate Timestamp";
     }
 
     public static final class Shooter {

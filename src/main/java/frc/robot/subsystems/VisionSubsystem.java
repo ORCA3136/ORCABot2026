@@ -4,29 +4,32 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+
 import java.util.Optional;
 
 import au.grapplerobotics.LaserCan;
 import au.grapplerobotics.interfaces.LaserCanInterface.Measurement;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.networktables.StructSubscriber;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
+import frc.robot.Constants.*;
 import limelight.Limelight;
 import limelight.networktables.AngularVelocity3d;
 import limelight.networktables.LimelightPoseEstimator.EstimationMode;
-import limelight.networktables.LimelightResults;
 import limelight.networktables.LimelightSettings.ImuMode;
 import limelight.networktables.LimelightSettings.LEDMode;
 import limelight.networktables.Orientation3d;
-// import frc.robot.Robot;
 import limelight.networktables.PoseEstimate;
 
 /*
@@ -40,23 +43,26 @@ import limelight.networktables.PoseEstimate;
 
 public class VisionSubsystem extends SubsystemBase {
 
-  Limelight limelightOne = new Limelight(Constants.VisionConstants.limelightOneName);
-  Limelight limelightTwo = new Limelight(Constants.VisionConstants.limelightTwoName);
+  Limelight limelightOne = new Limelight(VisionConstants.limelightOneName);
+  Limelight limelightTwo = new Limelight(VisionConstants.limelightTwoName);
 
   private LaserCan lidar;
-  private LaserCan.Measurement intakeLidar;
-  private boolean intakeStatus;
+  // private LaserCan.Measurement intakeLidar;
+  // private boolean intakeStatus;
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  NetworkTable odometryTable = networkTable.getTable(Constants.NetworkTableNames.Odometry.kOdometry);
+  NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kOdometry);
+  NetworkTable visionTable = networkTable.getTable(NetworkTableNames.Vision.kVision);
 
-  StructSubscriber<Pose2d> robotPositionSubscriber = networkTable
-      .getStructTopic(Constants.NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).subscribe(new Pose2d());
+  StructPublisher<Pose2d> visionEstimatePublisher = visionTable
+      .getStructTopic(NetworkTableNames.Vision.kVisionEstimatePose2d, Pose2d.struct).publish();
 
+  StructSubscriber<Pose2d> robotPositionSubscriber = odometryTable
+      .getStructTopic(NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).subscribe(new Pose2d());
   StructSubscriber<Rotation3d> robotRotation3dSubscriber = odometryTable
-      .getStructTopic(Constants.NetworkTableNames.Odometry.kRobotRotation3d, Rotation3d.struct).subscribe(new Rotation3d());
+      .getStructTopic(NetworkTableNames.Odometry.kRobotRotation3d, Rotation3d.struct).subscribe(new Rotation3d());
   DoubleArraySubscriber robotAngularVelocity3dSubscriber = odometryTable
-      .getDoubleArrayTopic(Constants.NetworkTableNames.Odometry.kRobotAngularVelocity3d).subscribe(new double[] {});
+      .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotAngularVelocity3d).subscribe(new double[] {});
 
   public VisionSubsystem() {
     // lidar = new LaserCan(Constants.CanIdConstants.kLidarCanId);
@@ -116,46 +122,63 @@ public class VisionSubsystem extends SubsystemBase {
    */
   public void updateRobotPosition() {
     // Get current robot position
-      robotPositionSubscriber.get();
-    // Get limelight position estimate
-      Optional<PoseEstimate> visionEstimateOne = limelightOne
-        .createPoseEstimator(EstimationMode.MEGATAG2).getPoseEstimate();
-      Optional<PoseEstimate> visionEstimateTwo = limelightTwo
-        .createPoseEstimator(EstimationMode.MEGATAG2).getPoseEstimate();
-    // Get limelight STD DEVs X, Y, Yaw
-      Optional<LimelightResults> resultsOne = limelightOne.getLatestResults();
-      if (resultsOne.isEmpty())
-      resultsOne.get().
+    Pose2d currentPose = robotPositionSubscriber.get();
+
+    Limelight[] limelights = {limelightOne, limelightTwo};
+    String[] limelightNames = {VisionConstants.limelightOneName, VisionConstants.limelightTwoName};
+
+    boolean updatePose = false;
+    int bestLimelight = -1;
+    double maxFitness = 1000;
 
     // Check for each limelight
-      // If no valid target -- continue
+    for (int i = 0; i <= 1; i++) {
+      // Get and check if there is a valid estimate
+      Optional<PoseEstimate> visionEstimate = limelights[i]
+          .createPoseEstimator(EstimationMode.MEGATAG2).getPoseEstimate();
+      if (visionEstimate.isEmpty()) continue;
 
-      // If current position is outside of STD DEVs update position
+      double[] stddevs = NetworkTableInstance.getDefault().getTable(limelightNames[i])
+          .getEntry("stddevs").getDoubleArray(new double[12]);
+      
+      // If the estimate is more accurate than the current pose then update
+      if (MathUtil.isNear(visionEstimate.get().pose.getX(), currentPose.getX(), stddevs[6]) && 
+          MathUtil.isNear(visionEstimate.get().pose.getY(), currentPose.getY(), stddevs[7]) && 
+          MathUtil.isNear(visionEstimate.get().pose.getRotation().getZ(), currentPose.getRotation().getRadians(), stddevs[11]))
+      {
+        updatePose = true;
+        continue;
+      }
 
-      // If STD DEVs are less than default value scaled update position
-        // Scaling includes:
-          // User influence
-          // Time since last update
-          // Odometry (jostling)
+      // Calculate fitness score
+      double timeFitness = 0; // time since last update
+      double positionFitness = 0; // stddevs
+      double velocityFitness = 0; // How fast we are driving/accelerating    // Odometry (jostling)
+      double zFitness = 0; // If the robot isn't on the ground
+      double userFitness = 0; // Decrease fitness at user request
 
-      // 
+      double totalFitness = timeFitness + positionFitness + velocityFitness + zFitness - userFitness;
+      maxFitness = (totalFitness < maxFitness ? totalFitness : maxFitness);
+    }
 
-
-
-      // robot_orientation_set
-      // stddevs
-      // botpose_orb_wpiblue
-      // imumode_set -- 1 use external and calibrate internal -- 2 use internal
-
-      // setVisionMeasurementStdDevs;
-      // addVisionMeasurement
+    if (updatePose && bestLimelight != -1) {
+      PoseEstimate estimate = limelights[bestLimelight].createPoseEstimator(EstimationMode.MEGATAG2).getPoseEstimate().get();
+      visionEstimatePublisher.set(estimate.pose.toPose2d());
+      visionTable.getEntry(NetworkTableNames.Vision.kVisionEstimateTimestamp).setDouble(estimate.timestampSeconds);
+    }
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
 
-    limelight.getSettings()
+    limelightOne.getSettings()
+		 .withRobotOrientation(new Orientation3d(robotRotation3dSubscriber.get(),
+				new AngularVelocity3d(DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]),
+															DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]),
+															DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]))))
+		 .save();
+    limelightTwo.getSettings()
 		 .withRobotOrientation(new Orientation3d(robotRotation3dSubscriber.get(),
 				new AngularVelocity3d(DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]),
 															DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]),
@@ -170,4 +193,18 @@ public class VisionSubsystem extends SubsystemBase {
   public void simulationPeriodic() {
     // This method will be called once per scheduler run during simulation
   }
+
+  public Command getLLSeedCommand() {
+    return Commands.runOnce(() -> {
+      limelightOne.getSettings().withImuMode(ImuMode.SyncInternalImu).save(); 
+      limelightTwo.getSettings().withImuMode(ImuMode.SyncInternalImu).save();}, 
+      (Subsystem[]) null);
+  }
+
+  public Command getLLInternalCommand() {
+    return Commands.runOnce(() -> {
+      limelightOne.getSettings().withImuMode(ImuMode.InternalImu).save(); 
+      limelightTwo.getSettings().withImuMode(ImuMode.InternalImu).save();}, 
+      (Subsystem[]) null);
+}
 }
