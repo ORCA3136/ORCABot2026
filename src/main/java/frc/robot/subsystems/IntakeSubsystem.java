@@ -27,15 +27,15 @@ import frc.robot.Constants;
 public class IntakeSubsystem extends SubsystemBase {
   SparkFlex intakeMotor = new SparkFlex(Constants.CanIdConstants.kIntakeCanId, MotorType.kBrushless);
 
-  SparkFlex intakeDeployPrimaryMotor = new SparkFlex(Constants.CanIdConstants.kDeploymentPrimaryCanId, MotorType.kBrushless);
-  SparkFlex intakeDeploySecondaryMotor = new SparkFlex(Constants.CanIdConstants.kDeploymentSecondaryCanId, MotorType.kBrushless);
+  SparkFlex intakeDeployPrimaryMotor = new SparkFlex(Constants.CanIdConstants.kDeployPrimaryCanId, MotorType.kBrushless);
+  SparkFlex intakeDeploySecondaryMotor = new SparkFlex(Constants.CanIdConstants.kDeploySecondaryCanId, MotorType.kBrushless);
 
   RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
   RelativeEncoder intakeDeployEncoder = intakeDeployPrimaryMotor.getEncoder();
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   NetworkTable intakeTable = networkTable.getTable(Constants.NetworkTableNames.Intake.kIntake);
-  NetworkTable intakeDeployTable = networkTable.getTable(Constants.NetworkTableNames.IntakeDeployment.kIntakeDeployment);
+  NetworkTable intakeDeployTable = networkTable.getTable(Constants.NetworkTableNames.IntakeDeploy.kIntakeDeploy);
 
   public IntakeSubsystem() {
 
@@ -74,7 +74,7 @@ public class IntakeSubsystem extends SubsystemBase {
     // This method will be called once per scheduler run
     intakeTable.getEntry(Constants.NetworkTableNames.Intake.kVelocityRPM)
       .setNumber(getIntakeVelocity());
-    intakeDeployTable.getEntry(Constants.NetworkTableNames.IntakeDeployment.kVelocityRPM)
+    intakeDeployTable.getEntry(Constants.NetworkTableNames.IntakeDeploy.kVelocityRPM)
       .setNumber(getIntakeDeployVelocity());
   }
 

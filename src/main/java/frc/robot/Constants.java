@@ -18,6 +18,18 @@ public final class Constants {
     public static final double kVelocityMax = 6500;
   }
 
+  public static final class HoodConstants {
+    public static final double kP = 0.02;
+    public static final double kI = 0;
+    public static final double kD = 0.05;
+    public static final double kG = 0.02;
+    // public static final double kS = 0;
+    // public static final double kV = 0;
+    // public static final double kA = 0;
+
+    public static final double kGearRatio = 12 * (40 / 19);
+  }
+
   public static final class VisionConstants {
     public static final String limelightOneName = "limelight-left";
     public static final String limelightTwoName = "limelight-right";
@@ -69,8 +81,8 @@ public final class Constants {
     public static final int kIntakeCanId = 17;
 
     // Intake Deployment Vortexes 
-    public static final int kDeploymentPrimaryCanId = 18;
-    public static final int kDeploymentSecondaryCanId = 19;
+    public static final int kDeployPrimaryCanId = 18;
+    public static final int kDeploySecondaryCanId = 19;
 
     // Lidars
     public static final int kLidarCanId = 25;
@@ -97,6 +109,7 @@ public final class Constants {
     public static final class Hood {
       public static final String kHood = "Hood";
       public static final String kVelocityRPM = "Velocity RPM";
+      public static final String kPositionRotations = "Velocity RPM";
     }
 
     public static final class Conveyor {
@@ -109,8 +122,8 @@ public final class Constants {
       public static final String kVelocityRPM = "Velocity RPM";
     }
 
-    public static final class IntakeDeployment {
-      public static final String kIntakeDeployment = "IntakeDeployment";
+    public static final class IntakeDeploy {
+      public static final String kIntakeDeploy = "IntakeDeploy";
       public static final String kVelocityRPM = "Velocity RPM";
     }
 
