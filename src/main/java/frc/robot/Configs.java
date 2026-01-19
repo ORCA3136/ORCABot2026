@@ -13,26 +13,19 @@ public class Configs {
 
         public static final SparkMaxConfig primaryHoodConfig = new SparkMaxConfig();
         public static final SparkMaxConfig secondaryHoodConfig = new SparkMaxConfig();
-
-        public static final SparkFlexConfig kickerMotorConfig = new SparkFlexConfig();
         static {
             primaryShooterConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast);
             secondaryShooterConfig
-                .inverted(true)
-                .idleMode(IdleMode.kCoast)
-                .follow(CanIdConstants.kShooterPrimaryCanId);
-            kickerMotorConfig
                 .inverted(false)
-                .idleMode(IdleMode.kBrake);
+                .idleMode(IdleMode.kCoast);
             primaryHoodConfig
                 .inverted(false)
                 .idleMode(IdleMode.kBrake);
             secondaryHoodConfig
-                .inverted(true)
-                .idleMode(IdleMode.kBrake)
-                .follow(CanIdConstants.kShooterPrimaryCanId);
+                .inverted(false)
+                .idleMode(IdleMode.kBrake);
 
             primaryHoodConfig.encoder
                 .positionConversionFactor(1 / HoodConstants.kGearRatio)
@@ -46,10 +39,14 @@ public class Configs {
 
     public static final class ConveyorConfigs {
         public static final SparkFlexConfig conveyorMotorConfig = new SparkFlexConfig();
+        public static final SparkFlexConfig kickerMotorConfig = new SparkFlexConfig();
         static {
             conveyorMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast);
+            kickerMotorConfig
+                .inverted(false)
+                .idleMode(IdleMode.kBrake);
         }
     }
 

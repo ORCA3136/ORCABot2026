@@ -9,8 +9,10 @@ import java.io.File;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.commands.RunConveyorCommand;
 import frc.robot.commands.RunHoodCommand;
 import frc.robot.commands.RunShooterCommand;
+import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
@@ -34,8 +36,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
-  private final VisionSubsystem visionSubsystem = new VisionSubsystem();
+  // private final VisionSubsystem visionSubsystem = new VisionSubsystem();
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+  private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   
   private final SendableChooser<Command> autoChooser;
 
@@ -85,9 +88,12 @@ public class RobotContainer {
     m_primaryController.a().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(0)));
     m_primaryController.b().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity()));
     m_primaryController.x().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseShooterVelocity()));
-    m_primaryController.y().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityHigh)));
-    m_primaryController.rightBumper().whileTrue(new RunShooterCommand(shooterSubsystem, 200));
-    m_primaryController.leftBumper().whileTrue(new RunHoodCommand(shooterSubsystem, 200));
+    m_primaryController.y().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityMax)));
+    m_primaryController.povUp().whileTrue(new RunConveyorCommand(conveyorSubsystem, 2000));
+    m_primaryController.povDown().whileTrue(new RunConveyorCommand(conveyorSubsystem, -2000));
+    // m_primaryController.rightBumper().whileTrue(new RunHoodCommand(shooterSubsystem, -500));
+    // m_primaryController.rightBumper().whileTrue(new RunHoodCommand(shooterSubsystem, 500));
+    // m_primaryController
 
     // D pad
     // Axis/Triggers
@@ -112,7 +118,7 @@ public class RobotContainer {
    * @return the command to run in disabled
    */
   public Command getLLSeedCommand() {
-      return visionSubsystem.getLLSeedCommand();
+      return null;//visionSubsystem.getLLSeedCommand();
   }
 
   /**
@@ -121,6 +127,6 @@ public class RobotContainer {
    * @return the command to run in auto and teleop
    */
   public Command getLLInternalCommand() {
-      return visionSubsystem.getLLInternalCommand();
+      return null;//visionSubsystem.getLLInternalCommand();
   }
 }

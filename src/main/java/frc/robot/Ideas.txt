@@ -2,7 +2,7 @@ Ideas for the Robot (Things we want or need to add)
 
 - Automatically close Hood when close to trench
 - Climber
-- Autoallighn to hub
+- Autoalign to hub
 - Autos
 - 
 

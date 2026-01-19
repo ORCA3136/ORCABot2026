@@ -12,6 +12,7 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
@@ -39,11 +40,11 @@ public class ShooterSubsystem extends SubsystemBase {
   final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
   final SparkFlex shooterSecondaryMotor = new SparkFlex(CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
 
-  final SparkFlex hoodPrimaryMotor = new SparkFlex(CanIdConstants.kHoodPrimaryCanId, MotorType.kBrushless);
-  final SparkFlex hoodSecondaryMotor = new SparkFlex(CanIdConstants.kHoodSecondaryCanId, MotorType.kBrushless);
+  final SparkMax hoodPrimaryMotor = new SparkMax(CanIdConstants.kHoodPrimaryCanId, MotorType.kBrushless);
+  final SparkMax hoodSecondaryMotor = new SparkMax(CanIdConstants.kHoodSecondaryCanId, MotorType.kBrushless);
 
   final RelativeEncoder shooterEncoder = shooterPrimaryMotor.getEncoder();
-  final RelativeEncoder hoodEncoder = shooterPrimaryMotor.getEncoder();
+  final RelativeEncoder hoodEncoder = hoodPrimaryMotor.getEncoder();
 
   final SparkClosedLoopController hoodPIDController = hoodPrimaryMotor.getClosedLoopController();
 
@@ -110,7 +111,8 @@ public class ShooterSubsystem extends SubsystemBase {
    * @param Velocity is in RPM
    */
   public void setShooterVelocity(double velocity) {
-    shooterPrimaryMotor.set(velocity);
+    shooterPrimaryMotor.set(velocity / 6500);
+    // shooterSecondaryMotor.set(velocity / 6500);
   }
 
   /**
@@ -124,7 +126,8 @@ public class ShooterSubsystem extends SubsystemBase {
    * @param Velocity is in RPM
    */
   public void setHoodVelocity(double velocity) {
-    hoodPrimaryMotor.set(velocity);
+    hoodPrimaryMotor.set(velocity / 6500);
+    hoodSecondaryMotor.set(velocity / 6500);
   }
 
   /**

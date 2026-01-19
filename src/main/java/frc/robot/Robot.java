@@ -40,10 +40,10 @@ public class Robot extends TimedRobot {
     CanBridge.runTCP();
     CameraServer.startAutomaticCapture();
     DataLogManager.start();
-    LLSeedModeCommand = m_robotContainer.getLLSeedCommand();
-    LLInternalModeCommand = m_robotContainer.getLLInternalCommand();
+    // LLSeedModeCommand = m_robotContainer.getLLSeedCommand();
+    // LLInternalModeCommand = m_robotContainer.getLLInternalCommand();
 
-    commandScheduler.schedule(LLSeedModeCommand);
+    // commandScheduler.schedule(LLSeedModeCommand);
   }
 
   /**
@@ -65,7 +65,7 @@ public class Robot extends TimedRobot {
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
   public void disabledInit() {
-    commandScheduler.schedule(LLSeedModeCommand);
+    // commandScheduler.schedule(LLSeedModeCommand);
   }
 
   @Override
@@ -74,7 +74,7 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    commandScheduler.schedule(LLInternalModeCommand);
+    // commandScheduler.schedule(LLInternalModeCommand);
 
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
@@ -94,7 +94,7 @@ public class Robot extends TimedRobot {
     // teleop starts running. If you want the autonomous to
     // continue until interrupted by another command, remove
     // this line or comment it out.
-    commandScheduler.schedule(LLInternalModeCommand);
+    // commandScheduler.schedule(LLInternalModeCommand);
 
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();

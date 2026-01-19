@@ -30,15 +30,19 @@ import frc.robot.Constants.*;
 public class ConveyorSubsystem extends SubsystemBase {
 
   SparkFlex conveyorMotor = new SparkFlex(CanIdConstants.kConveyorCanId, MotorType.kBrushless);
+  SparkFlex kickerMotor = new SparkFlex(CanIdConstants.kKickerCanId, MotorType.kBrushless);
 
   RelativeEncoder conveyorEncoder = conveyorMotor.getEncoder();
+  RelativeEncoder kickerEncoder = kickerMotor.getEncoder();
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   NetworkTable conveyorTable = networkTable.getTable(NetworkTableNames.Conveyor.kConveyor);
 
+
   public ConveyorSubsystem() {
 
     conveyorMotor.configure(ConveyorConfigs.conveyorMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    kickerMotor.configure(ConveyorConfigs.kickerMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 
@@ -46,7 +50,7 @@ public class ConveyorSubsystem extends SubsystemBase {
    * @param Velocity is in RPM
    */
   public void setConveyorVelocity(double velocity) {
-    conveyorMotor.set(velocity);
+    conveyorMotor.set(velocity / 6500);
   }
 
   /**
@@ -54,6 +58,20 @@ public class ConveyorSubsystem extends SubsystemBase {
    */
   public double getConveyorVelocity() {
     return conveyorEncoder.getVelocity();
+  }
+
+   /**
+   * @param Velocity is in RPM
+   */
+  public void setKickerVelocity(double velocity) {
+    kickerMotor.set(velocity / 6500);
+  }
+
+  /**
+   * @return Velocity in RPM
+   */
+  public double getKickerVelocity() {
+    return kickerEncoder.getVelocity();
   }
 
   @Override
