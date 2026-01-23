@@ -108,7 +108,7 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   /**
-   * @param Velocity is in RPM
+   * @param velocity is in RPM
    */
   public void setShooterVelocity(double velocity) {
     shooterPrimaryMotor.set(velocity / 6500);

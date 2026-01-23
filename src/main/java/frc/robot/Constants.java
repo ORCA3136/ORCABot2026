@@ -72,19 +72,19 @@ public final class Constants {
     // Kicker Vortex
     public static final int kKickerCanId = 13;
 
-    // Hood 550s
-    public static final int kHoodPrimaryCanId = 14;
-    public static final int kHoodSecondaryCanId = 15;
-
     // Conveyor Vortex
-    public static final int kConveyorCanId = 16;
+    public static final int kConveyorCanId = 14;
+
+    // Hood 550s
+    public static final int kHoodPrimaryCanId = 15;
+    public static final int kHoodSecondaryCanId = 16;
 
     // Intake Vortex
     public static final int kIntakeCanId = 17;
 
     // Intake Deployment Vortexes 
-    public static final int kDeployPrimaryCanId = 18;
-    public static final int kDeploySecondaryCanId = 19;
+    public static final int kIntakeDeployPrimaryCanId = 18;
+    public static final int kIntakeDeploySecondaryCanId = 19;
 
     // Lidars
     public static final int kLidarCanId = 25;

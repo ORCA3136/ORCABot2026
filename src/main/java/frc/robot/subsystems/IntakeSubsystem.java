@@ -27,8 +27,8 @@ import frc.robot.Constants.*;
 public class IntakeSubsystem extends SubsystemBase {
   SparkFlex intakeMotor = new SparkFlex(CanIdConstants.kIntakeCanId, MotorType.kBrushless);
 
-  SparkFlex intakeDeployPrimaryMotor = new SparkFlex(CanIdConstants.kDeployPrimaryCanId, MotorType.kBrushless);
-  SparkFlex intakeDeploySecondaryMotor = new SparkFlex(CanIdConstants.kDeploySecondaryCanId, MotorType.kBrushless);
+  SparkFlex intakeDeployPrimaryMotor = new SparkFlex(CanIdConstants.kIntakeDeployPrimaryCanId, MotorType.kBrushless);
+  SparkFlex intakeDeploySecondaryMotor = new SparkFlex(CanIdConstants.kIntakeDeploySecondaryCanId, MotorType.kBrushless);
 
   RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
   RelativeEncoder intakeDeployEncoder = intakeDeployPrimaryMotor.getEncoder();

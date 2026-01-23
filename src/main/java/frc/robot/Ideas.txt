@@ -9,3 +9,5 @@ Ideas for the Robot (Things we want or need to add)
 
 Unfinished things for the Robot (Things that have been started but need work)
 
+- Hood PID (I don't think we can ork on this yet, but I could be wrong)
+- Shooter RPM values (testing necessary)

@@ -18,15 +18,16 @@ public class Configs {
                 .inverted(false)
                 .idleMode(IdleMode.kCoast);
             secondaryShooterConfig
-                .inverted(false)
-                .idleMode(IdleMode.kCoast);
+                .inverted(true)
+                .idleMode(IdleMode.kCoast)
+                .follow(CanIdConstants.kShooterPrimaryCanId);
             primaryHoodConfig
                 .inverted(false)
                 .idleMode(IdleMode.kBrake);
             secondaryHoodConfig
                 .inverted(false)
-                .idleMode(IdleMode.kBrake);
-
+                .idleMode(IdleMode.kBrake)
+                .follow(CanIdConstants.kHoodPrimaryCanId);
             primaryHoodConfig.encoder
                 .positionConversionFactor(1 / HoodConstants.kGearRatio)
                 .velocityConversionFactor(1 / HoodConstants.kGearRatio);
@@ -52,19 +53,19 @@ public class Configs {
 
     public static final class IntakeConfigs {
         public static final SparkFlexConfig intakeMotorConfig = new SparkFlexConfig();
-        public static final SparkFlexConfig primaryIntakeDeploymentMotorConfig = new SparkFlexConfig();
-        public static final SparkFlexConfig secondaryIntakeDeploymentMotorConfig = new SparkFlexConfig();
+        public static final SparkFlexConfig primaryIntakeDeployMotorConfig = new SparkFlexConfig();
+        public static final SparkFlexConfig secondaryIntakeDeployMotorConfig = new SparkFlexConfig();
         static {
             intakeMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast);
-            primaryIntakeDeploymentMotorConfig
+            primaryIntakeDeployMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kBrake);
-            secondaryIntakeDeploymentMotorConfig
+            secondaryIntakeDeployMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kBrake)
-                .follow(CanIdConstants.kShooterPrimaryCanId);
+                .follow(CanIdConstants.kIntakeDeployPrimaryCanId);
         }
     }
 
