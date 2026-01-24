@@ -21,6 +21,7 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotController;
 import swervelib.parser.SwerveParser;
 import swervelib.simulation.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import swervelib.telemetry.SwerveDriveTelemetry;
@@ -524,6 +525,9 @@ public class SwerveSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+
+    networkTable.getTable("Robot").getEntry("Battery Voltage").setDouble(RobotController.getBatteryVoltage());
+    networkTable.getTable("Robot").getEntry("Battery Brownout Setting").setDouble(RobotController.getBrownoutVoltage());
 
     robotPose2dPublisher.set(swerveDrive.getPose());
     robotRotation3dPublisher.set(swerveDrive.getGyroRotation3d());

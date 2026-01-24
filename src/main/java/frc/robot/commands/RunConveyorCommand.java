@@ -14,15 +14,17 @@ public class RunConveyorCommand extends Command {
   @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
   private final ConveyorSubsystem m_conveyorSubsystem;
   private final double velocity;
+  private final double velocity2;
 
   /**
    * Creates a new ExampleCommand.
    *
    * @param subsystem The subsystem used by this command.
    */
-  public RunConveyorCommand(ConveyorSubsystem conveyorSubsystem, double velocity) {
+  public RunConveyorCommand(ConveyorSubsystem conveyorSubsystem, double conveyorVelocity, double kickerVelocity) {
     m_conveyorSubsystem = conveyorSubsystem;
-    this.velocity = velocity;
+    velocity = conveyorVelocity;
+    velocity2 = kickerVelocity;
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(conveyorSubsystem);
   }
@@ -30,8 +32,8 @@ public class RunConveyorCommand extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    m_conveyorSubsystem.setConveyorVelocity(velocity / 2);
-    m_conveyorSubsystem.setKickerVelocity(velocity);
+    m_conveyorSubsystem.setConveyorVelocity(velocity);
+    m_conveyorSubsystem.setKickerVelocity(velocity2);
 
 
   }

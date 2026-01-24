@@ -112,7 +112,7 @@ public class ShooterSubsystem extends SubsystemBase {
    */
   public void setShooterVelocity(double velocity) {
     shooterPrimaryMotor.set(velocity / 6500);
-    // shooterSecondaryMotor.set(velocity / 6500);
+    shooterSecondaryMotor.set(velocity / 6500);
   }
 
   /**

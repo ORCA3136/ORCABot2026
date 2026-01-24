@@ -16,18 +16,21 @@ public class Configs {
         static {
             primaryShooterConfig
                 .inverted(false)
-                .idleMode(IdleMode.kCoast);
-            secondaryShooterConfig
+                .idleMode(IdleMode.kCoast)
+                .smartCurrentLimit(30);
+            secondaryShooterConfig // making the secondary shooter follow the primary uninverts it, and that makes them fight each other
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
-                .follow(CanIdConstants.kShooterPrimaryCanId);
+                .smartCurrentLimit(30);
             primaryHoodConfig
                 .inverted(false)
-                .idleMode(IdleMode.kBrake);
+                .idleMode(IdleMode.kCoast)
+                .smartCurrentLimit(30);
             secondaryHoodConfig
                 .inverted(false)
-                .idleMode(IdleMode.kBrake)
-                .follow(CanIdConstants.kHoodPrimaryCanId);
+                .idleMode(IdleMode.kCoast)
+                .follow(CanIdConstants.kHoodPrimaryCanId)
+                .smartCurrentLimit(30);
             primaryHoodConfig.encoder
                 .positionConversionFactor(1 / HoodConstants.kGearRatio)
                 .velocityConversionFactor(1 / HoodConstants.kGearRatio);
@@ -44,10 +47,12 @@ public class Configs {
         static {
             conveyorMotorConfig
                 .inverted(false)
-                .idleMode(IdleMode.kCoast);
+                .idleMode(IdleMode.kCoast)
+                .smartCurrentLimit(30);
             kickerMotorConfig
                 .inverted(false)
-                .idleMode(IdleMode.kBrake);
+                .idleMode(IdleMode.kCoast)
+                .smartCurrentLimit(30);
         }
     }
 
@@ -58,14 +63,17 @@ public class Configs {
         static {
             intakeMotorConfig
                 .inverted(false)
-                .idleMode(IdleMode.kCoast);
+                .idleMode(IdleMode.kCoast)
+                .smartCurrentLimit(30);
             primaryIntakeDeployMotorConfig
                 .inverted(false)
-                .idleMode(IdleMode.kBrake);
+                .idleMode(IdleMode.kCoast)
+                .smartCurrentLimit(30);
             secondaryIntakeDeployMotorConfig
                 .inverted(false)
-                .idleMode(IdleMode.kBrake)
-                .follow(CanIdConstants.kIntakeDeployPrimaryCanId);
+                .idleMode(IdleMode.kCoast)
+                .follow(CanIdConstants.kIntakeDeployPrimaryCanId)
+                .smartCurrentLimit(30);
         }
     }
 
