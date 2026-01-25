@@ -118,6 +118,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public void isIntakeDown(boolean Override) {
     if (Override == true) intakeDeployed =! intakeDeployed;
+  }
   /**
    * Get the current applied voltage.
    * @return Applied voltage
