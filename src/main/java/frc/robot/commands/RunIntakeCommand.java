@@ -4,29 +4,29 @@
 
 package frc.robot.commands;
 
-import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 
 /** An example command that uses an example subsystem. */
 public class RunIntakeCommand extends Command {
   @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-  private final ExampleSubsystem m_subsystem;
+  private final IntakeSubsystem m_intakeSubsystem;
 
   /**
    * Creates a new ExampleCommand.
    *
-   * @param subsystem The subsystem used by this command.
+   * @param intakeSubsystem The subsystem used by this command.
    */
-  public RunIntakeCommand(ExampleSubsystem subsystem) {
-    m_subsystem = subsystem;
+  public RunIntakeCommand(IntakeSubsystem intakeSubsystem) {
+    m_intakeSubsystem = intakeSubsystem;
     // Use addRequirements() here to declare subsystem dependencies.
-    addRequirements(subsystem);
+    addRequirements(intakeSubsystem);
   }
 
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    m_subsystem.getClass();
+    m_intakeSubsystem.setIntakePower();
   }
 
   // Called every time the scheduler runs while the command is scheduled.

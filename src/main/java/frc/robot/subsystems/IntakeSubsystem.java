@@ -37,6 +37,9 @@ public class IntakeSubsystem extends SubsystemBase {
   NetworkTable intakeTable = networkTable.getTable(NetworkTableNames.Intake.kIntake);
   NetworkTable intakeDeployTable = networkTable.getTable(NetworkTableNames.IntakeDeploy.kIntakeDeploy);
 
+  private boolean intakeDeployed = false;
+  private boolean Override = false;
+
   public IntakeSubsystem() {
 
   }
@@ -69,6 +72,14 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeEncoder.getVelocity();
   }
 
+  public void setIntakePower() {
+    intakeMotor.set(5);
+  }
+
+  public void isIntakeDown(boolean Override) {
+    if (Override == true) intakeDeployed =! intakeDeployed;
+  }
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
@@ -76,6 +87,8 @@ public class IntakeSubsystem extends SubsystemBase {
       .setNumber(getIntakeVelocity());
     intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM)
       .setNumber(getIntakeDeployVelocity());
+
+    
   }
 
   @Override
