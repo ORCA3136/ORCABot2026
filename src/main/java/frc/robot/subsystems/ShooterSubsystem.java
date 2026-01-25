@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -36,6 +37,7 @@ import frc.robot.Constants.HoodConstants;
 public class ShooterSubsystem extends SubsystemBase {
 
   double shooterVelocity = 0;
+  double rotations;
   
   final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
   final SparkFlex shooterSecondaryMotor = new SparkFlex(CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
@@ -44,7 +46,7 @@ public class ShooterSubsystem extends SubsystemBase {
   final SparkMax hoodSecondaryMotor = new SparkMax(CanIdConstants.kHoodSecondaryCanId, MotorType.kBrushless);
 
   final RelativeEncoder shooterEncoder = shooterPrimaryMotor.getEncoder();
-  final RelativeEncoder hoodEncoder = hoodPrimaryMotor.getEncoder();
+  final AbsoluteEncoder hoodEncoder = hoodPrimaryMotor.getAbsoluteEncoder();
 
   final SparkClosedLoopController hoodPIDController = hoodPrimaryMotor.getClosedLoopController();
 
@@ -63,12 +65,16 @@ public class ShooterSubsystem extends SubsystemBase {
     return HoodConstants.kG * Math.cos(Units.degreesToRadians(getHoodPosition()));
   }
 
+  public void setPIDAngle() {
+    hoodPIDController.setSetpoint(rotations, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, calculateFeedForward());
+  }
+
   /**
    * @param Angle is in Degrees
+   * updates the rotations variale which is used in the setPIDAngle method
    */
-  public void setPIDAngle(double angle) {
-    double rotations = angle / 360;
-    hoodPIDController.setSetpoint(rotations, ControlType.kMAXMotionPositionControl,ClosedLoopSlot.kSlot0,0);
+  public void updateHoodTarget(double angle) {
+    rotations = angle / 360;
   }
 
   /**
@@ -153,6 +159,8 @@ public class ShooterSubsystem extends SubsystemBase {
       .setNumber(getHoodVelocity());
     hoodTable.getEntry(NetworkTableNames.Hood.kPositionRotations)
       .setNumber(getHoodPosition());
+
+    setPIDAngle();
   }
 
   @Override

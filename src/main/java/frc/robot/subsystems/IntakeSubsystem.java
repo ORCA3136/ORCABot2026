@@ -112,8 +112,8 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeEncoder.getVelocity();
   }
 
-  public void setIntakePower() {
-    intakeMotor.set(5);
+  public void setIntakePower(double intakePower) {
+    intakeMotor.set(intakePower);
   }
 
   public void isIntakeDown(boolean Override) {

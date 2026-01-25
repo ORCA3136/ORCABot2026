@@ -2,6 +2,7 @@ package frc.robot;
 
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import frc.robot.Constants.*;
 
@@ -35,7 +36,9 @@ public class Configs {
                 .positionConversionFactor(1 / HoodConstants.kGearRatio)
                 .velocityConversionFactor(1 / HoodConstants.kGearRatio);
             primaryHoodConfig.closedLoop
-                .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD);
+                .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+                .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD)
+                .outputRange(-0.7, 0.7); // Old was +-0.8
             primaryHoodConfig.closedLoop.feedForward
                 .kG(HoodConstants.kG);
         }

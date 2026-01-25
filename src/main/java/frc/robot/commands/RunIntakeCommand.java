@@ -12,21 +12,27 @@ public class RunIntakeCommand extends Command {
   @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
   private final IntakeSubsystem m_intakeSubsystem;
 
+  private double intakeVelocity;
+
   /**
    * Creates a new ExampleCommand.
    *
    * @param intakeSubsystem The subsystem used by this command.
    */
-  public RunIntakeCommand(IntakeSubsystem intakeSubsystem) {
+  public RunIntakeCommand(IntakeSubsystem intakeSubsystem, double intakeVelocity) {
     m_intakeSubsystem = intakeSubsystem;
+
+    this.intakeVelocity = intakeVelocity;
+    
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(intakeSubsystem);
+    
   }
 
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    m_intakeSubsystem.setIntakePower();
+    m_intakeSubsystem.setIntakePower(intakeVelocity);
   }
 
   // Called every time the scheduler runs while the command is scheduled.
