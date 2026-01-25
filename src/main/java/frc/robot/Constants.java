@@ -32,6 +32,17 @@ public final class Constants {
     public static final double kGearRatio = 12 * (40 / 19);
   }
 
+  public static final class IntakeConstants {
+    // Shooter speeds, RPM
+    public static final double kVelocityLow = 500;
+    public static final double kVelocityMedium = 1000;
+    public static final double kVelocityHigh = 1500;
+    public static final double kVelocityMax = 2500;
+
+    public static final double kDeployGearRatio = 1;
+    public static final double kIntakeGearRatio = 1;
+  }
+
   public static final class VisionConstants {
     public static final String limelightOneName = "limelight-left";
     public static final String limelightTwoName = "limelight-right";
