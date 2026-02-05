@@ -39,6 +39,7 @@ public class ConveyorSubsystem extends SubsystemBase {
   NetworkTable conveyorTable = networkTable.getTable(NetworkTableNames.Conveyor.kConveyor);
 
 
+  /** Creates a new ConveyorSubsystem. */
   public ConveyorSubsystem() {
 
     conveyorMotor.configure(ConveyorConfigs.conveyorMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -74,15 +75,21 @@ public class ConveyorSubsystem extends SubsystemBase {
     return kickerEncoder.getVelocity();
   }
 
-  @Override
-  public void periodic() {
-    // This method will be called once per scheduler run
+  public void updateNetworkTable() {
     conveyorTable.getEntry(NetworkTableNames.Conveyor.kVelocityRPM)
       .setNumber(getConveyorVelocity());
   }
 
+  /** This method will be called once per scheduler run */
+  @Override
+  public void periodic() {
+
+    updateNetworkTable();
+  }
+
+  /** This method will be called once per scheduler run during simulation */
   @Override
   public void simulationPeriodic() {
-    // This method will be called once per scheduler run during simulation
+
   }
 }

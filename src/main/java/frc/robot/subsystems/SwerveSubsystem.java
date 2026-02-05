@@ -87,11 +87,8 @@ public class SwerveSubsystem extends SubsystemBase {
   StructSubscriber<Pose2d> visionEstimateSubscriber = visionTable
       .getStructTopic(NetworkTableNames.Vision.kVisionEstimatePose2d, Pose2d.struct).subscribe(new Pose2d());
 
-    /*
-      public static final String kRobotAngularVelocity3d = "Robot Pitch, Roll, Yaw Velocities";
-      public static final String kRobotVelocity = "Robot X, Y, Z Velocities";
-     */
 
+  /** Creates a new SwerveSubsystem from given json files. */
   public SwerveSubsystem(File directory) {
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.LOW;
 
@@ -520,12 +517,9 @@ public class SwerveSubsystem extends SubsystemBase {
     Pose2d visionEstimate = visionEstimateSubscriber.get();
     swerveDrive.addVisionMeasurement(visionEstimate, visionTimestamp);
   }
-  
 
-  @Override
-  public void periodic() {
-    // This method will be called once per scheduler run
-
+  /** Publish continuous values to network table */
+  public void updateNetworkTable() {
     networkTable.getTable("Robot").getEntry("Battery Voltage").setDouble(RobotController.getBatteryVoltage());
     networkTable.getTable("Robot").getEntry("Battery Brownout Setting").setDouble(RobotController.getBrownoutVoltage());
 
@@ -538,13 +532,20 @@ public class SwerveSubsystem extends SubsystemBase {
     robotAngularVelocity3dPublisher.set(new double[] {pitchSupplier.get().baseUnitMagnitude(), 
                                                       rollSupplier.get().baseUnitMagnitude(), 
                                                       yawSupplier.get().baseUnitMagnitude()}, 0);
+  }
+
+  /** This method will be called once per scheduler run */
+  @Override
+  public void periodic() {
+    updateNetworkTable();
 
     swerveDrive.updateOdometry();
     getVisionUpdate();
   }
 
+  /** This method will be called once per scheduler run during simulation */
   @Override
   public void simulationPeriodic() {
-    // This method will be called once per scheduler run during simulation
+
   }
 }

@@ -80,6 +80,8 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean intakeDeployed = false;
   private boolean Override = false;
 
+
+  /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem() {
 
   }
@@ -128,20 +130,22 @@ public class IntakeSubsystem extends SubsystemBase {
            intakeMotor.getAppliedOutput() * intakeMotor.getBusVoltage();
   }
 
-  @Override
-  public void periodic() {
-    // This method will be called once per scheduler run
+  public void updateNetworkTable() {
     intakeTable.getEntry(NetworkTableNames.Intake.kVelocityRPM)
       .setNumber(getIntakeVelocity());
     intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM)
       .setNumber(getIntakeDeployVelocity());
-
-    
   }
 
+  /** This method will be called once per scheduler run */
+  @Override
+  public void periodic() {
+    updateNetworkTable();
+  }
+
+  /** This method will be called once per scheduler run during simulation */
   @Override
   public void simulationPeriodic() {
-    // This method will be called once per scheduler run during simulation
 
     // Set input voltage from motor controller to simulation
     // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input

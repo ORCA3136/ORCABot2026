@@ -64,6 +64,8 @@ public class VisionSubsystem extends SubsystemBase {
   DoubleArraySubscriber robotAngularVelocity3dSubscriber = odometryTable
       .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotAngularVelocity3d).subscribe(new double[] {});
 
+
+  /** Creates a new VisionSubsystem. */
   public VisionSubsystem() {
     // lidar = new LaserCan(Constants.CanIdConstants.kLidarCanId);
 
@@ -147,6 +149,10 @@ public class VisionSubsystem extends SubsystemBase {
     }
   }
 
+  /** Publish continuous values to network table */
+  public void updateNetworkTable() {}
+
+  /** This method will be called once per scheduler run */
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
@@ -164,13 +170,16 @@ public class VisionSubsystem extends SubsystemBase {
 															DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]))))
 		 .save();
 
+    updateRobotPosition();
+
     // NetworkTableInstance.getDefault().getTable("Lidar").getEntry("Lidar distance").setDouble(getLidarMeasurement());
 
   }
 
+  /** This method will be called once per scheduler run during simulation */
   @Override
   public void simulationPeriodic() {
-    // This method will be called once per scheduler run during simulation
+
   }
 
   public Command getLLSeedCommand() {

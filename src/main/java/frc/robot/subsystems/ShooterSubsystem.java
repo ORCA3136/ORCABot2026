@@ -21,7 +21,6 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.*;
 import frc.robot.Constants.*;
-import frc.robot.Constants.HoodConstants;
 
 
 /*
@@ -54,6 +53,8 @@ public class ShooterSubsystem extends SubsystemBase {
   final NetworkTable shooterTable = networkTable.getTable(NetworkTableNames.Shooter.kShooter);
   final NetworkTable hoodTable = networkTable.getTable(NetworkTableNames.Hood.kHood);
 
+
+  /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem() {
 
     shooterPrimaryMotor.configure(ShooterConfigs.primaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -61,26 +62,25 @@ public class ShooterSubsystem extends SubsystemBase {
 
   }
 
+  /** Calculates the current hood feedforward
+   * {@summary Hood feedforward includes gravitational force, static loss, air resistance, and robot acceleration} */
   public double calculateFeedForward() {
+    // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
     return HoodConstants.kG * Math.cos(Units.degreesToRadians(getHoodPosition()));
   }
 
+  /** Sets the hood setpoint angle */
   public void setPIDAngle() {
     hoodPIDController.setSetpoint(rotations, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, calculateFeedForward());
   }
 
-  /**
-   * @param Angle is in Degrees
-   * updates the rotations variale which is used in the setPIDAngle method
-   */
+  /** Updates the rotations variable which is used in the setPIDAngle method
+   * @param angle is in Degrees */
   public void updateHoodTarget(double angle) {
     rotations = angle / 360;
   }
 
-  /**
-   * In RPM
-   * Increases the power of the shooter by about 5% (caps at 6500)
-   */
+  /** Increases the speed of the shooter by 350 RPM */
   public void increaseShooterVelocity() {
     shooterVelocity += 350;
     if (shooterVelocity > 6500) shooterVelocity = 6500;
@@ -88,10 +88,7 @@ public class ShooterSubsystem extends SubsystemBase {
     setShooterVelocity(shooterVelocity);
   }
 
-  /**
-   * In RPM
-   * Decreases the power of the shooter by about 5% (Defaults to 0 if you try to go negative)
-   */
+  /** Decreases the speed of the shooter by 350 RPM */ 
   public void decreaseShooterVelocity() {
     shooterVelocity -= 350;
     if (shooterVelocity < 0) shooterVelocity = 0;
@@ -99,72 +96,65 @@ public class ShooterSubsystem extends SubsystemBase {
     setShooterVelocity(shooterVelocity);
   }
   
-  /**
-   * @param Velocity is in RPM
-   */
+  /** @param Velocity is in RPM */
   public void setShooterVelocityHigh() {
     shooterPrimaryMotor.set(ShooterConstants.kVelocityHigh);
   }
 
-  /**
-   * @param Velocity is in RPM
-   */
+  /** @param Velocity is in RPM */
   public void setShooterVelocityNone() {
     shooterPrimaryMotor.set(0);
   }
 
-  /**
-   * @param velocity is in RPM
-   */
+  /** @param velocity is in RPM */
   public void setShooterVelocity(double velocity) {
     shooterPrimaryMotor.set(velocity / 6500);
     shooterSecondaryMotor.set(velocity / 6500);
   }
 
-  /**
-   * @return Velocity in RPM
-   */
+  /** @return Velocity in RPM */
   public double getShooterVelocity() {
     return shooterEncoder.getVelocity();
   }
 
-  /**
-   * @param Velocity is in RPM
-   */
+  /** @param Velocity is in RPM */
   public void setHoodVelocity(double velocity) {
     hoodPrimaryMotor.set(velocity / 6500);
     hoodSecondaryMotor.set(velocity / 6500);
   }
 
-  /**
-   * @return Velocity in RPM
-   */
-  public double getHoodVelocity() {
-    return hoodEncoder.getVelocity();
-  }
-
-  /**
-   * @return Velocity in RPM
-   */
+  /** @return Velocity in RPM */
   public double getHoodPosition() {
     return hoodEncoder.getPosition();
   }
 
-  @Override
-  public void periodic() {
-    // This method will be called once per scheduler run
+  /** @return Velocity in RPM */
+  public double getHoodVelocity() {
+    return hoodEncoder.getVelocity();
+  }
+
+  /** Publish continuous values to network table */
+  public void updateNetworkTable() {
     shooterTable.getEntry(NetworkTableNames.Shooter.kVelocityRPM)
       .setNumber(getShooterVelocity());
     hoodTable.getEntry(NetworkTableNames.Hood.kVelocityRPM)
       .setNumber(getHoodVelocity());
     hoodTable.getEntry(NetworkTableNames.Hood.kPositionRotations)
       .setNumber(getHoodPosition());
+  }
+
+  /** This method will be called once per scheduler run */
+  @Override
+  public void periodic() {
+    
+    updateNetworkTable();
 
     setPIDAngle();
   }
 
+  /** This method will be called once per scheduler run during simulation */
   @Override
   public void simulationPeriodic() {
-    // This method will be called once per scheduler run during simulation
+    
   }
 }

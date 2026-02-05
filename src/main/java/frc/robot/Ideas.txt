@@ -11,3 +11,30 @@ Unfinished things for the Robot (Things that have been started but need work)
 
 - Hood PID (I don't think we can ork on this yet, but I could be wrong)
 - Shooter RPM values (testing necessary)
+
+
+
+
+
+
+Josiah's tasks
+ - Finish setting up all motors with position and speed logging
+ - Add PID support to relevant subsystems (Shooter, Hood, Intake Deployment, Climber)
+ - 
+
+Testing
+ - PID control for hood
+ - Simulation
+ - Limelight localization
+ - 
+
+Simulation tasks
+ - Add all motor simulation equivalents
+ - Get PID simulation working
+ - Add all simulation systems
+ - Add subsystem visuals
+ - 
+
+Other tasks
+ - Teleop pathplanning
+ - 

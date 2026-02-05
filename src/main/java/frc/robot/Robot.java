@@ -44,6 +44,8 @@ public class Robot extends TimedRobot {
     // LLInternalModeCommand = m_robotContainer.getLLInternalCommand();
 
     // commandScheduler.schedule(LLSeedModeCommand);
+    
+    // addPeriodic(Intake::operate, Constants.intakeCycleTime);
   }
 
   /**

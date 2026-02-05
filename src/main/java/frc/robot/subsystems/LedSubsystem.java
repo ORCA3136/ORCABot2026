@@ -26,23 +26,14 @@ public class LedSubsystem extends SubsystemBase {
   double discoTiming = 0.5; // Seconds
   double time = -0.5;
 
+
+  /** Creates a new LedSubsystem. */
   public LedSubsystem() {
     blinkin = new Spark(0);
   }
   
   public void setLedColor(double color) {
     blinkin.set(color);
-  }
-
-  @Override
-  public void periodic() {
-
-    if (discoOn) {
-      if (Timer.getTimestamp() > time + discoTiming) {
-        time = Timer.getTimestamp();
-        setRandomColor();
-      }
-    }
   }
 
   public void setRandomColor() {
@@ -77,4 +68,15 @@ public class LedSubsystem extends SubsystemBase {
       return false;
   }
 
+  /** This method will be called once per scheduler run */
+  @Override
+  public void periodic() {
+
+    if (discoOn) {
+      if (Timer.getTimestamp() > time + discoTiming) {
+        time = Timer.getTimestamp();
+        setRandomColor();
+      }
+    }
+  }
 }
