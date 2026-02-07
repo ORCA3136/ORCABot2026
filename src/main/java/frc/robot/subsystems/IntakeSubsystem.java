@@ -121,13 +121,20 @@ public class IntakeSubsystem extends SubsystemBase {
   public void isIntakeDown(boolean Override) {
     if (Override == true) intakeDeployed =! intakeDeployed;
   }
+
   /**
    * Get the current applied voltage.
    * @return Applied voltage
    */
-  public double getVoltage() {
-    return intakeDeployPrimaryMotor.getAppliedOutput() * intakeDeployPrimaryMotor.getBusVoltage() + 
-           intakeMotor.getAppliedOutput() * intakeMotor.getBusVoltage();
+  public double getFlywheelVoltage() {
+    return intakeMotor.getAppliedOutput() * intakeMotor.getBusVoltage();
+  }
+  /**
+   * Get the current applied voltage.
+   * @return Applied voltage
+   */
+  public double getDeployVoltage() {
+    return intakeDeployPrimaryMotor.getAppliedOutput() * intakeDeployPrimaryMotor.getBusVoltage();
   }
 
   public void updateNetworkTable() {
@@ -153,8 +160,8 @@ public class IntakeSubsystem extends SubsystemBase {
     // pivotSim.setInput(getVoltage());
     // Set input voltage from motor controller to simulation
     // Use getVoltage() for other controllers
-    intakeFlywheelSim.setInput(getVoltage());
-    intakeDeploySim.setInput(getVoltage());
+    intakeFlywheelSim.setInput(getFlywheelVoltage());
+    intakeDeploySim.setInput(getDeployVoltage());
 
     // Update simulation by 20ms
     intakeFlywheelSim.update(0.020);

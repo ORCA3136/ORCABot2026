@@ -22,6 +22,12 @@ Josiah's tasks
  - Add PID support to relevant subsystems (Shooter, Hood, Intake Deployment, Climber)
  - 
 
+Josiah's advanced tasks
+ - Automatically close Hood when close to trench
+ - Autoalign to hub
+ - Autos
+ - 
+
 Testing
  - PID control for hood
  - Simulation
@@ -37,4 +43,5 @@ Simulation tasks
 
 Other tasks
  - Teleop pathplanning
+ - Make autos
  - 

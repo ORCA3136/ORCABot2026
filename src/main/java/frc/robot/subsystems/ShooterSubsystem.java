@@ -62,8 +62,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
   }
 
-  /** Calculates the current hood feedforward
-   * {@summary Hood feedforward includes gravitational force, static loss, air resistance, and robot acceleration} */
+  /** Calculates the current hood feedforward  <p>Includes:
+   *  <ul> <li> Gravitational force <li> Static loss <li> Air resistance <li> Robot acceleration </ul> */
   public double calculateFeedForward() {
     // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
     return HoodConstants.kG * Math.cos(Units.degreesToRadians(getHoodPosition()));
@@ -74,8 +74,8 @@ public class ShooterSubsystem extends SubsystemBase {
     hoodPIDController.setSetpoint(rotations, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, calculateFeedForward());
   }
 
-  /** Updates the rotations variable which is used in the setPIDAngle method
-   * @param angle is in Degrees */
+  /** Updates the rotations variable which is used in the {@code setPIDAngle} method
+   *  @param angle is in Degrees */
   public void updateHoodTarget(double angle) {
     rotations = angle / 360;
   }

@@ -21,6 +21,7 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import swervelib.parser.SwerveParser;
 import swervelib.simulation.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -95,8 +96,8 @@ public class SwerveSubsystem extends SubsystemBase {
     try
     {
       swerveDrive = new SwerveParser(directory).createSwerveDrive(RobotConstants.kDriveMaxSpeedMps,
-                                                                  new Pose2d(new Translation2d(Meter.of(0),
-                                                                                               Meter.of(0)),
+                                                                  new Pose2d(new Translation2d(Meter.of(0.2),
+                                                                                               Meter.of(0.2)),
                                                                              Rotation2d.fromDegrees(0)));
       // DataLogManager.log("Found and read the file");
 
@@ -108,7 +109,7 @@ public class SwerveSubsystem extends SubsystemBase {
       throw new RuntimeException(e);
     }
     swerveDrive.setHeadingCorrection(false); // Heading correction should only be used while controlling the robot via angle.
-    swerveDrive.setCosineCompensator(false);//!SwerveDriveTelemetry.isSimulation); // Disables cosine compensation for simulations since it causes discrepancies not seen in real life.
+    swerveDrive.setCosineCompensator(false); //!RobotBase.isSimulation()); // Disables cosine compensation for simulations since it causes discrepancies not seen in real life.
     swerveDrive.setAngularVelocityCompensation(true,
                                                true,
                                                0.1); //Correct for skew that gets worse as angular velocity increases. Start with a coefficient of 0.1.
@@ -540,7 +541,7 @@ public class SwerveSubsystem extends SubsystemBase {
     updateNetworkTable();
 
     swerveDrive.updateOdometry();
-    getVisionUpdate();
+    // getVisionUpdate();
   }
 
   /** This method will be called once per scheduler run during simulation */

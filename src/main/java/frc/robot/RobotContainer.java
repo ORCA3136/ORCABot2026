@@ -37,8 +37,8 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
   // private final VisionSubsystem visionSubsystem = new VisionSubsystem();
-  private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
-  private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
+  // private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+  // private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   
   private final SendableChooser<Command> autoChooser;
 
@@ -85,14 +85,14 @@ public class RobotContainer {
     driveBase.setDefaultCommand(defaultDriveCommand);
 
     // Buttons
-    m_primaryController.a().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(0)));
-    m_primaryController.b().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity()));
-    m_primaryController.x().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseShooterVelocity()));
-    m_primaryController.y().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityMax)));
-    m_primaryController.povUp().whileTrue(new RunConveyorCommand(conveyorSubsystem, 500, 4000));
-    m_primaryController.povDown().whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000, -1000));
-    m_primaryController.rightBumper().whileTrue(new RunHoodCommand(shooterSubsystem, -500));
-    m_primaryController.rightBumper().whileTrue(new RunHoodCommand(shooterSubsystem, 500));
+    // m_primaryController.a().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(0)));
+    // m_primaryController.b().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity()));
+    // m_primaryController.x().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseShooterVelocity()));
+    // m_primaryController.y().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityMax)));
+    // m_primaryController.povUp().whileTrue(new RunConveyorCommand(conveyorSubsystem, 500, 4000));
+    // m_primaryController.povDown().whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000, -1000));
+    // m_primaryController.rightBumper().whileTrue(new RunHoodCommand(shooterSubsystem, -500));
+    // m_primaryController.rightBumper().whileTrue(new RunHoodCommand(shooterSubsystem, 500));
     // m_primaryController
 
     // D pad
