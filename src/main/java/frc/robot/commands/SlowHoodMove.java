@@ -15,7 +15,7 @@ public class SlowHoodMove extends Command {
   @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
   private final ShooterSubsystem m_shooterSubsystem;
 
-  private final double slowHoodSpeed = 10; // Degrees per second (DPS)
+  private final double slowHoodSpeed = 4; // Degrees per second (DPS)
 
   double currentTime;
   double dTime; // Delta time
@@ -43,13 +43,12 @@ public class SlowHoodMove extends Command {
   @Override
   public void execute() {
     rotations = m_shooterSubsystem.getHoodTarget();
-    dTime = Timer.getTimestamp() - currentTime;
-    rotations += slowHoodSpeed * dTime;
-    rotations *= (m_shooterSubsystem.getHoodDirection() ? -1 : 1);
-    m_shooterSubsystem.setHoodTarget(rotations);
-    if (rotations >= 11 && m_shooterSubsystem.getHoodDirection() == false || rotations <= 1 && m_shooterSubsystem.getHoodDirection() == true) {
+    if (rotations >= 5 && m_shooterSubsystem.getHoodDirection() == true || rotations <= 1 && m_shooterSubsystem.getHoodDirection() == false) {
       m_shooterSubsystem.changeHoodDirection();
     }
+    dTime = Timer.getTimestamp() - currentTime;
+    rotations += slowHoodSpeed * dTime * (m_shooterSubsystem.getHoodDirection() ? 1 : -1);
+    m_shooterSubsystem.setHoodTarget(rotations);
     currentTime = Timer.getTimestamp();
   }
 

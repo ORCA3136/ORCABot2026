@@ -37,7 +37,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   double shooterVelocity = 0;
   double rotations;
-  boolean hoodDirection; // true is positive
+  boolean hoodDirection = true; // true is positive
   
   final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
   final SparkFlex shooterSecondaryMotor = new SparkFlex(CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);

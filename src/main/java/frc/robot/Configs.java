@@ -32,14 +32,14 @@ public class Configs {
                 .follow(CanIdConstants.kHoodPrimaryCanId, true)
                 .smartCurrentLimit(30);
             primaryHoodConfig.absoluteEncoder
-                .zeroOffset(.36)
+                .zeroOffset(.125)
                 .positionConversionFactor(HoodConstants.kMotorGearRatio)
                 .velocityConversionFactor(HoodConstants.kMotorGearRatio);
             primaryHoodConfig.closedLoop
                 .positionWrappingEnabled(true)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
                 .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD)
-                .outputRange(-0.1, 0.1); // Old was +-0.8
+                .outputRange(-0.7, 0.7); // Old was +-0.8
             // primaryHoodConfig.closedLoop.feedForward
             //     .kG(HoodConstants.kG);
         }
