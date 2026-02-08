@@ -2,6 +2,10 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.RobotController;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+
 public final class Constants {
 
 
@@ -169,6 +173,17 @@ public final class Constants {
       public static final String kTable = "Climber";
       public static final String kVelocityRPM = "Velocity RPM";
     }
+  }
+
+  public static final class FieldPositions {
+    public static final Pose2d kBlueHub     = new Pose2d(new Translation2d(4.597,  4.035), new Rotation2d(0));
+    public static final Pose2d kBlueOutpost = new Pose2d(new Translation2d(0,      0.666), new Rotation2d(0));
+    public static final Pose2d kBlueThrow   = new Pose2d(new Translation2d(0.666,   -0.254), new Rotation2d(0));
+    public static final Pose2d kBlueDump    = new Pose2d(new Translation2d(0.2,    0.666), new Rotation2d(0));
+    public static final Pose2d kRedHub      = new Pose2d(new Translation2d(11.938, 4.035), new Rotation2d(0));
+    public static final Pose2d kRedOutpost  = new Pose2d(new Translation2d(16.621, 7.403), new Rotation2d(0));
+    public static final Pose2d kRedThrow    = new Pose2d(new Translation2d(16.0,   8.2  ), new Rotation2d(0));
+    public static final Pose2d kRedDump     = new Pose2d(new Translation2d(16.421, 7.2  ), new Rotation2d(0));
   }
 
   public static final class LedColors {
