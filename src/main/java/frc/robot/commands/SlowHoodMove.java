@@ -45,10 +45,12 @@ public class SlowHoodMove extends Command {
     rotations = m_shooterSubsystem.getHoodTarget();
     dTime = Timer.getTimestamp() - currentTime;
     rotations += slowHoodSpeed * dTime;
+    rotations *= (m_shooterSubsystem.getHoodDirection() ? -1 : 1);
     m_shooterSubsystem.setHoodTarget(rotations);
-    if (rotations >= 11 || rotations <= 1) {
+    if (rotations >= 11 && m_shooterSubsystem.getHoodDirection() == false || rotations <= 1 && m_shooterSubsystem.getHoodDirection() == true) {
       m_shooterSubsystem.changeHoodDirection();
     }
+    currentTime = Timer.getTimestamp();
   }
 
   // Called once the command ends or is interrupted.
