@@ -9,7 +9,8 @@ Ideas for the Robot (Things we want or need to add)
 
 Unfinished things for the Robot (Things that have been started but need work)
 
-- 
+- Hood PID (I don't think we can ork on this yet, but I could be wrong)
+- Shooter RPM values (testing necessary)
 
 
 
@@ -19,6 +20,13 @@ Unfinished things for the Robot (Things that have been started but need work)
 Josiah's tasks
  - Finish setting up all motors with position and speed logging
  - Add PID support to relevant subsystems (Shooter, Hood, Intake Deployment, Climber)
+ - 
+
+Advanced tasks
+ - Automatically close Hood when close to trench
+ - Autoalign to hub
+ - Autos
+ - Climber Sequence
  - 
 
 Testing
@@ -36,4 +44,5 @@ Simulation tasks
 
 Other tasks
  - Teleop pathplanning
+ - Make autos
  - 
