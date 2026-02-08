@@ -29,14 +29,14 @@ import frc.robot.Constants.*;
 
 public class ConveyorSubsystem extends SubsystemBase {
 
-  SparkFlex conveyorMotor = new SparkFlex(CanIdConstants.kConveyorCanId, MotorType.kBrushless);
-  SparkFlex kickerMotor = new SparkFlex(CanIdConstants.kKickerCanId, MotorType.kBrushless);
+  final SparkFlex conveyorMotor = new SparkFlex(CanIdConstants.kConveyorCanId, MotorType.kBrushless);
+  final SparkFlex kickerMotor = new SparkFlex(CanIdConstants.kKickerCanId, MotorType.kBrushless);
 
-  RelativeEncoder conveyorEncoder = conveyorMotor.getEncoder();
-  RelativeEncoder kickerEncoder = kickerMotor.getEncoder();
+  final RelativeEncoder conveyorEncoder = conveyorMotor.getEncoder();
+  final RelativeEncoder kickerEncoder = kickerMotor.getEncoder();
 
-  NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  NetworkTable conveyorTable = networkTable.getTable(NetworkTableNames.Conveyor.kConveyor);
+  final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
+  final NetworkTable conveyorTable = networkTable.getTable(NetworkTableNames.Conveyor.kConveyor);
 
 
   /** Creates a new ConveyorSubsystem. */

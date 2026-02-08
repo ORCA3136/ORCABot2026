@@ -13,6 +13,7 @@ import frc.robot.commands.RunConveyorCommand;
 import frc.robot.commands.RunHoodCommand;
 import frc.robot.commands.RunShooterCommand;
 import frc.robot.subsystems.ConveyorSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
@@ -91,8 +92,9 @@ public class RobotContainer {
     m_primaryController.y().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityMax)));
     m_primaryController.povUp().whileTrue(new RunConveyorCommand(conveyorSubsystem, 500, 4000));
     m_primaryController.povDown().whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000, -1000));
-    m_primaryController.rightBumper().whileTrue(new RunHoodCommand(shooterSubsystem, -500));
-    m_primaryController.rightBumper().whileTrue(new RunHoodCommand(shooterSubsystem, 500));
+    // m_primaryController.povLeft().whileTrue(Commands.runOnce(() -> IntakeSubsystem.))
+    m_primaryController.rightBumper().whileTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(05)));
+    m_primaryController.leftBumper().whileTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(30)));
     // m_primaryController
 
     // D pad

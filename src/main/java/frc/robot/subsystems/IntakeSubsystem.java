@@ -9,7 +9,9 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
+import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkSim;
@@ -22,6 +24,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.*;
 
 import edu.wpi.first.wpilibj.simulation.AddressableLEDSim;
@@ -48,10 +51,10 @@ public class IntakeSubsystem extends SubsystemBase {
   final DCMotor deployDCMotor = DCMotor.getNeoVortex(1);
   final DCMotor intakeDCMotor = DCMotor.getNeoVortex(1);
 
-  SparkFlex intakeMotor = new SparkFlex(CanIdConstants.kIntakeCanId, MotorType.kBrushless);
+  final SparkFlex intakeMotor = new SparkFlex(CanIdConstants.kIntakeCanId, MotorType.kBrushless);
 
-  SparkFlex intakeDeployPrimaryMotor = new SparkFlex(CanIdConstants.kIntakeDeployPrimaryCanId, MotorType.kBrushless);
-  SparkFlex intakeDeploySecondaryMotor = new SparkFlex(CanIdConstants.kIntakeDeploySecondaryCanId, MotorType.kBrushless);
+  final SparkFlex intakeDeployPrimaryMotor = new SparkFlex(CanIdConstants.kIntakeDeployPrimaryCanId, MotorType.kBrushless);
+  final SparkFlex intakeDeploySecondaryMotor = new SparkFlex(CanIdConstants.kIntakeDeploySecondaryCanId, MotorType.kBrushless);
 
   final SparkSim deployMotorSim = new SparkSim(intakeDeployPrimaryMotor, deployDCMotor);
   final SparkSim intakeMotorSim = new SparkSim(intakeMotor, intakeDCMotor);
@@ -70,12 +73,12 @@ public class IntakeSubsystem extends SubsystemBase {
   final LinearSystem linearIntake = new LinearSystem<>(null, null, null, null);
   final FlywheelSim intakeFlywheelSim = new FlywheelSim(linearIntake, intakeDCMotor, null);
 
-  RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
-  RelativeEncoder intakeDeployEncoder = intakeDeployPrimaryMotor.getEncoder();
+  final RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
+  final RelativeEncoder intakeDeployEncoder = intakeDeployPrimaryMotor.getEncoder();
 
-  NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  NetworkTable intakeTable = networkTable.getTable(NetworkTableNames.Intake.kIntake);
-  NetworkTable intakeDeployTable = networkTable.getTable(NetworkTableNames.IntakeDeploy.kIntakeDeploy);
+  final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
+  final NetworkTable intakeTable = networkTable.getTable(NetworkTableNames.Intake.kIntake);
+  final NetworkTable intakeDeployTable = networkTable.getTable(NetworkTableNames.IntakeDeploy.kIntakeDeploy);
 
   private boolean intakeDeployed = false;
   private boolean Override = false;
@@ -83,6 +86,10 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem() {
+
+    intakeMotor.configure(IntakeConfigs.intakeMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    intakeDeployPrimaryMotor.configure(IntakeConfigs.primaryIntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    intakeDeploySecondaryMotor.configure(IntakeConfigs.secondaryIntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 

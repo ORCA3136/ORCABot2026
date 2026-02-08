@@ -66,9 +66,9 @@ public class SwerveSubsystem extends SubsystemBase {
   
   private final Pigeon2 pigeon2 = new Pigeon2(CanIdConstants.kPigeonCanId, "rio");
 
-  NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kOdometry);
-  NetworkTable visionTable = networkTable.getTable(NetworkTableNames.Vision.kVision);
+  final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
+  final NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kOdometry);
+  final NetworkTable visionTable = networkTable.getTable(NetworkTableNames.Vision.kVision);
 
   Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
   Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();

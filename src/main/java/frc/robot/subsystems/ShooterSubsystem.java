@@ -60,6 +60,9 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterPrimaryMotor.configure(ShooterConfigs.primaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     shooterSecondaryMotor.configure(ShooterConfigs.secondaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+    hoodPrimaryMotor.configure(ShooterConfigs.primaryHoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    hoodSecondaryMotor.configure(ShooterConfigs.secondaryHoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
   }
 
   /** Calculates the current hood feedforward
@@ -77,7 +80,7 @@ public class ShooterSubsystem extends SubsystemBase {
   /** Updates the rotations variable which is used in the setPIDAngle method
    * @param angle is in Degrees */
   public void updateHoodTarget(double angle) {
-    rotations = angle / 360;
+    rotations = (angle / 360) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
   }
 
   /** Increases the speed of the shooter by 350 RPM */
@@ -141,6 +144,8 @@ public class ShooterSubsystem extends SubsystemBase {
       .setNumber(getHoodVelocity());
     hoodTable.getEntry(NetworkTableNames.Hood.kPositionRotations)
       .setNumber(getHoodPosition());
+    hoodTable.getEntry(NetworkTableNames.Hood.kTargetRotations)
+      .setNumber(rotations);
   }
 
   /** This method will be called once per scheduler run */

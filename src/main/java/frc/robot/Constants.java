@@ -21,15 +21,16 @@ public final class Constants {
   }
 
   public static final class HoodConstants {
-    public static final double kP = 0.02;
-    public static final double kI = 0;
-    public static final double kD = 0.05;
+    public static final double kP = 2.;
+    public static final double kI = 0.;
+    public static final double kD = 5.;
     public static final double kG = 0.02;
     // public static final double kS = 0;
     // public static final double kV = 0;
     // public static final double kA = 0;
 
-    public static final double kGearRatio = 12 * (40 / 19);
+    public static final double kEncoderGearRatio = 40. / 18;
+    public static final double kMotorGearRatio = 12;
   }
 
   public static final class IntakeConstants {
@@ -87,8 +88,8 @@ public final class Constants {
     public static final int kConveyorCanId = 14;
 
     // Hood 550s
-    public static final int kHoodPrimaryCanId = 15;
-    public static final int kHoodSecondaryCanId = 16;
+    public static final int kHoodPrimaryCanId = 16; // swap later
+    public static final int kHoodSecondaryCanId = 15;
 
     // Intake Vortex
     public static final int kIntakeCanId = 17;
@@ -128,7 +129,8 @@ public final class Constants {
     public static final class Hood {
       public static final String kHood = "Hood";
       public static final String kVelocityRPM = "Velocity RPM";
-      public static final String kPositionRotations = "Velocity RPM";
+      public static final String kPositionRotations = "Position Rotations";
+      public static final String kTargetRotations = "Target Position Rotations";
     }
 
     public static final class Conveyor {
