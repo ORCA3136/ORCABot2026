@@ -28,17 +28,18 @@ public class Configs {
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(30);
             secondaryHoodConfig
-                .inverted(false)
                 .idleMode(IdleMode.kCoast)
-                .follow(CanIdConstants.kHoodPrimaryCanId)
+                .follow(CanIdConstants.kHoodPrimaryCanId, true)
                 .smartCurrentLimit(30);
             primaryHoodConfig.absoluteEncoder
+                .zeroOffset(.36)
                 .positionConversionFactor(HoodConstants.kMotorGearRatio)
                 .velocityConversionFactor(HoodConstants.kMotorGearRatio);
             primaryHoodConfig.closedLoop
+                .positionWrappingEnabled(true)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
                 .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD)
-                .outputRange(-1, 1); // Old was +-0.8
+                .outputRange(-0.1, 0.1); // Old was +-0.8
             // primaryHoodConfig.closedLoop.feedForward
             //     .kG(HoodConstants.kG);
         }
@@ -77,6 +78,13 @@ public class Configs {
                 .idleMode(IdleMode.kCoast)
                 .follow(CanIdConstants.kIntakeDeployPrimaryCanId)
                 .smartCurrentLimit(30);
+            primaryIntakeDeployMotorConfig.closedLoop
+                .positionWrappingEnabled(true)
+                .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+                .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD)
+                .outputRange(-0.5, 0.5); // Old was +-0.8
+            // primaryHoodConfig.closedLoop.feedForward
+            //     .kG(HoodConstants.kG);
         }
     }
 

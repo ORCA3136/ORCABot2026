@@ -67,8 +67,8 @@ public class SwerveSubsystem extends SubsystemBase {
   private final Pigeon2 pigeon2 = new Pigeon2(CanIdConstants.kPigeonCanId, "rio");
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  final NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kOdometry);
-  final NetworkTable visionTable = networkTable.getTable(NetworkTableNames.Vision.kVision);
+  final NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kTable);
+  final NetworkTable visionTable = networkTable.getTable(NetworkTableNames.Vision.kTable);
 
   Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
   Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
@@ -520,8 +520,9 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
-    networkTable.getTable("Robot").getEntry("Battery Voltage").setDouble(RobotController.getBatteryVoltage());
-    networkTable.getTable("Robot").getEntry("Battery Brownout Setting").setDouble(RobotController.getBrownoutVoltage());
+    networkTable.getTable(NetworkTableNames.Robot.kTable).getEntry(NetworkTableNames.Robot.kEnabled).setBoolean(DriverStation.isEnabled());
+    networkTable.getTable(NetworkTableNames.Robot.kTable).getEntry(NetworkTableNames.Robot.kBatteryVoltage).setDouble(RobotController.getBatteryVoltage());
+    networkTable.getTable(NetworkTableNames.Robot.kTable).getEntry(NetworkTableNames.Robot.kBatteryBrownout).setDouble(RobotController.getBrownoutVoltage());
 
     robotPose2dPublisher.set(swerveDrive.getPose());
     robotRotation3dPublisher.set(swerveDrive.getGyroRotation3d());

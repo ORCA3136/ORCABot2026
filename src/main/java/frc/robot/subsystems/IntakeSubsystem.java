@@ -12,6 +12,9 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.ClosedLoopSlot;
+import com.revrobotics.spark.SparkBase.ControlType;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkSim;
@@ -76,12 +79,15 @@ public class IntakeSubsystem extends SubsystemBase {
   final RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
   final RelativeEncoder intakeDeployEncoder = intakeDeployPrimaryMotor.getEncoder();
 
+  final SparkClosedLoopController IntakePIDController = intakeDeployPrimaryMotor.getClosedLoopController();
+
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  final NetworkTable intakeTable = networkTable.getTable(NetworkTableNames.Intake.kIntake);
-  final NetworkTable intakeDeployTable = networkTable.getTable(NetworkTableNames.IntakeDeploy.kIntakeDeploy);
+  final NetworkTable intakeTable = networkTable.getTable(NetworkTableNames.Intake.kTable);
+  final NetworkTable intakeDeployTable = networkTable.getTable(NetworkTableNames.IntakeDeploy.kTable);
 
   private boolean intakeDeployed = false;
   private boolean Override = false;
+  private double rotations = 0;
 
 
   /** Creates a new IntakeSubsystem. */
@@ -91,6 +97,29 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeDeployPrimaryMotor.configure(IntakeConfigs.primaryIntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     intakeDeploySecondaryMotor.configure(IntakeConfigs.secondaryIntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+  }
+
+  /** Calculates the current intake feedforward
+   * {@summary intake feedforward includes gravitational force, static loss, air resistance, and robot acceleration} */
+  public double calculateFeedForward() {
+    // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
+    return IntakeConstants.kS + IntakeConstants.kG * Math.cos(getIntakeAngle());
+  }
+
+  /** Sets the intake setpoint angle */
+  public void setPIDAngle() {
+    IntakePIDController.setSetpoint(rotations, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
+  }
+
+  /** Updates the rotations variable which is used in the setPIDAngle method
+   * @param angle is in Degrees */
+  public void updateIntakeDeployTarget(double angle) {
+    rotations = (angle / 360) * IntakeConstants.kDeployGearRatio;
+  }
+
+  /** @return Angle in Rad */
+  public double getIntakeAngle() {
+    return 2 * Math.PI * (intakeDeployEncoder.getPosition() / IntakeConstants.kDeployGearRatio);
   }
 
   /**
@@ -126,7 +155,7 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void isIntakeDown(boolean Override) {
-    if (Override == true) intakeDeployed =! intakeDeployed;
+    if (Override == true) intakeDeployed = !intakeDeployed;
   }
   /**
    * Get the current applied voltage.
