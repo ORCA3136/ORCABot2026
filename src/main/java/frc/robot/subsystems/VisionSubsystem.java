@@ -51,8 +51,8 @@ public class VisionSubsystem extends SubsystemBase {
   // private boolean intakeStatus;
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kOdometry);
-  NetworkTable visionTable = networkTable.getTable(NetworkTableNames.Vision.kVision);
+  NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kTable);
+  NetworkTable visionTable = networkTable.getTable(NetworkTableNames.Vision.kTable);
 
   StructPublisher<Pose2d> visionEstimatePublisher = visionTable
       .getStructTopic(NetworkTableNames.Vision.kVisionEstimatePose2d, Pose2d.struct).publish();

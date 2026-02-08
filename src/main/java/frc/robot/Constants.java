@@ -1,5 +1,7 @@
 package frc.robot;
 
+import edu.wpi.first.wpilibj.RobotController;
+
 public final class Constants {
 
 
@@ -21,11 +23,11 @@ public final class Constants {
   }
 
   public static final class HoodConstants {
-    public static final double kP = 2.;
+    public static final double kP = 0.1;
     public static final double kI = 0.;
-    public static final double kD = 5.;
-    public static final double kG = 0.02;
-    // public static final double kS = 0;
+    public static final double kD = 1.5;
+    public static final double kG = 0.5;
+    public static final double kS = 0.;
     // public static final double kV = 0;
     // public static final double kA = 0;
 
@@ -40,7 +42,15 @@ public final class Constants {
     public static final double kVelocityHigh = 1500;
     public static final double kVelocityMax = 2500;
 
-    public static final double kDeployGearRatio = 1;
+    public static final double kP = 0.;
+    public static final double kI = 0.;
+    public static final double kD = 0.;
+    public static final double kG = 0.;
+    public static final double kS = 0.;
+    // public static final double kV = 0;
+    // public static final double kA = 0;
+
+    public static final double kDeployGearRatio = 15. / 36;
     public static final double kIntakeGearRatio = 1;
   }
 
@@ -106,9 +116,16 @@ public final class Constants {
   }
 
   public static final class NetworkTableNames {
+
+    public static final class Robot {
+      public static final String kTable = "Robot";
+      public static final String kEnabled = "Enabled";
+      public static final String kBatteryVoltage = "Battery Voltage";
+      public static final String kBatteryBrownout = "Battery Brownout Setting";
+    }
       
     public static final class Odometry {
-      public static final String kOdometry = "Odometry";
+      public static final String kTable = "Odometry";
       public static final String kRobotPose2d = "Robot Pose 2d";
       public static final String kRobotRotation3d = "Robot Pitch, Roll, Yaw Rotations";
       public static final String kRobotAngularVelocity3d = "Robot Pitch, Roll, Yaw Velocities";
@@ -116,40 +133,40 @@ public final class Constants {
     }
 
     public static final class Vision {
-      public static final String kVision = "Vision";
+      public static final String kTable = "Vision";
       public static final String kVisionEstimatePose2d = "Vision Estimate Pose 2d";
       public static final String kVisionEstimateTimestamp = "Vision Estimate Timestamp";
     }
 
     public static final class Shooter {
-      public static final String kShooter = "Shooter";
+      public static final String kTable = "Shooter";
       public static final String kVelocityRPM = "Velocity RPM";
     }
 
     public static final class Hood {
-      public static final String kHood = "Hood";
+      public static final String kTable = "Hood";
       public static final String kVelocityRPM = "Velocity RPM";
       public static final String kPositionRotations = "Position Rotations";
       public static final String kTargetRotations = "Target Position Rotations";
     }
 
     public static final class Conveyor {
-      public static final String kConveyor = "Conveyor";
+      public static final String kTable = "Conveyor";
       public static final String kVelocityRPM = "Velocity RPM";
     }
 
     public static final class Intake {
-      public static final String kIntake = "Intake";
+      public static final String kTable = "Intake";
       public static final String kVelocityRPM = "Velocity RPM";
     }
 
     public static final class IntakeDeploy {
-      public static final String kIntakeDeploy = "IntakeDeploy";
+      public static final String kTable = "IntakeDeploy";
       public static final String kVelocityRPM = "Velocity RPM";
     }
 
     public static final class Climber {
-      public static final String kClimber = "Climber";
+      public static final String kTable = "Climber";
       public static final String kVelocityRPM = "Velocity RPM";
     }
   }

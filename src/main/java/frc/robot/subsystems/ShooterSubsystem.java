@@ -37,6 +37,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   double shooterVelocity = 0;
   double rotations;
+  boolean hoodDirection; // true is positive
   
   final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
   final SparkFlex shooterSecondaryMotor = new SparkFlex(CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
@@ -50,8 +51,8 @@ public class ShooterSubsystem extends SubsystemBase {
   final SparkClosedLoopController hoodPIDController = hoodPrimaryMotor.getClosedLoopController();
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  final NetworkTable shooterTable = networkTable.getTable(NetworkTableNames.Shooter.kShooter);
-  final NetworkTable hoodTable = networkTable.getTable(NetworkTableNames.Hood.kHood);
+  final NetworkTable shooterTable = networkTable.getTable(NetworkTableNames.Shooter.kTable);
+  final NetworkTable hoodTable = networkTable.getTable(NetworkTableNames.Hood.kTable);
 
 
   /** Creates a new ShooterSubsystem. */
@@ -69,18 +70,34 @@ public class ShooterSubsystem extends SubsystemBase {
    * {@summary Hood feedforward includes gravitational force, static loss, air resistance, and robot acceleration} */
   public double calculateFeedForward() {
     // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
-    return HoodConstants.kG * Math.cos(Units.degreesToRadians(getHoodPosition()));
+    return HoodConstants.kS + HoodConstants.kG * Math.cos(getHoodAngle());
   }
 
   /** Sets the hood setpoint angle */
   public void setPIDAngle() {
-    hoodPIDController.setSetpoint(rotations, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, calculateFeedForward());
+    hoodPIDController.setSetpoint(rotations, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
   }
 
   /** Updates the rotations variable which is used in the setPIDAngle method
    * @param angle is in Degrees */
   public void updateHoodTarget(double angle) {
     rotations = (angle / 360) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+  }
+
+  public void setHoodTarget(double target) {
+    rotations = target;
+  }
+
+  public double getHoodTarget() {
+    return rotations;
+  }
+
+  public void changeHoodDirection() {
+    hoodDirection = !hoodDirection;
+  }
+
+  public boolean getHoodDirection() {
+    return hoodDirection;
   }
 
   /** Increases the speed of the shooter by 350 RPM */
@@ -126,9 +143,14 @@ public class ShooterSubsystem extends SubsystemBase {
     hoodSecondaryMotor.set(velocity / 6500);
   }
 
-  /** @return Velocity in RPM */
-  public double getHoodPosition() {
+  /** @return Motor Rotations */
+  public double getHoodMotorRotations() {
     return hoodEncoder.getPosition();
+  }
+
+  /** @return Angle in Rad */
+  public double getHoodAngle() {
+    return 2 * Math.PI * (hoodEncoder.getPosition() / (HoodConstants.kMotorGearRatio * HoodConstants.kEncoderGearRatio));
   }
 
   /** @return Velocity in RPM */
@@ -143,7 +165,7 @@ public class ShooterSubsystem extends SubsystemBase {
     hoodTable.getEntry(NetworkTableNames.Hood.kVelocityRPM)
       .setNumber(getHoodVelocity());
     hoodTable.getEntry(NetworkTableNames.Hood.kPositionRotations)
-      .setNumber(getHoodPosition());
+      .setNumber(getHoodMotorRotations());
     hoodTable.getEntry(NetworkTableNames.Hood.kTargetRotations)
       .setNumber(rotations);
   }
