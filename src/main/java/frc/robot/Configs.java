@@ -4,6 +4,9 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+
+import edu.wpi.first.units.measure.Current;
+import frc.robot.Constants.CurrentConstants.*;
 import frc.robot.Constants.*;
 
 public class Configs {
@@ -50,34 +53,34 @@ public class Configs {
         public static final SparkFlexConfig kickerMotorConfig = new SparkFlexConfig();
         static {
             conveyorMotorConfig
-                .inverted(false)
+                .inverted(true)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             kickerMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
         }
     }
 
     public static final class IntakeConfigs {
         public static final SparkFlexConfig intakeMotorConfig = new SparkFlexConfig();
         public static final SparkFlexConfig primaryIntakeDeployMotorConfig = new SparkFlexConfig();
-        public static final SparkFlexConfig secondaryIntakeDeployMotorConfig = new SparkFlexConfig();
+        // public static final SparkFlexConfig secondaryIntakeDeployMotorConfig = new SparkFlexConfig();
         static {
             intakeMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
             primaryIntakeDeployMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(30);
-            secondaryIntakeDeployMotorConfig
-                .inverted(false)
-                .idleMode(IdleMode.kCoast)
-                .follow(CanIdConstants.kIntakeDeployPrimaryCanId)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
+            // secondaryIntakeDeployMotorConfig
+            //     .inverted(false)
+            //     .idleMode(IdleMode.kCoast)
+            //     .follow(CanIdConstants.kIntakeDeployPrimaryCanId)
+            //     .smartCurrentLimit(30);
             primaryIntakeDeployMotorConfig.closedLoop
                 .positionWrappingEnabled(true)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)

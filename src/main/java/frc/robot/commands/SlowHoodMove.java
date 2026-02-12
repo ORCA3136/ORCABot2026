@@ -4,7 +4,6 @@
 
 package frc.robot.commands;
 
-import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj.Timer;
@@ -19,7 +18,7 @@ public class SlowHoodMove extends Command {
 
   double currentTime;
   double dTime; // Delta time
-  double rotations;
+  double targetPosition; // Rotations
 
   /**
    * Creates a new ExampleCommand.
@@ -42,13 +41,13 @@ public class SlowHoodMove extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    rotations = m_shooterSubsystem.getHoodTarget();
-    if (rotations >= 5 && m_shooterSubsystem.getHoodDirection() == true || rotations <= 1 && m_shooterSubsystem.getHoodDirection() == false) {
+    targetPosition = m_shooterSubsystem.getHoodTarget();
+    if (targetPosition >= 5 && m_shooterSubsystem.getHoodDirection() == true || targetPosition <= 1 && m_shooterSubsystem.getHoodDirection() == false) {
       m_shooterSubsystem.changeHoodDirection();
     }
     dTime = Timer.getTimestamp() - currentTime;
-    rotations += slowHoodSpeed * dTime * (m_shooterSubsystem.getHoodDirection() ? 1 : -1);
-    m_shooterSubsystem.setHoodTarget(rotations);
+    targetPosition += slowHoodSpeed * dTime * (m_shooterSubsystem.getHoodDirection() ? 1 : -1);
+    m_shooterSubsystem.setHoodTarget(targetPosition);
     currentTime = Timer.getTimestamp();
   }
 

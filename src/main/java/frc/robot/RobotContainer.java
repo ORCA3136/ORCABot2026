@@ -11,6 +11,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.commands.RunConveyorCommand;
 import frc.robot.commands.RunHoodCommand;
+import frc.robot.commands.RunIntakeCommand;
 import frc.robot.commands.RunShooterCommand;
 import frc.robot.commands.SlowHoodMove;
 import frc.robot.subsystems.ConveyorSubsystem;
@@ -41,6 +42,7 @@ public class RobotContainer {
   // private final VisionSubsystem visionSubsystem = new VisionSubsystem();
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
+  private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
   
   private final SendableChooser<Command> autoChooser;
 
@@ -91,16 +93,16 @@ public class RobotContainer {
     m_primaryController.b().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity()));
     m_primaryController.x().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseShooterVelocity()));
     m_primaryController.y().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityMax)));
+    
+    // D pad
     m_primaryController.povUp().whileTrue(new RunConveyorCommand(conveyorSubsystem, 500, 4000));
     m_primaryController.povDown().whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000, -1000));
-    // m_primaryController.povLeft().whileTrue(Commands.runOnce(() -> IntakeSubsystem.))
+    m_primaryController.povLeft().whileTrue(new RunIntakeCommand(intakeSubsystem, 10));
     m_primaryController.povRight().whileTrue(new SlowHoodMove(shooterSubsystem));
+
+    // Axis/Triggers/Bumpers
     m_primaryController.rightBumper().whileTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(15)));
     m_primaryController.leftBumper().whileTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(45)));
-    // m_primaryController
-
-    // D pad
-    // Axis/Triggers
   }
 
   private void configureNamedCommands() {

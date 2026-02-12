@@ -57,7 +57,7 @@ public class IntakeSubsystem extends SubsystemBase {
   final SparkFlex intakeMotor = new SparkFlex(CanIdConstants.kIntakeCanId, MotorType.kBrushless);
 
   final SparkFlex intakeDeployPrimaryMotor = new SparkFlex(CanIdConstants.kIntakeDeployPrimaryCanId, MotorType.kBrushless);
-  final SparkFlex intakeDeploySecondaryMotor = new SparkFlex(CanIdConstants.kIntakeDeploySecondaryCanId, MotorType.kBrushless);
+  // final SparkFlex intakeDeploySecondaryMotor = new SparkFlex(CanIdConstants.kIntakeDeploySecondaryCanId, MotorType.kBrushless);
 
   final SparkSim deployMotorSim = new SparkSim(intakeDeployPrimaryMotor, deployDCMotor);
   final SparkSim intakeMotorSim = new SparkSim(intakeMotor, intakeDCMotor);
@@ -95,7 +95,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     intakeMotor.configure(IntakeConfigs.intakeMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     intakeDeployPrimaryMotor.configure(IntakeConfigs.primaryIntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    intakeDeploySecondaryMotor.configure(IntakeConfigs.secondaryIntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    // intakeDeploySecondaryMotor.configure(IntakeConfigs.secondaryIntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 

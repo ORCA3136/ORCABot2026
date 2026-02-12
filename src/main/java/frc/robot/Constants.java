@@ -110,7 +110,7 @@ public final class Constants {
 
     // Intake Deployment Vortexes 
     public static final int kIntakeDeployPrimaryCanId = 18;
-    public static final int kIntakeDeploySecondaryCanId = 19;
+    // public static final int kIntakeDeploySecondaryCanId = 19;
 
     // Lidars
     public static final int kLidarCanId = 25;
@@ -184,6 +184,19 @@ public final class Constants {
     public static final Pose2d kRedOutpost  = new Pose2d(new Translation2d(16.621, 7.403), new Rotation2d(0));
     public static final Pose2d kRedThrow    = new Pose2d(new Translation2d(16.0,   8.2  ), new Rotation2d(0));
     public static final Pose2d kRedDump     = new Pose2d(new Translation2d(16.421, 7.2  ), new Rotation2d(0));
+  }
+
+   public final static class CurrentConstants
+  {
+  
+    public static final int AMP80 = 80;
+    public static final int AMP60 = 60;
+    public static final int AMP40 = 40;
+    public static final int AMP30 = 30;
+    public static final int AMP25 = 25;
+    public static final int AMP20 = 20;
+    public static final int AMP15 = 15;
+
   }
 
   public static final class LedColors {
