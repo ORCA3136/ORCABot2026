@@ -12,7 +12,12 @@ Unfinished things for the Robot (Things that have been started but need work)
 - Hood PID (I don't think we can ork on this yet, but I could be wrong)
 - Shooter RPM values (testing necessary)
 
-
+Weekend plan/task list
+- Figure out what's wrong with the intake (it isn't running)
+- Add constants for climber motor(s) and get the climber subsystem to a theoretically work
+- Climber PID
+- Intake Deployment PID
+- Autos (probably need some help)
 
 
 

@@ -97,7 +97,7 @@ public class RobotContainer {
     // D pad
     m_primaryController.povUp().whileTrue(new RunConveyorCommand(conveyorSubsystem, 500, 4000));
     m_primaryController.povDown().whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000, -1000));
-    m_primaryController.povLeft().whileTrue(new RunIntakeCommand(intakeSubsystem, 10));
+    m_primaryController.povLeft().whileTrue(new RunIntakeCommand(intakeSubsystem, 20));
     m_primaryController.povRight().whileTrue(new SlowHoodMove(shooterSubsystem));
 
     // Axis/Triggers/Bumpers

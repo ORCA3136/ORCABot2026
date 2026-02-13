@@ -57,24 +57,23 @@ public class IntakeSubsystem extends SubsystemBase {
   final SparkFlex intakeMotor = new SparkFlex(CanIdConstants.kIntakeCanId, MotorType.kBrushless);
 
   final SparkFlex intakeDeployPrimaryMotor = new SparkFlex(CanIdConstants.kIntakeDeployPrimaryCanId, MotorType.kBrushless);
-  // final SparkFlex intakeDeploySecondaryMotor = new SparkFlex(CanIdConstants.kIntakeDeploySecondaryCanId, MotorType.kBrushless);
 
-  final SparkSim deployMotorSim = new SparkSim(intakeDeployPrimaryMotor, deployDCMotor);
-  final SparkSim intakeMotorSim = new SparkSim(intakeMotor, intakeDCMotor);
+  // final SparkSim deployMotorSim = new SparkSim(intakeDeployPrimaryMotor, deployDCMotor);
+  // final SparkSim intakeMotorSim = new SparkSim(intakeMotor, intakeDCMotor);
 
-  final SingleJointedArmSim intakeDeploySim = new SingleJointedArmSim(
-      deployDCMotor, // Motor type
-      IntakeConstants.kDeployGearRatio,
-      0.01, // Arm moment of inertia - Small value since there are no arm parameters
-      0.1, // Arm length (m) - Small value since there are no arm parameters
-      Units.degreesToRadians(-90), // Min angle (rad)
-      Units.degreesToRadians(90), // Max angle (rad)
-      false, // Simulate gravity - Disable gravity for pivot
-      Units.degreesToRadians(0) // Starting position (rad)
-    );
+  // final SingleJointedArmSim intakeDeploySim = new SingleJointedArmSim(
+  //     deployDCMotor, // Motor type
+  //     IntakeConstants.kDeployGearRatio,
+  //     0.01, // Arm moment of inertia - Small value since there are no arm parameters
+  //     0.1, // Arm length (m) - Small value since there are no arm parameters
+  //     Units.degreesToRadians(-90), // Min angle (rad)
+  //     Units.degreesToRadians(90), // Max angle (rad)
+  //     false, // Simulate gravity - Disable gravity for pivot
+  //     Units.degreesToRadians(0) // Starting position (rad)
+  //   );
 
-  final LinearSystem linearIntake = new LinearSystem<>(null, null, null, null);
-  final FlywheelSim intakeFlywheelSim = new FlywheelSim(linearIntake, intakeDCMotor, null);
+  // final LinearSystem linearIntake = new LinearSystem<>(null, null, null, null);
+  // final FlywheelSim intakeFlywheelSim = new FlywheelSim(linearIntake, intakeDCMotor, null);
 
   final RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
   final RelativeEncoder intakeDeployEncoder = intakeDeployPrimaryMotor.getEncoder();
@@ -95,7 +94,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
     intakeMotor.configure(IntakeConfigs.intakeMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     intakeDeployPrimaryMotor.configure(IntakeConfigs.primaryIntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    // intakeDeploySecondaryMotor.configure(IntakeConfigs.secondaryIntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 
@@ -150,10 +148,6 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeEncoder.getVelocity();
   }
 
-  public void setIntakePower(double intakePower) {
-    intakeMotor.set(intakePower);
-  }
-
   public void isIntakeDown(boolean Override) {
     if (Override == true) intakeDeployed = !intakeDeployed;
   }
@@ -181,41 +175,41 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** This method will be called once per scheduler run during simulation */
   @Override
-  public void simulationPeriodic() {
+  public void simulationPeriodic() { // Tempotrarily commented out becasue it may be causing problems with the code
 
-    // Set input voltage from motor controller to simulation
-    // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input
-    //pivotSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(pivotSim.getCurrentDrawAmps()), pivotSim.getVelocityRadPerSec()));
-    // pivotSim.setInput(getVoltage());
-    // Set input voltage from motor controller to simulation
-    // Use getVoltage() for other controllers
-    intakeFlywheelSim.setInput(getVoltage());
-    intakeDeploySim.setInput(getVoltage());
+    // // Set input voltage from motor controller to simulation
+    // // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input
+    // //pivotSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(pivotSim.getCurrentDrawAmps()), pivotSim.getVelocityRadPerSec()));
+    // // pivotSim.setInput(getVoltage());
+    // // Set input voltage from motor controller to simulation
+    // // Use getVoltage() for other controllers
+    // intakeFlywheelSim.setInput(getVoltage());
+    // intakeDeploySim.setInput(getVoltage());
 
-    // Update simulation by 20ms
-    intakeFlywheelSim.update(0.020);
-    intakeDeploySim.update(0.020);
-    RoboRioSim.setVInVoltage(
-      BatterySim.calculateDefaultBatteryLoadedVoltage(
-        intakeFlywheelSim.getCurrentDrawAmps() + 
-        intakeDeploySim.getCurrentDrawAmps()
-      )
-    );
-
-    // double motorDeployPosition = Radians.of(intakeDeploySim.getAngleRads() * IntakeConstants.kDeployGearRatio).in(
-    //   Rotations
+    // // Update simulation by 20ms
+    // intakeFlywheelSim.update(0.020);
+    // intakeDeploySim.update(0.020);
+    // RoboRioSim.setVInVoltage(
+    //   BatterySim.calculateDefaultBatteryLoadedVoltage(
+    //     intakeFlywheelSim.getCurrentDrawAmps() + 
+    //     intakeDeploySim.getCurrentDrawAmps()
+    //   )
     // );
-    double motorDeployVelocity = RadiansPerSecond.of(
-      intakeDeploySim.getVelocityRadPerSec() * IntakeConstants.kDeployGearRatio
-    ).in(RotationsPerSecond);
-    deployMotorSim.iterate(motorDeployVelocity * 60, RoboRioSim.getVInVoltage(), 0.02);
 
-    // double motorIntakePosition = Radians.of(intakeDeploySim.getAngleRads() * IntakeConstants.kDeployGearRatio).in(
-    //   Rotations
-    // );
-    double motorIntakeVelocity = RadiansPerSecond.of(
-      intakeDeploySim.getVelocityRadPerSec() * IntakeConstants.kDeployGearRatio
-    ).in(RotationsPerSecond);
-    deployMotorSim.iterate(motorIntakeVelocity * 60, RoboRioSim.getVInVoltage(), 0.02);
+    // // double motorDeployPosition = Radians.of(intakeDeploySim.getAngleRads() * IntakeConstants.kDeployGearRatio).in(
+    // //   Rotations
+    // // );
+    // double motorDeployVelocity = RadiansPerSecond.of(
+    //   intakeDeploySim.getVelocityRadPerSec() * IntakeConstants.kDeployGearRatio
+    // ).in(RotationsPerSecond);
+    // deployMotorSim.iterate(motorDeployVelocity * 60, RoboRioSim.getVInVoltage(), 0.02);
+
+    // // double motorIntakePosition = Radians.of(intakeDeploySim.getAngleRads() * IntakeConstants.kDeployGearRatio).in(
+    // //   Rotations
+    // // );
+    // double motorIntakeVelocity = RadiansPerSecond.of(
+    //   intakeDeploySim.getVelocityRadPerSec() * IntakeConstants.kDeployGearRatio
+    // ).in(RotationsPerSecond);
+    // deployMotorSim.iterate(motorIntakeVelocity * 60, RoboRioSim.getVInVoltage(), 0.02);
   }
 }

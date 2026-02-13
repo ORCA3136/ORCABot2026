@@ -32,7 +32,7 @@ public class RunIntakeCommand extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    m_intakeSubsystem.setIntakePower(intakeVelocity);
+    m_intakeSubsystem.setIntakeVelocity(intakeVelocity);
   }
 
   // Called every time the scheduler runs while the command is scheduled.
@@ -42,7 +42,7 @@ public class RunIntakeCommand extends Command {
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    m_intakeSubsystem.setIntakePower(0);
+    m_intakeSubsystem.setIntakeVelocity(0);
   }
 
   // Returns true when the command should end.
