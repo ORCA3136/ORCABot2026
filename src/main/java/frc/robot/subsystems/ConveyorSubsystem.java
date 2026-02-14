@@ -38,7 +38,6 @@ public class ConveyorSubsystem extends SubsystemBase {
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable conveyorTable = networkTable.getTable(NetworkTableNames.Conveyor.kTable);
 
-
   /** Creates a new ConveyorSubsystem. */
   public ConveyorSubsystem() {
 

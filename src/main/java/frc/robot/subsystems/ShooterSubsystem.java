@@ -102,7 +102,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** Increases the speed of the shooter by 350 RPM */
   public void increaseShooterVelocity() {
-    shooterVelocity += 350;
+    shooterVelocity += 100;
     if (shooterVelocity > 6500) shooterVelocity = 6500;
 
     setShooterVelocity(shooterVelocity);
@@ -110,7 +110,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** Decreases the speed of the shooter by 350 RPM */ 
   public void decreaseShooterVelocity() {
-    shooterVelocity -= 350;
+    shooterVelocity -= 100;
     if (shooterVelocity < 0) shooterVelocity = 0;
       
     setShooterVelocity(shooterVelocity);

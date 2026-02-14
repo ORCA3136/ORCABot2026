@@ -65,22 +65,40 @@ public class Configs {
 
     public static final class IntakeConfigs {
         public static final SparkFlexConfig intakeMotorConfig = new SparkFlexConfig();
-        public static final SparkFlexConfig primaryIntakeDeployMotorConfig = new SparkFlexConfig();        static {
+        public static final SparkFlexConfig IntakeDeployMotorConfig = new SparkFlexConfig();        
+        
+        static {
             intakeMotorConfig
+                .inverted(true)
+                .idleMode(IdleMode.kCoast)
+                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
+            IntakeDeployMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
-            primaryIntakeDeployMotorConfig
-                .inverted(false)
-                .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
-            primaryIntakeDeployMotorConfig.closedLoop
+            IntakeDeployMotorConfig.closedLoop
                 .positionWrappingEnabled(true)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
                 .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD)
                 .outputRange(-0.5, 0.5); // Old was +-0.8
             // primaryHoodConfig.closedLoop.feedForward
             //     .kG(HoodConstants.kG);
+        }
+    }
+
+    public static final class ClimberConfigs {
+        public static final SparkFlexConfig climberPrimaryMotor = new SparkFlexConfig();
+        public static final SparkFlexConfig climberSecondaryMotor = new SparkFlexConfig();        
+        
+        static {
+            climberPrimaryMotor
+                .inverted(true)
+                .idleMode(IdleMode.kCoast)
+                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
+            climberSecondaryMotor
+                .inverted(false)
+                .idleMode(IdleMode.kCoast)
+                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
         }
     }
 

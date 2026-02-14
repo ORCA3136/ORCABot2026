@@ -4,7 +4,17 @@
 
 package frc.robot.subsystems;
 
+import com.revrobotics.AbsoluteEncoder;
+import com.revrobotics.PersistMode;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Configs.ClimberConfigs;
+import frc.robot.Constants.CanIdConstants;
 
 
 /*
@@ -18,9 +28,27 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 
 public class ClimberSubsystem extends SubsystemBase {
-  
+
+  final SparkFlex climberPrimaryMotor = new SparkFlex(CanIdConstants.kClimberPrimaryCanId, MotorType.kBrushless);
+  final SparkFlex climberSecondaryMotor = new SparkFlex(CanIdConstants.kClimberSecondaryCanId, MotorType.kBrushless);
+
+  final RelativeEncoder climberEncoder = climberPrimaryMotor.getEncoder();
+
   /** Creates a new ClimberSubsystem. */
-  public ClimberSubsystem() {}
+  public ClimberSubsystem() {
+
+    climberPrimaryMotor.configure(ClimberConfigs.climberPrimaryMotor, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    climberSecondaryMotor.configure(ClimberConfigs.climberSecondaryMotor, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+  }
+
+  public void setClimberVelocity(double velocity) {
+    climberPrimaryMotor.set(velocity / 6500);
+  }
+
+  public double getClimberVlocity() {
+    return climberEncoder.getVelocity();
+  }
 
   /** This method will be called once per scheduler run */
   @Override

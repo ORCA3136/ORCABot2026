@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -56,9 +57,9 @@ public class IntakeSubsystem extends SubsystemBase {
 
   final SparkFlex intakeMotor = new SparkFlex(CanIdConstants.kIntakeCanId, MotorType.kBrushless);
 
-  final SparkFlex intakeDeployPrimaryMotor = new SparkFlex(CanIdConstants.kIntakeDeployPrimaryCanId, MotorType.kBrushless);
+  final SparkFlex intakeDeployMotor = new SparkFlex(CanIdConstants.kIntakeDeployCanId, MotorType.kBrushless);
 
-  // final SparkSim deployMotorSim = new SparkSim(intakeDeployPrimaryMotor, deployDCMotor);
+  // final SparkSim deployMotorSim = new SparkSim(intakeDeployMotor, deployDCMotor);
   // final SparkSim intakeMotorSim = new SparkSim(intakeMotor, intakeDCMotor);
 
   // final SingleJointedArmSim intakeDeploySim = new SingleJointedArmSim(
@@ -76,9 +77,9 @@ public class IntakeSubsystem extends SubsystemBase {
   // final FlywheelSim intakeFlywheelSim = new FlywheelSim(linearIntake, intakeDCMotor, null);
 
   final RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
-  final RelativeEncoder intakeDeployEncoder = intakeDeployPrimaryMotor.getEncoder();
+  final AbsoluteEncoder intakeDeployEncoder = intakeDeployMotor.getAbsoluteEncoder();
 
-  final SparkClosedLoopController IntakePIDController = intakeDeployPrimaryMotor.getClosedLoopController();
+  final SparkClosedLoopController IntakePIDController = intakeDeployMotor.getClosedLoopController();
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable intakeTable = networkTable.getTable(NetworkTableNames.Intake.kTable);
@@ -93,7 +94,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public IntakeSubsystem() {
 
     intakeMotor.configure(IntakeConfigs.intakeMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    intakeDeployPrimaryMotor.configure(IntakeConfigs.primaryIntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    intakeDeployMotor.configure(IntakeConfigs.IntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 
@@ -101,7 +102,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * {@summary intake feedforward includes gravitational force, static loss, air resistance, and robot acceleration} */
   public double calculateFeedForward() {
     // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
-    return IntakeConstants.kS + IntakeConstants.kG * Math.cos(getIntakeAngle());
+    return IntakeConstants.kS + IntakeConstants.kG * Math.sin(getIntakeAngle());
   }
 
   /** Sets the intake setpoint angle */
@@ -145,7 +146,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * @return Velocity in RPM
    */
   public double getIntakeDeployVelocity() {
-    return intakeEncoder.getVelocity();
+    return intakeDeployEncoder.getVelocity();
   }
 
   public void isIntakeDown(boolean Override) {
@@ -156,7 +157,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * @return Applied voltage
    */
   public double getVoltage() {
-    return intakeDeployPrimaryMotor.getAppliedOutput() * intakeDeployPrimaryMotor.getBusVoltage() + 
+    return intakeDeployMotor.getAppliedOutput() * intakeDeployMotor.getBusVoltage() + 
            intakeMotor.getAppliedOutput() * intakeMotor.getBusVoltage();
   }
 
@@ -170,7 +171,10 @@ public class IntakeSubsystem extends SubsystemBase {
   /** This method will be called once per scheduler run */
   @Override
   public void periodic() {
+
     updateNetworkTable();
+
+    setPIDAngle();
   }
 
   /** This method will be called once per scheduler run during simulation */
