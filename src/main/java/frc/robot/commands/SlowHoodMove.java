@@ -4,7 +4,6 @@
 
 package frc.robot.commands;
 
-import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj.Timer;
@@ -15,11 +14,11 @@ public class SlowHoodMove extends Command {
   @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
   private final ShooterSubsystem m_shooterSubsystem;
 
-  private final double slowHoodSpeed = 10; // Degrees per second (DPS)
+  private final double slowHoodSpeed = 4; // Degrees per second (DPS)
 
   double currentTime;
   double dTime; // Delta time
-  double rotations;
+  double targetPosition; // Rotations
 
   /**
    * Creates a new ExampleCommand.
@@ -42,14 +41,13 @@ public class SlowHoodMove extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    rotations = m_shooterSubsystem.getHoodTarget();
-    dTime = Timer.getTimestamp() - currentTime;
-    rotations += slowHoodSpeed * dTime;
-    rotations *= (m_shooterSubsystem.getHoodDirection() ? -1 : 1);
-    m_shooterSubsystem.setHoodTarget(rotations);
-    if (rotations >= 11 && m_shooterSubsystem.getHoodDirection() == false || rotations <= 1 && m_shooterSubsystem.getHoodDirection() == true) {
+    targetPosition = m_shooterSubsystem.getHoodTarget();
+    if (targetPosition >= 5 && m_shooterSubsystem.getHoodDirection() == true || targetPosition <= 1 && m_shooterSubsystem.getHoodDirection() == false) {
       m_shooterSubsystem.changeHoodDirection();
     }
+    dTime = Timer.getTimestamp() - currentTime;
+    targetPosition += slowHoodSpeed * dTime * (m_shooterSubsystem.getHoodDirection() ? 1 : -1);
+    m_shooterSubsystem.setHoodTarget(targetPosition);
     currentTime = Timer.getTimestamp();
   }
 

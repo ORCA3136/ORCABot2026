@@ -4,6 +4,9 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+
+import edu.wpi.first.units.measure.Current;
+import frc.robot.Constants.CurrentConstants.*;
 import frc.robot.Constants.*;
 
 public class Configs {
@@ -18,28 +21,28 @@ public class Configs {
             primaryShooterConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             secondaryShooterConfig // making the secondary shooter follow the primary uninverts it, and that makes them fight each other
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             primaryHoodConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
             secondaryHoodConfig
                 .idleMode(IdleMode.kCoast)
                 .follow(CanIdConstants.kHoodPrimaryCanId, true)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
             primaryHoodConfig.absoluteEncoder
-                .zeroOffset(.36)
+                .zeroOffset(.125)
                 .positionConversionFactor(HoodConstants.kMotorGearRatio)
                 .velocityConversionFactor(HoodConstants.kMotorGearRatio);
             primaryHoodConfig.closedLoop
                 .positionWrappingEnabled(true)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
                 .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD)
-                .outputRange(-0.1, 0.1); // Old was +-0.8
+                .outputRange(-0.7, 0.7); // Old was +-0.8
             // primaryHoodConfig.closedLoop.feedForward
             //     .kG(HoodConstants.kG);
         }
@@ -50,34 +53,27 @@ public class Configs {
         public static final SparkFlexConfig kickerMotorConfig = new SparkFlexConfig();
         static {
             conveyorMotorConfig
-                .inverted(false)
+                .inverted(true)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             kickerMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
         }
     }
 
     public static final class IntakeConfigs {
         public static final SparkFlexConfig intakeMotorConfig = new SparkFlexConfig();
-        public static final SparkFlexConfig primaryIntakeDeployMotorConfig = new SparkFlexConfig();
-        public static final SparkFlexConfig secondaryIntakeDeployMotorConfig = new SparkFlexConfig();
-        static {
+        public static final SparkFlexConfig primaryIntakeDeployMotorConfig = new SparkFlexConfig();        static {
             intakeMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
             primaryIntakeDeployMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(30);
-            secondaryIntakeDeployMotorConfig
-                .inverted(false)
-                .idleMode(IdleMode.kCoast)
-                .follow(CanIdConstants.kIntakeDeployPrimaryCanId)
-                .smartCurrentLimit(30);
+                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
             primaryIntakeDeployMotorConfig.closedLoop
                 .positionWrappingEnabled(true)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)

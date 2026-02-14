@@ -105,15 +105,18 @@ public final class Constants {
     public static final int kConveyorCanId = 14;
 
     // Hood 550s
-    public static final int kHoodPrimaryCanId = 16; // swap later
-    public static final int kHoodSecondaryCanId = 15;
+    public static final int kHoodPrimaryCanId = 15;
+    public static final int kHoodSecondaryCanId = 16;
 
     // Intake Vortex
     public static final int kIntakeCanId = 17;
 
-    // Intake Deployment Vortexes 
+    // Intake Deployment Vortex
     public static final int kIntakeDeployPrimaryCanId = 18;
-    public static final int kIntakeDeploySecondaryCanId = 19;
+
+    // Climber Vortexes
+    public static final int kClimberPrimaryCanId = 19;
+    public static final int kClimberSecondaryCanId = 20;
 
     // Lidars
     public static final int kLidarCanId = 25;
@@ -203,6 +206,19 @@ public final class Constants {
 
     public static final List<Translation2d> bumpPoses = new ArrayList<Translation2d>(){{
     }};
+  }
+
+   public final static class CurrentConstants
+  {
+  
+    public static final int AMP80 = 80;
+    public static final int AMP60 = 60;
+    public static final int AMP40 = 40;
+    public static final int AMP30 = 30;
+    public static final int AMP25 = 25;
+    public static final int AMP20 = 20;
+    public static final int AMP15 = 15;
+
   }
 
   public static final class LedColors {
