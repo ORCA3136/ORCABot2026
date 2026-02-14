@@ -158,6 +158,26 @@ public class ShooterSubsystem extends SubsystemBase {
     return hoodEncoder.getVelocity();
   }
 
+  /** @return Current in Amps */
+  public double getShooterPrimaryCurrent() {
+    return shooterPrimaryMotor.getOutputCurrent();
+  }
+
+  /** @return Current in Amps */
+  public double getShooterSecondaryCurrent() {
+    return shooterPrimaryMotor.getOutputCurrent();
+  }
+
+  /** @return Current in Amps */
+  public double getHoodPrimaryCurrent() {
+    return hoodPrimaryMotor.getOutputCurrent();
+  }
+
+  /** @return Current in Amps */
+  public double getHoodSecondaryCurrent() {
+    return hoodSecondaryMotor.getOutputCurrent();
+  }
+
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
     shooterTable.getEntry(NetworkTableNames.Shooter.kVelocityRPM)
@@ -168,6 +188,15 @@ public class ShooterSubsystem extends SubsystemBase {
       .setNumber(getHoodMotorRotations());
     hoodTable.getEntry(NetworkTableNames.Hood.kTargetRotations)
       .setNumber(rotations);
+
+    shooterTable.getEntry(NetworkTableNames.Shooter.kPrimaryCurrent)
+      .setNumber(getShooterVelocity());
+    shooterTable.getEntry(NetworkTableNames.Shooter.kSecondaryCurrent)
+      .setNumber(getShooterVelocity());
+    hoodTable.getEntry(NetworkTableNames.Hood.kPrimaryCurrent)
+      .setNumber(getHoodVelocity());
+    hoodTable.getEntry(NetworkTableNames.Hood.kSecondaryCurrent)
+      .setNumber(getHoodVelocity());
   }
 
   /** This method will be called once per scheduler run */

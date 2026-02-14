@@ -151,6 +151,8 @@ public final class Constants {
     public static final class Shooter {
       public static final String kTable = "Shooter";
       public static final String kVelocityRPM = "Velocity RPM";
+      public static String kPrimaryCurrent = "Primary Current";
+    public static String kSecondaryCurrent = "Secondary Current";
     }
 
     public static final class Hood {
@@ -158,6 +160,8 @@ public final class Constants {
       public static final String kVelocityRPM = "Velocity RPM";
       public static final String kPositionRotations = "Position Rotations";
       public static final String kTargetRotations = "Target Position Rotations";
+    public static String kPrimaryCurrent = "Primary Current";
+    public static String kSecondaryCurrent = "Secondary Current";
     }
 
     public static final class Conveyor {
