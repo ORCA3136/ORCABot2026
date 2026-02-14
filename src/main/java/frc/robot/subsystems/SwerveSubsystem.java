@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import java.io.File;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -22,6 +23,7 @@ import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import swervelib.parser.SwerveParser;
 import swervelib.simulation.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import swervelib.telemetry.SwerveDriveTelemetry;
@@ -86,6 +88,17 @@ public class SwerveSubsystem extends SubsystemBase {
   double lastVisionUpdateTime = 0;
   StructSubscriber<Pose2d> visionEstimateSubscriber = visionTable
       .getStructTopic(NetworkTableNames.Vision.kVisionEstimatePose2d, Pose2d.struct).subscribe(new Pose2d());
+
+
+  
+  public enum FieldTargets {
+    kHub,         // Scoring element
+    kTower,       // Climbing challenge
+    kOutpost,     // Human player station
+    kDepot        // Zone on the floor with staring fuel
+  }
+
+
 
 
   /** Creates a new SwerveSubsystem from given json files. */
@@ -283,6 +296,16 @@ public class SwerveSubsystem extends SubsystemBase {
     return run(()->{
       swerveDrive.driveFieldOriented(velocity.get());
     });
+  }
+
+  /** Checks the current zone the robot is in 
+   *  @return Blue, Middle, Red */
+
+  /** @return The current alliance */
+  public Alliance getAlliance() {
+    if (DriverStation.getAlliance().isPresent())
+      return DriverStation.getAlliance().get();
+    return null;
   }
 
  
@@ -503,9 +526,40 @@ public class SwerveSubsystem extends SubsystemBase {
     return new PathPlannerAuto(pathName);
   }
 
-  /**
-   * Update swervedrive when a new pose estimate is available
-   */
+  /** @param element The game field element to compare with
+   *  @param opponentSide Whether to check with the opposing side elements
+   *  @return The translation2d to the specified game element */
+  public Translation2d getTranslationToFieldElement(FieldTargets element, boolean opponentSide) {
+    if (DriverStation.getAlliance().isEmpty())
+      return null;
+
+    List<Translation2d> positions = (opponentSide ^ getAlliance() == Alliance.Blue ? FieldPositions.kBlueFieldElements : FieldPositions.kRedFieldElements);
+
+    switch (element) {
+      case kHub:
+        swerveDrive.getPose().getTranslation().minus(positions.get(0));
+      case kOutpost:
+        swerveDrive.getPose().getTranslation().minus(positions.get(1));
+      case kTower:
+        swerveDrive.getPose().getTranslation().minus(positions.get(2));
+      case kDepot:
+        swerveDrive.getPose().getTranslation().minus(positions.get(3));
+      default:
+        return null;
+    }
+  }
+
+  public double getDistanceToNearestTrench() {
+    Translation2d robotTranslation = swerveDrive.getPose().getTranslation();
+    return robotTranslation.nearest(FieldPositions.trenchPoses).getDistance(robotTranslation);
+  }
+
+  public double getDistanceToNearestBump() {
+    Translation2d robotTranslation = swerveDrive.getPose().getTranslation();
+    return robotTranslation.nearest(FieldPositions.bumpPoses).getDistance(robotTranslation);
+  }
+
+  /** Update swervedrive when a new pose estimate is available */
   public void getVisionUpdate() {
     double visionTimestamp = visionTable.getEntry(NetworkTableNames.Vision.kVisionEstimateTimestamp).getDouble(0);
     if (visionTimestamp == 0) 

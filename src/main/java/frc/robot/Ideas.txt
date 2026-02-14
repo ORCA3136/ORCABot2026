@@ -48,19 +48,3 @@ Other tasks
  - 
 
 
-
-
- P 0.2
- D 0.5
-
- Start time 33.80
- Start motor 33.84
- Max 34.05 - 3.589
- Min 34.19 - 3.124
- Level 34.26 - 3.168
-
-
-
- P 0.2
- D 0.6
-

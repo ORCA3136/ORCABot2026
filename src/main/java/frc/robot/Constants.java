@@ -2,6 +2,9 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.RobotController;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -176,14 +179,30 @@ public final class Constants {
   }
 
   public static final class FieldPositions {
-    public static final Pose2d kBlueHub     = new Pose2d(new Translation2d(4.597,  4.035), new Rotation2d(0));
-    public static final Pose2d kBlueOutpost = new Pose2d(new Translation2d(0,      0.666), new Rotation2d(0));
-    public static final Pose2d kBlueThrow   = new Pose2d(new Translation2d(0.666,   -0.254), new Rotation2d(0));
-    public static final Pose2d kBlueDump    = new Pose2d(new Translation2d(0.2,    0.666), new Rotation2d(0));
-    public static final Pose2d kRedHub      = new Pose2d(new Translation2d(11.938, 4.035), new Rotation2d(0));
-    public static final Pose2d kRedOutpost  = new Pose2d(new Translation2d(16.621, 7.403), new Rotation2d(0));
-    public static final Pose2d kRedThrow    = new Pose2d(new Translation2d(16.0,   8.2  ), new Rotation2d(0));
-    public static final Pose2d kRedDump     = new Pose2d(new Translation2d(16.421, 7.2  ), new Rotation2d(0));
+
+    public static final List<Translation2d> kBlueFieldElements = new ArrayList<Translation2d>(){{
+      add(new Translation2d(4.597,  4.035));         // Blue Hub
+      add(new Translation2d(0.2,    0.666));         // Blue Outpost
+      add(new Translation2d(1.065,  3.745));         // Blue Tower
+      add(new Translation2d(0.410,  5.965));         // Blue Depot
+    }};
+
+    public static final List<Translation2d> kRedFieldElements = new ArrayList<Translation2d>(){{
+      add(new Translation2d(11.938, 4.035));         // Red Hub
+      add(new Translation2d(16.621, 7.403));         // Red Outpost
+      add(new Translation2d(15.48,  3.745));         // Red Tower
+      add(new Translation2d(16.13,  2.103));         // Red Depot
+    }};
+
+    public static final List<Translation2d> trenchPoses = new ArrayList<Translation2d>(){{
+      add(new Translation2d(4.620, 7.430));
+      add(new Translation2d(4.620, 0.630));
+      add(new Translation2d(11.93, 7.430));
+      add(new Translation2d(11.93, 0.630));
+    }};
+
+    public static final List<Translation2d> bumpPoses = new ArrayList<Translation2d>(){{
+    }};
   }
 
   public static final class LedColors {
