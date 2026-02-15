@@ -12,9 +12,13 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.ClimberConfigs;
 import frc.robot.Constants.CanIdConstants;
+import frc.robot.Constants.ClimberConstants;
+import frc.robot.Constants.NetworkTableNames;
 
 
 /*
@@ -34,6 +38,9 @@ public class ClimberSubsystem extends SubsystemBase {
 
   final RelativeEncoder climberEncoder = climberPrimaryMotor.getEncoder();
 
+  final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
+  final NetworkTable climberTable = networkTable.getTable(NetworkTableNames.Climber.kTable);
+
   /** Creates a new ClimberSubsystem. */
   public ClimberSubsystem() {
 
@@ -46,8 +53,27 @@ public class ClimberSubsystem extends SubsystemBase {
     climberPrimaryMotor.set(velocity / 6500);
   }
 
-  public double getClimberVlocity() {
+  public double getMotorVlocity() {
     return climberEncoder.getVelocity();
+  }
+
+  public double getClimberVlocity() {
+    return climberEncoder.getVelocity() / ClimberConstants.kClimberGearRatio;
+  }
+
+  public double getMotorRotations() {
+    return climberEncoder.getPosition();
+  }
+
+  public double getClimberPosition() {
+    return climberEncoder.getPosition() / ClimberConstants.kClimberGearRatio;
+  }
+
+  public void updateNetworkTable() {
+    climberTable.getEntry(NetworkTableNames.Climber.kVelocityRPM)
+      .setNumber(getClimberVlocity());
+    climberTable.getEntry(NetworkTableNames.Climber.kPositionRotations)
+      .setNumber(getClimberPosition());
   }
 
   /** This method will be called once per scheduler run */

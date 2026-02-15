@@ -7,13 +7,16 @@ package frc.robot;
 import java.io.File;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.commands.RunClimberCommand;
 import frc.robot.commands.RunConveyorCommand;
 import frc.robot.commands.RunHoodCommand;
 import frc.robot.commands.RunIntakeCommand;
 import frc.robot.commands.RunShooterCommand;
 import frc.robot.commands.SlowHoodMove;
+import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
@@ -43,6 +46,7 @@ public class RobotContainer {
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
+  private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
   
   private final SendableChooser<Command> autoChooser;
 
@@ -60,7 +64,7 @@ public class RobotContainer {
     configureBindings();
     configureNamedCommands();
 
-    autoChooser = AutoBuilder.buildAutoChooser(); //pick a default
+    autoChooser = null;//AutoBuilder.buildAutoChooser(); //pick a default
 
   }
 
@@ -86,16 +90,18 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    driveBase.setDefaultCommand(defaultDriveCommand);
+    // driveBase.setDefaultCommand(defaultDriveCommand);
 
     // Buttons
     m_primaryController.a().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(0)));
     m_primaryController.b().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity()));
     m_primaryController.x().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseShooterVelocity()));
     m_primaryController.y().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityMax)));
+    m_primaryController.start().whileTrue(new RunClimberCommand(climberSubsystem, 500).repeatedly());
+    m_primaryController.back().whileTrue(new RunClimberCommand(climberSubsystem, -500).repeatedly());
     
     // D pad
-    m_primaryController.povUp().whileTrue(new RunConveyorCommand(conveyorSubsystem, 500, 4000));
+    m_primaryController.povUp().whileTrue(new RunConveyorCommand(conveyorSubsystem, 500, 1500));
     m_primaryController.povDown().whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000, -1000));
     m_primaryController.povLeft().whileTrue(new RunIntakeCommand(intakeSubsystem, 6000));
     m_primaryController.povRight().whileTrue(new SlowHoodMove(shooterSubsystem));
@@ -107,6 +113,27 @@ public class RobotContainer {
 
   private void configureNamedCommands() {
     // Pathplanner commands
+
+    // Run Intake
+    NamedCommands.registerCommand("Run Intake", new RunIntakeCommand(intakeSubsystem, 6000));
+
+    // Deploy Intake
+
+    // Shoot
+    NamedCommands.registerCommand("Stop Shooter", Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(0)));
+    NamedCommands.registerCommand("Run Shooter Low", Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityLow)));
+    NamedCommands.registerCommand("Run Shooter Medium", Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityMedium)));
+    NamedCommands.registerCommand("Run Shooter High", Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityHigh)));
+    
+    // Move hood
+    NamedCommands.registerCommand("Hood Low Position", Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(1)));
+    NamedCommands.registerCommand("Hood Medium Position", Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(10)));
+    NamedCommands.registerCommand("Hood High Position", Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(20)));
+
+    // Climb
+    // Conveyor/kicker
+    NamedCommands.registerCommand("Run Conveyor", new RunConveyorCommand(conveyorSubsystem, 500, 4000));
+    NamedCommands.registerCommand("Stop Conveyor", new RunConveyorCommand(conveyorSubsystem, 0, 0));
   }
 
   /**

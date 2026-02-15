@@ -30,7 +30,7 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.*;
-
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.AddressableLEDSim;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
@@ -85,9 +85,12 @@ public class IntakeSubsystem extends SubsystemBase {
   final NetworkTable intakeTable = networkTable.getTable(NetworkTableNames.Intake.kTable);
   final NetworkTable intakeDeployTable = networkTable.getTable(NetworkTableNames.IntakeDeploy.kTable);
 
+  private boolean stateDriven = true;
+  
   private boolean intakeDeployed = false;
-  private boolean Override = false;
-  private double rotations = 0;
+  private boolean vibrateIntake = false;
+  private double vibrationMagnitude = 1;
+  private double vibrationFrequency = 1;
 
 
   /** Creates a new IntakeSubsystem. */
@@ -105,15 +108,36 @@ public class IntakeSubsystem extends SubsystemBase {
     return IntakeConstants.kS + IntakeConstants.kG * Math.sin(getIntakeAngle());
   }
 
+  public double calculatePosition() {
+
+    double tempTargetPosition;
+
+    if (intakeDeployed) 
+      tempTargetPosition = IntakeConstants.kMinDeployPosition;
+    else
+      tempTargetPosition = IntakeConstants.kMaxDeployPosition;
+
+    if (intakeDeployed && vibrateIntake) {
+      tempTargetPosition += vibrationMagnitude * (1 + Math.sin(Timer.getTimestamp() * vibrationFrequency));
+    }
+
+    if (tempTargetPosition > IntakeConstants.kMaxDeployPosition)
+        tempTargetPosition = IntakeConstants.kMaxDeployPosition;
+    if (tempTargetPosition < IntakeConstants.kMinDeployPosition)
+        tempTargetPosition = IntakeConstants.kMinDeployPosition;
+
+    return tempTargetPosition;
+  }
+
   /** Sets the intake setpoint angle */
   public void setPIDAngle() {
-    IntakePIDController.setSetpoint(rotations, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
+    IntakePIDController.setSetpoint(calculatePosition(), ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
   }
 
   /** Updates the rotations variable which is used in the setPIDAngle method
    * @param angle is in Degrees */
-  public void updateIntakeDeployTarget(double angle) {
-    rotations = (angle / 360) * IntakeConstants.kDeployGearRatio;
+  public void deployIntake(boolean intakeDeployed) {
+    this.intakeDeployed = intakeDeployed;
   }
 
   /** @return Angle in Rad */
@@ -149,9 +173,6 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeDeployEncoder.getVelocity();
   }
 
-  public void isIntakeDown(boolean Override) {
-    if (Override == true) intakeDeployed = !intakeDeployed;
-  }
   /**
    * Get the current applied voltage.
    * @return Applied voltage
