@@ -42,11 +42,11 @@ public class SlowHoodMove extends Command {
   @Override
   public void execute() {
     targetPosition = m_shooterSubsystem.getHoodTarget();
-    if (targetPosition >= 5 && m_shooterSubsystem.getHoodDirection() == true || targetPosition <= 1 && m_shooterSubsystem.getHoodDirection() == false) {
+    if (targetPosition >= 5 && m_shooterSubsystem.getHoodMovingForward() == true || targetPosition <= 1 && m_shooterSubsystem.getHoodMovingForward() == false) {
       m_shooterSubsystem.changeHoodDirection();
     }
     dTime = Timer.getTimestamp() - currentTime;
-    targetPosition += slowHoodSpeed * dTime * (m_shooterSubsystem.getHoodDirection() ? 1 : -1);
+    targetPosition += slowHoodSpeed * dTime * (m_shooterSubsystem.getHoodMovingForward() ? 1 : -1);
     m_shooterSubsystem.setHoodTarget(targetPosition);
     currentTime = Timer.getTimestamp();
   }

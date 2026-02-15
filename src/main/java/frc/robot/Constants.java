@@ -23,7 +23,7 @@ public final class Constants {
 
   public static final class ShooterConstants {
     // Shooter speeds, RPM
-    public static final double kVelocityLow = 2000;
+    public static final double kVelocityLow = 1900;
     public static final double kVelocityMedium = 3500;
     public static final double kVelocityHigh = 5000;
     public static final double kVelocityMax = 6500;
@@ -57,8 +57,19 @@ public final class Constants {
     // public static final double kV = 0;
     // public static final double kA = 0;
 
+    public static final double kMaxDeployPosition = 60;
+    public static final double kMinDeployPosition = 30;
+
     public static final double kDeployGearRatio = 15. / 36;
     public static final double kIntakeGearRatio = 1;
+  }
+
+  public static final class ClimberConstants {
+    // Climber position in motor rotations
+    public static final double kClimberMaxPosition = 0;
+    public static final double kClimberMinPosition = 0;
+
+    public static final double kClimberGearRatio = (28. / 11.) * 125.;
   }
 
   public static final class VisionConstants {
@@ -169,6 +180,11 @@ public final class Constants {
       public static final String kVelocityRPM = "Velocity RPM";
     }
 
+    public static final class Kicker {
+      public static final String kTable = "Kicker";
+      public static final String kCurrent = "Smart Current";
+    }
+
     public static final class Intake {
       public static final String kTable = "Intake";
       public static final String kVelocityRPM = "Velocity RPM";
@@ -182,6 +198,7 @@ public final class Constants {
     public static final class Climber {
       public static final String kTable = "Climber";
       public static final String kVelocityRPM = "Velocity RPM";
+      public static final String kPositionRotations = "Position Rotations";
     }
   }
 

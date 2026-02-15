@@ -37,6 +37,7 @@ public class ConveyorSubsystem extends SubsystemBase {
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable conveyorTable = networkTable.getTable(NetworkTableNames.Conveyor.kTable);
+  final NetworkTable kickerTable = networkTable.getTable(NetworkTableNames.Kicker.kTable);
 
   /** Creates a new ConveyorSubsystem. */
   public ConveyorSubsystem() {
@@ -76,6 +77,8 @@ public class ConveyorSubsystem extends SubsystemBase {
 
   public void updateNetworkTable() {
     conveyorTable.getEntry(NetworkTableNames.Conveyor.kVelocityRPM)
+      .setNumber(getConveyorVelocity());
+    kickerTable.getEntry(NetworkTableNames.Kicker.kCurrent)
       .setNumber(getConveyorVelocity());
   }
 

@@ -22,8 +22,11 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import swervelib.parser.SwerveParser;
 import swervelib.simulation.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import swervelib.telemetry.SwerveDriveTelemetry;
@@ -596,6 +599,9 @@ public class SwerveSubsystem extends SubsystemBase {
 
     swerveDrive.updateOdometry();
     getVisionUpdate();
+
+    PowerDistribution pdh = new PowerDistribution(1, ModuleType.kRev);
+    
   }
 
   /** This method will be called once per scheduler run during simulation */
@@ -603,4 +609,4 @@ public class SwerveSubsystem extends SubsystemBase {
   public void simulationPeriodic() {
 
   }
-}
+} 

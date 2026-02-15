@@ -37,7 +37,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   double shooterVelocity = 0;
   double rotations;
-  boolean hoodDirection = true; // true is positive
+  boolean hoodMovingForward = true; // true is positive
   
   final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
   final SparkFlex shooterSecondaryMotor = new SparkFlex(CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
@@ -93,14 +93,14 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void changeHoodDirection() {
-    hoodDirection = !hoodDirection;
+    hoodMovingForward = !hoodMovingForward;
   }
 
-  public boolean getHoodDirection() {
-    return hoodDirection;
+  public boolean getHoodMovingForward() {
+    return hoodMovingForward;
   }
 
-  /** Increases the speed of the shooter by 350 RPM */
+  /** Increases the speed of the shooter by ~ 100 RPM */
   public void increaseShooterVelocity() {
     shooterVelocity += 100;
     if (shooterVelocity > 6500) shooterVelocity = 6500;
@@ -108,7 +108,7 @@ public class ShooterSubsystem extends SubsystemBase {
     setShooterVelocity(shooterVelocity);
   }
 
-  /** Decreases the speed of the shooter by 350 RPM */ 
+  /** Decreases the speed of the shooter by ~ 100 RPM */ 
   public void decreaseShooterVelocity() {
     shooterVelocity -= 100;
     if (shooterVelocity < 0) shooterVelocity = 0;
@@ -173,7 +173,7 @@ public class ShooterSubsystem extends SubsystemBase {
     return hoodPrimaryMotor.getOutputCurrent();
   }
 
-  /** @return Current in Amps */
+  // /** @return Current in Amps */
   public double getHoodSecondaryCurrent() {
     return hoodSecondaryMotor.getOutputCurrent();
   }
@@ -190,13 +190,14 @@ public class ShooterSubsystem extends SubsystemBase {
       .setNumber(rotations);
 
     shooterTable.getEntry(NetworkTableNames.Shooter.kPrimaryCurrent)
-      .setNumber(getShooterVelocity());
+      .setNumber(getShooterPrimaryCurrent());
     shooterTable.getEntry(NetworkTableNames.Shooter.kSecondaryCurrent)
-      .setNumber(getShooterVelocity());
+      .setNumber(getShooterSecondaryCurrent());
     hoodTable.getEntry(NetworkTableNames.Hood.kPrimaryCurrent)
-      .setNumber(getHoodVelocity());
+
+      .setNumber(getHoodPrimaryCurrent());
     hoodTable.getEntry(NetworkTableNames.Hood.kSecondaryCurrent)
-      .setNumber(getHoodVelocity());
+      .setNumber(getHoodSecondaryCurrent());
   }
 
   /** This method will be called once per scheduler run */

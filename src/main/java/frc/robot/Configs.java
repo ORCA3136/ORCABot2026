@@ -6,7 +6,6 @@ import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.units.measure.Current;
-import frc.robot.Constants.CurrentConstants.*;
 import frc.robot.Constants.*;
 
 public class Configs {
@@ -71,7 +70,7 @@ public class Configs {
             intakeMotorConfig
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
+                .smartCurrentLimit(CurrentConstants.AMP30, CurrentConstants.AMP20);
             IntakeDeployMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
@@ -92,12 +91,12 @@ public class Configs {
         
         static {
             climberPrimaryMotor
-                .inverted(true)
+                .inverted(false)
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
             climberSecondaryMotor
-                .inverted(false)
                 .idleMode(IdleMode.kCoast)
+                .follow(CanIdConstants.kClimberPrimaryCanId, true)
                 .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
         }
     }

@@ -3,7 +3,9 @@
   "robotLength": 0.889,
   "holonomicMode": true,
   "pathFolders": [
-    "Depot Climb"
+    "Depot Climb",
+    "Center Climb",
+    "Right Human Player Pickup"
   ],
   "autoFolders": [],
   "defaultMaxVel": 4.0,
