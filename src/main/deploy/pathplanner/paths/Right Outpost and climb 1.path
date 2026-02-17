@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.553688888888889,
-        "y": 3.937555555555555
+        "x": 3.560328102710413,
+        "y": 1.4407988587731824
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.1054444444444447,
-        "y": 3.9180666666666664
+        "x": 3.017744444444445,
+        "y": 2.514866666666667
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.037,
-        "y": 3.938
+        "x": 3.133,
+        "y": 2.889928673323824
       },
       "prevControl": {
-        "x": 3.287,
-        "y": 3.938
+        "x": 2.9787657833002172,
+        "y": 2.6123116018763985
       },
       "nextControl": null,
       "isLocked": false,
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 40.601
   },
   "reversed": false,
-  "folder": "Center Climb",
+  "folder": "Right Human Player Pickup",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 85.91438322002503
   },
   "useDefaultConstraints": true
 }
