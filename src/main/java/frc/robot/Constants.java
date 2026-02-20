@@ -85,6 +85,7 @@ public final class Constants {
     public static final int kSecondaryDriverControler = 1;
 
     public static final double kStickDeadband = 0.05;
+    public static final double kPathplannerDeadband = 0.01;
     public static final double kTriggerDeadband = 0.05;
   }
 
