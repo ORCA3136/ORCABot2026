@@ -42,7 +42,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
-  // private final VisionSubsystem visionSubsystem = new VisionSubsystem();
+  private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveBase);
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
@@ -146,21 +146,4 @@ public class RobotContainer {
     return autoChooser.getSelected();
   }
 
-  /**
-   * Use this to pass the limelight command to the main {@link Robot} class.
-   *
-   * @return the command to run in disabled
-   */
-  public Command getLLSeedCommand() {
-      return null; //visionSubsystem.getLLSeedCommand();
-  }
-
-  /**
-   * Use this to pass the limelight command to the main {@link Robot} class.
-   *
-   * @return the command to run in auto and teleop
-   */
-  public Command getLLInternalCommand() {
-      return null; //visionSubsystem.getLLInternalCommand();
-  }
 }

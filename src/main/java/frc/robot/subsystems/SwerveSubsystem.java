@@ -22,11 +22,9 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import swervelib.parser.SwerveParser;
 import swervelib.simulation.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import swervelib.telemetry.SwerveDriveTelemetry;
@@ -44,7 +42,6 @@ import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
-import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.*;
@@ -73,10 +70,9 @@ public class SwerveSubsystem extends SubsystemBase {
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kTable);
-  final NetworkTable visionTable = networkTable.getTable(NetworkTableNames.Vision.kTable);
 
-  Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
-  Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
+  Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityZDevice().asSupplier();
+  Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityYDevice().asSupplier();
   Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
 
   StructPublisher<Pose2d> robotPose2dPublisher = odometryTable
@@ -88,9 +84,6 @@ public class SwerveSubsystem extends SubsystemBase {
   DoubleArrayPublisher robotAngularVelocity3dPublisher = odometryTable
       .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotAngularVelocity3d).publish();
 
-  double lastVisionUpdateTime = 0;
-  StructSubscriber<Pose2d> visionEstimateSubscriber = visionTable
-      .getStructTopic(NetworkTableNames.Vision.kVisionEstimatePose2d, Pose2d.struct).subscribe(new Pose2d());
 
 
   
@@ -562,18 +555,6 @@ public class SwerveSubsystem extends SubsystemBase {
     return robotTranslation.nearest(FieldPositions.bumpPoses).getDistance(robotTranslation);
   }
 
-  /** Update swervedrive when a new pose estimate is available */
-  public void getVisionUpdate() {
-    double visionTimestamp = visionTable.getEntry(NetworkTableNames.Vision.kVisionEstimateTimestamp).getDouble(0);
-    if (visionTimestamp == 0) 
-      return;
-
-    if (lastVisionUpdateTime == visionTimestamp)
-      return;
-
-    Pose2d visionEstimate = visionEstimateSubscriber.get();
-    swerveDrive.addVisionMeasurement(visionEstimate, visionTimestamp);
-  }
 
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
@@ -598,10 +579,6 @@ public class SwerveSubsystem extends SubsystemBase {
     updateNetworkTable();
 
     swerveDrive.updateOdometry();
-    getVisionUpdate();
-
-    PowerDistribution pdh = new PowerDistribution(1, ModuleType.kRev);
-    
   }
 
   /** This method will be called once per scheduler run during simulation */
