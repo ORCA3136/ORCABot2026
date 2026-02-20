@@ -31,11 +31,15 @@ import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 import swervelib.SwerveDrive;
 import swervelib.math.SwerveMath;
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.networktables.DoubleArrayPublisher;
@@ -281,6 +285,36 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public SwerveDrive getSwerveDrive(){
     return swerveDrive;
+  }
+
+  /**
+   * Fuse a vision measurement into the pose estimator with custom standard deviations.
+   * This wrapper keeps vision fusion logic going through SwerveSubsystem's API
+   * rather than requiring callers to reach into the raw SwerveDrive object.
+   *
+   * @param pose      Vision-measured robot pose (blue-origin).
+   * @param timestamp FPGA timestamp of when the image was captured (from PoseEstimate).
+   * @param stdDevs   Standard deviations [x, y, theta] in meters and radians.
+   */
+  public void addVisionMeasurement(Pose2d pose, double timestamp, Matrix<N3, N1> stdDevs) {
+    swerveDrive.addVisionMeasurement(pose, timestamp, stdDevs);
+  }
+
+  /**
+   * @return The full 3D rotation (pitch, roll, yaw) from the Pigeon2 gyro.
+   *         Used by VisionSubsystem to feed accurate orientation to the Limelights,
+   *         including pitch/roll for accurate pose estimation when crossing the Bump.
+   */
+  public Rotation3d getGyroRotation3d() {
+    return swerveDrive.getGyroRotation3d();
+  }
+
+  /**
+   * @return Yaw rate in degrees/second directly from the Pigeon2 MEMS gyroscope.
+   *         More accurate than wheel-derived angular velocity under wheel slip.
+   */
+  public double getPigeon2YawRateDegPerSec() {
+    return yawSupplier.get().in(DegreesPerSecond);
   }
 
   public void driveFieldOriented(ChassisSpeeds velocity){

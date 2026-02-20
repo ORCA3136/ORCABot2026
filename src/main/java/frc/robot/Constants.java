@@ -73,43 +73,70 @@ public final class Constants {
   }
 
   public static final class VisionConstants {
-    // Camera names
+    // Camera names — must match the names configured in the Limelight web interface.
+    // Update these if the physical Limelights are renamed.
     public static final String kLimelightFrontName = "limelight-front";
     public static final String kLimelightBackName = "limelight-back";
 
-    // Front camera mount offsets (TODO: measure on real robot)
+    // Front camera mount offsets (TODO: measure on real robot to nearest mm)
+    // Even 1cm of error causes a systematic pose bias the Kalman filter cannot correct.
     public static final double kFrontCamForwardM = 0.30;
     public static final double kFrontCamLeftM = 0.0;
     public static final double kFrontCamUpM = 0.25;
     public static final double kFrontCamPitchDeg = 15.0;
 
-    // Back camera mount offsets (TODO: measure on real robot)
+    // Back camera mount offsets (TODO: measure on real robot to nearest mm)
+    // Note: pitch sign for rear camera may need to be positive after 180deg yaw —
+    // verify empirically that the Limelight can see tags on the far wall at 3+ meters.
     public static final double kBackCamForwardM = -0.30;
     public static final double kBackCamLeftM = 0.0;
     public static final double kBackCamUpM = 0.25;
     public static final double kBackCamPitchDeg = 15.0;
 
-    // Rejection thresholds
-    public static final double kMaxYawRateDegPerSec = 540.0;
+    // --- Rejection thresholds ---
+
+    // At 270 deg/s with ~80ms latency, heading error ≈ 22 degrees.
+    // Higher rates cause unacceptable pose error from heading/image timestamp mismatch.
+    public static final double kMaxYawRateDegPerSec = 270.0;
+
+    // Single-tag solves have an ambiguity failure mode (two mirror-image solutions).
+    // Reject when the solver isn't confident which solution is correct.
     public static final double kMaxAmbiguitySingleTag = 0.5;
-    public static final double kMaxPoseJumpMultiTag = 2.5;
-    public static final double kMaxPoseJumpSingleTag = 1.5;
-    public static final double kMaxPoseJumpSettling = 3.0;
+
+    // Pose jump limits: at 3.05 m/s max speed and ~80ms pipeline latency,
+    // legitimate travel between frames is ~0.25m. These limits catch bad solves.
+    public static final double kMaxPoseJumpMultiTag = 0.75;
+    public static final double kMaxPoseJumpSingleTag = 0.75;
+    public static final double kMaxPoseJumpSettling = 1.5;
+
+    // Reject vision poses that disagree with current odometry by more than this.
+    // Catches bad solves after camera occlusion when lastPose is stale.
+    public static final double kMaxOdometryJumpM = 1.0;
+
     public static final double kMaxTimestampAgeSec = 0.5;
 
-    // 2026 field boundary + 0.5m margin (field is 16.54m x 8.21m)
+    // 2026 REBUILT field boundary + 0.5m margin (field is 16.54m x 8.21m)
     public static final double kFieldMinX = -0.5;
     public static final double kFieldMaxX = 17.04;
     public static final double kFieldMinY = -0.5;
     public static final double kFieldMaxY = 8.71;
 
-    // Std dev tuning
-    public static final double kXYStdDevBase = 0.3;
-    public static final double kMT2TrustFactor = 0.6;
-    public static final double kMinXYStdDev = 0.05;
+    // --- Std dev tuning ---
+    // Controls how much the Kalman filter trusts vision vs odometry.
+    // Higher std dev = less trust in vision. Formula: base * dist^2 * (1/tagCount) * singleTagPenalty
+    public static final double kXYStdDevBase = 0.5;
+    public static final double kSingleTagPenalty = 2.0;
+    public static final double kMinXYStdDev = 0.1;
 
-    // IMU settling
+    // --- IMU settling ---
+    // After switching IMU modes, wait this many cycles before processing vision
+    // to let the Limelight's internal IMU synchronize with the new heading source.
     public static final int kImuSettleCycles = 10;
+    // After settling, allow a brief grace period with relaxed pose jump limits.
+    public static final int kPostSettleGraceCycles = 5;
+
+    // How long without an accepted measurement before vision is considered unhealthy.
+    public static final double kVisionHealthyTimeoutSec = 0.5;
   }
   
   public static final class OperatorConstants {
