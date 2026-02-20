@@ -160,13 +160,6 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /**
-   * @param Velocity is in RPM
-   */
-  public void setIntakeDeployVelocity(double velocity) {
-    intakeMotor.set(velocity / 6500);
-  }
-
-  /**
    * @return Velocity in RPM
    */
   public double getIntakeDeployVelocity() {

@@ -31,7 +31,7 @@ public class RunShooterCommand extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    m_shooterSubsystem.setShooterVelocity(velocity);
+    m_shooterSubsystem.setShooterVelocityTarget(velocity);
   }
 
   // Called every time the scheduler runs while the command is scheduled.
@@ -41,7 +41,7 @@ public class RunShooterCommand extends Command {
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    m_shooterSubsystem.setShooterVelocity(0);
+    m_shooterSubsystem.setShooterVelocityTarget(0);
   }
 
   // Returns true when the command should end.

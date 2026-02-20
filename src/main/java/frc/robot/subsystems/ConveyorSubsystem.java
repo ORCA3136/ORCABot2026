@@ -79,7 +79,7 @@ public class ConveyorSubsystem extends SubsystemBase {
     conveyorTable.getEntry(NetworkTableNames.Conveyor.kVelocityRPM)
       .setNumber(getConveyorVelocity());
     kickerTable.getEntry(NetworkTableNames.Kicker.kCurrent)
-      .setNumber(getConveyorVelocity());
+      .setNumber(getKickerVelocity());
   }
 
   /** This method will be called once per scheduler run */

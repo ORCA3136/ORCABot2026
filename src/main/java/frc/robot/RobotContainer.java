@@ -93,10 +93,10 @@ public class RobotContainer {
     // driveBase.setDefaultCommand(defaultDriveCommand);
 
     // Buttons
-    m_primaryController.a().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(0)));
+    m_primaryController.a().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     m_primaryController.b().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity()));
     m_primaryController.x().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseShooterVelocity()));
-    m_primaryController.y().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityMax)));
+    m_primaryController.y().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityMax)));
     m_primaryController.start().whileTrue(new RunClimberCommand(climberSubsystem, 500).repeatedly());
     m_primaryController.back().whileTrue(new RunClimberCommand(climberSubsystem, -500).repeatedly());
     
@@ -121,10 +121,10 @@ public class RobotContainer {
     // Deploy Intake
 
     // Shoot
-    NamedCommands.registerCommand("Stop Shooter", Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(0)));
-    NamedCommands.registerCommand("Run Shooter Low", Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityLow)));
-    NamedCommands.registerCommand("Run Shooter Medium", Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityMedium)));
-    NamedCommands.registerCommand("Run Shooter High", Commands.runOnce(() -> shooterSubsystem.setShooterVelocity(ShooterConstants.kVelocityHigh)));
+    NamedCommands.registerCommand("Stop Shooter", Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
+    NamedCommands.registerCommand("Run Shooter Low", Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityLow)));
+    NamedCommands.registerCommand("Run Shooter Medium", Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityMedium)));
+    NamedCommands.registerCommand("Run Shooter High", Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityHigh)));
     
     // Move hood
     NamedCommands.registerCommand("Hood Low Position", Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(1)));

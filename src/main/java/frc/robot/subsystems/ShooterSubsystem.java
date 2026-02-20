@@ -18,6 +18,7 @@ import com.revrobotics.spark.SparkMax;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.*;
 import frc.robot.Constants.*;
@@ -48,6 +49,9 @@ public class ShooterSubsystem extends SubsystemBase {
   final RelativeEncoder shooterEncoder = shooterPrimaryMotor.getEncoder();
   final AbsoluteEncoder hoodEncoder = hoodPrimaryMotor.getAbsoluteEncoder();
 
+  final SparkClosedLoopController shooterPrimaryPIDController = shooterPrimaryMotor.getClosedLoopController();
+  final SparkClosedLoopController shooterSecondaryPIDController = shooterPrimaryMotor.getClosedLoopController();
+
   final SparkClosedLoopController hoodPIDController = hoodPrimaryMotor.getClosedLoopController();
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
@@ -74,8 +78,18 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   /** Sets the hood setpoint angle */
-  public void setPIDAngle() {
+  public void setHoodPIDAngle() {
     hoodPIDController.setSetpoint(rotations, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
+  }
+
+  /**
+   * Sets the shooters velocity
+   * 
+   * use "setShooterVelocityTarget" to change shooterVelocity variable in this subsystem
+   */
+  private void setShooterPIDVelocity() {
+    shooterPrimaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot1);
+    shooterSecondaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot1);
   }
 
   /** Updates the rotations variable which is used in the setPIDAngle method
@@ -100,37 +114,27 @@ public class ShooterSubsystem extends SubsystemBase {
     return hoodMovingForward;
   }
 
+  public void setShooterVelocityTarget(double target) {
+    shooterVelocity = target;
+  }
+
   /** Increases the speed of the shooter by ~ 100 RPM */
   public void increaseShooterVelocity() {
     shooterVelocity += 100;
     if (shooterVelocity > 6500) shooterVelocity = 6500;
-
-    setShooterVelocity(shooterVelocity);
   }
 
   /** Decreases the speed of the shooter by ~ 100 RPM */ 
   public void decreaseShooterVelocity() {
     shooterVelocity -= 100;
     if (shooterVelocity < 0) shooterVelocity = 0;
-      
-    setShooterVelocity(shooterVelocity);
   }
   
-  /** @param Velocity is in RPM */
-  public void setShooterVelocityHigh() {
-    shooterPrimaryMotor.set(ShooterConstants.kVelocityHigh);
-  }
-
-  /** @param Velocity is in RPM */
-  public void setShooterVelocityNone() {
-    shooterPrimaryMotor.set(0);
-  }
-
   /** @param velocity is in RPM */
-  public void setShooterVelocity(double velocity) {
-    shooterPrimaryMotor.set(velocity / 6500);
-    shooterSecondaryMotor.set(velocity / 6500);
-  }
+  // public void setShooterVelocity(double velocity) {
+  //   shooterPrimaryMotor.set(velocity / 6500);
+  //   shooterSecondaryMotor.set(velocity / 6500);
+  // }
 
   /** @return Velocity in RPM */
   public double getShooterVelocity() {
@@ -139,8 +143,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** @param Velocity is in RPM */
   public void setHoodVelocity(double velocity) {
-    hoodPrimaryMotor.set(velocity / 6500);
-    hoodSecondaryMotor.set(velocity / 6500);
+    hoodPrimaryMotor.set(velocity / 11000);
+    hoodSecondaryMotor.set(velocity / 11000);
   }
 
   /** @return Motor Rotations */
@@ -165,7 +169,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** @return Current in Amps */
   public double getShooterSecondaryCurrent() {
-    return shooterPrimaryMotor.getOutputCurrent();
+    return shooterSecondaryMotor.getOutputCurrent();
   }
 
   /** @return Current in Amps */
@@ -206,7 +210,8 @@ public class ShooterSubsystem extends SubsystemBase {
     
     updateNetworkTable();
 
-    setPIDAngle();
+    setShooterPIDVelocity();
+    setHoodPIDAngle();
   }
 
   /** This method will be called once per scheduler run during simulation */

@@ -25,6 +25,8 @@ public class Configs {
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+            primaryShooterConfig.closedLoop
+                .pid(ShooterConstants.kP, ShooterConstants.kI, ShooterConstants.kD);
             primaryHoodConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
