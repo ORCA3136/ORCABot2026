@@ -3,32 +3,37 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.553688888888889,
-        "y": 3.937555555555555
+        "x": 3.133,
+        "y": 2.89
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.1054444444444447,
-        "y": 3.9180666666666664
+        "x": 3.046977777777778,
+        "y": 2.612311111111111
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.037,
-        "y": 3.938
+        "x": 0.973,
+        "y": 0.703
       },
       "prevControl": {
-        "x": 3.287,
-        "y": 3.938
+        "x": 3.301958788902589,
+        "y": 0.7676875935492554
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": null
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.8770949720670382,
+      "rotationDegrees": -172.11220069711555
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -42,13 +47,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 180.0
   },
   "reversed": false,
-  "folder": "Center Climb",
+  "folder": "Right Human Player Pickup",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 40.601
   },
   "useDefaultConstraints": true
 }

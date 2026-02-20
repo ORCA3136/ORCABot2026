@@ -132,6 +132,7 @@ public class RobotContainer {
 
     // Run Intake
     NamedCommands.registerCommand("Run Intake", new RunIntakeCommand(intakeSubsystem, 6000));
+    NamedCommands.registerCommand("Stop Intake", new RunIntakeCommand(intakeSubsystem, 0));
 
     // Deploy Intake
 

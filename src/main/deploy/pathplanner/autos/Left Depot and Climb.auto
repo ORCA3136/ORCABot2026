@@ -11,7 +11,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Middle Depot Shoot"
+                  "pathName": "Start to Shoot"
                 }
               },
               {
@@ -39,6 +39,6 @@
     }
   },
   "resetOdom": true,
-  "folder": null,
+  "folder": "Left Side Autos",
   "choreoAuto": false
 }
