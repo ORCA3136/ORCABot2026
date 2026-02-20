@@ -310,6 +310,22 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   /**
+   * @return Pitch rate in degrees/second directly from the Pigeon2 MEMS gyroscope.
+   *         Used by VisionSubsystem to feed accurate angular velocity during Bump traversal.
+   */
+  public double getPigeon2PitchRateDegPerSec() {
+    return pitchSupplier.get().in(DegreesPerSecond);
+  }
+
+  /**
+   * @return Roll rate in degrees/second directly from the Pigeon2 MEMS gyroscope.
+   *         Used by VisionSubsystem to feed accurate angular velocity during Bump traversal.
+   */
+  public double getPigeon2RollRateDegPerSec() {
+    return rollSupplier.get().in(DegreesPerSecond);
+  }
+
+  /**
    * @return Yaw rate in degrees/second directly from the Pigeon2 MEMS gyroscope.
    *         More accurate than wheel-derived angular velocity under wheel slip.
    */
@@ -360,11 +376,13 @@ public class SwerveSubsystem extends SubsystemBase {
  
   /**
    * Resets the gyro angle to zero and resets odometry to the same position, but facing toward 0.
+   * Uses YAGSL's zeroGyro() which handles both the Pigeon2 hardware reset and YAGSL's
+   * internal offset tracking. Do NOT also call pigeon2.reset() — that would desync
+   * YAGSL's perceived zero from the hardware zero.
    */
   public void zeroGyro()
   {
     swerveDrive.zeroGyro();
-    pigeon2.reset();
   }
 
    /**
@@ -381,7 +399,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void zeroHeading() {
-    pigeon2.reset();
+    swerveDrive.zeroGyro();
   }
 
   public Command zeroHeadingCommand() {
@@ -567,13 +585,13 @@ public class SwerveSubsystem extends SubsystemBase {
 
     switch (element) {
       case kHub:
-        swerveDrive.getPose().getTranslation().minus(positions.get(0));
+        return swerveDrive.getPose().getTranslation().minus(positions.get(0));
       case kOutpost:
-        swerveDrive.getPose().getTranslation().minus(positions.get(1));
+        return swerveDrive.getPose().getTranslation().minus(positions.get(1));
       case kTower:
-        swerveDrive.getPose().getTranslation().minus(positions.get(2));
+        return swerveDrive.getPose().getTranslation().minus(positions.get(2));
       case kDepot:
-        swerveDrive.getPose().getTranslation().minus(positions.get(3));
+        return swerveDrive.getPose().getTranslation().minus(positions.get(3));
       default:
         return null;
     }

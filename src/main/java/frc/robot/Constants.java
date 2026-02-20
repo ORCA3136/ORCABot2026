@@ -105,14 +105,23 @@ public final class Constants {
 
     // Pose jump limits: at 3.05 m/s max speed and ~80ms pipeline latency,
     // legitimate travel between frames is ~0.25m. These limits catch bad solves.
+    // Single-tag limit is tighter because ambiguity flips can produce jumps that
+    // look small but are actually the solver switching between mirror solutions.
     public static final double kMaxPoseJumpMultiTag = 0.75;
-    public static final double kMaxPoseJumpSingleTag = 0.75;
+    public static final double kMaxPoseJumpSingleTag = 0.5;
     public static final double kMaxPoseJumpSettling = 1.5;
 
     // Reject vision poses that disagree with current odometry by more than this.
     // Catches bad solves after camera occlusion when lastPose is stale.
     public static final double kMaxOdometryJumpM = 1.0;
+    // Relaxed odometry jump limit during post-settle grace period.
+    // After an IMU mode switch, odometry may have drifted while vision was paused,
+    // so we allow a larger disagreement to let vision "catch up" to reality.
+    public static final double kMaxOdometryJumpSettlingM = 2.0;
 
+    // Typical pipeline latency is 30-80ms; 500ms covers extreme cases like NT
+    // reconnection after a brownout. Anything older predates multiple vision frames
+    // and is likely from before the current robot action.
     public static final double kMaxTimestampAgeSec = 0.5;
 
     // 2026 REBUILT field boundary + 0.5m margin (field is 16.54m x 8.21m)
@@ -131,12 +140,17 @@ public final class Constants {
     // --- IMU settling ---
     // After switching IMU modes, wait this many cycles before processing vision
     // to let the Limelight's internal IMU synchronize with the new heading source.
-    public static final int kImuSettleCycles = 10;
+    // 25 cycles = 500ms at 50Hz. MEMS IMU filters typically converge in 0.5-1.0s.
+    public static final int kImuSettleCycles = 25;
     // After settling, allow a brief grace period with relaxed pose jump limits.
     public static final int kPostSettleGraceCycles = 5;
 
     // How long without an accepted measurement before vision is considered unhealthy.
     public static final double kVisionHealthyTimeoutSec = 0.5;
+
+    // Max age for getDistanceToTag() freshness check. At 30Hz camera rate, frames
+    // arrive every ~33ms. 80ms allows one full camera frame + one robot loop of slack.
+    public static final double kTagDistanceStaleSec = 0.08;
   }
   
   public static final class OperatorConstants {
@@ -231,6 +245,9 @@ public final class Constants {
       public static final String kRejectReason = "RejectReason";
       public static final String kLatencyMs = "LatencyMs";
       public static final String kPoseJumpMeters = "PoseJumpMeters";
+
+      // Per-camera diagnostic keys
+      public static final String kHeadingDeviationDeg = "HeadingDeviationDeg";
 
       // System-level keys
       public static final String kTotalTagCount = "TotalTagCount";

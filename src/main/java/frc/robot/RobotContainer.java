@@ -41,7 +41,12 @@ public class RobotContainer {
   // IMPORTANT: SwerveSubsystem must be created BEFORE VisionSubsystem.
   // WPILib runs subsystem periodic() methods in registration order, so SwerveSubsystem
   // updates odometry first, then VisionSubsystem reads the freshest pose data.
+  // If this order is reversed, VisionSubsystem reads a pose that is one cycle stale.
   private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
+
+  // VisionSubsystem runs autonomously via periodic() — no commands needed.
+  // Keeping the reference here ensures it's registered with CommandScheduler.
+  @SuppressWarnings("unused")
   private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveBase);
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();

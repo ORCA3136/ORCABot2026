@@ -11,6 +11,8 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -27,6 +29,10 @@ import limelight.results.RawFiducial;
 /**
  * Dual Limelight 4 vision subsystem using MegaTag2 pose estimation.
  *
+ * <p>This subsystem is "command-free" by design: all vision processing happens in
+ * {@link #periodic()}. No command should ever {@code addRequirements()} on this
+ * subsystem, because vision fusion must never be interrupted.
+ *
  * <h2>What this does</h2>
  * Each cycle, this subsystem:
  * <ol>
@@ -36,6 +42,26 @@ import limelight.results.RawFiducial;
  *   <li>Calculates dynamic standard deviations based on tag distance and count</li>
  *   <li>Fuses accepted measurements into the swerve drive's Kalman filter</li>
  * </ol>
+ *
+ * <h2>6-stage rejection filter</h2>
+ * Each measurement is tested against these filters in order. The first failure
+ * short-circuits and the reject reason string is published to NetworkTables for
+ * real-time debugging in AdvantageScope.
+ * <table>
+ *   <tr><th>Stage</th><th>Reject Reason</th><th>Constant</th><th>What it catches</th></tr>
+ *   <tr><td>1</td><td>{@code stale_timestamp}</td><td>{@code kMaxTimestampAgeSec}</td>
+ *       <td>Measurement too old (NT reconnect, brownout)</td></tr>
+ *   <tr><td>2</td><td>{@code out_of_field}</td><td>{@code kFieldMin/MaxX/Y}</td>
+ *       <td>Pose outside field boundary (bad solve)</td></tr>
+ *   <tr><td>3</td><td>{@code high_yaw_rate}</td><td>{@code kMaxYawRateDegPerSec}</td>
+ *       <td>Fast spinning causes heading/image mismatch</td></tr>
+ *   <tr><td>4</td><td>{@code high_ambiguity}</td><td>{@code kMaxAmbiguitySingleTag}</td>
+ *       <td>Single-tag solver not confident (mirror solutions)</td></tr>
+ *   <tr><td>5</td><td>{@code pose_jump}</td><td>{@code kMaxPoseJump*}</td>
+ *       <td>Vision pose moved too far from last accepted pose</td></tr>
+ *   <tr><td>6</td><td>{@code odometry_jump}</td><td>{@code kMaxOdometryJumpM}</td>
+ *       <td>Vision disagrees with current odometry estimate</td></tr>
+ * </table>
  *
  * <h2>IMU mode lifecycle</h2>
  * Managed automatically — no external commands needed:
@@ -63,6 +89,7 @@ public class VisionSubsystem extends SubsystemBase {
   // createPoseEstimator binds the internal PoseEstimate to its NT table, and the
   // second camera silently reads the first camera's data. Constructing directly
   // gives each camera its own independent PoseEstimate bound to its own NT table.
+  // Verified against YALL 2026.1.13 source — re-check after any YALL upgrade.
   private final PoseEstimate frontPoseEstimate;
   private final PoseEstimate backPoseEstimate;
 
@@ -91,7 +118,7 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTable visionTable;
 
   // Front camera NT entries
-  private final NetworkTableEntry frontPoseEntry;
+  private final StructPublisher<Pose2d> frontPosePublisher;
   private final NetworkTableEntry frontTagCountEntry;
   private final NetworkTableEntry frontAvgDistEntry;
   private final NetworkTableEntry frontStdDevEntry;
@@ -99,9 +126,10 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry frontRejectEntry;
   private final NetworkTableEntry frontLatencyEntry;
   private final NetworkTableEntry frontPoseJumpEntry;
+  private final NetworkTableEntry frontHeadingDevEntry;
 
   // Back camera NT entries
-  private final NetworkTableEntry backPoseEntry;
+  private final StructPublisher<Pose2d> backPosePublisher;
   private final NetworkTableEntry backTagCountEntry;
   private final NetworkTableEntry backAvgDistEntry;
   private final NetworkTableEntry backStdDevEntry;
@@ -109,6 +137,7 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry backRejectEntry;
   private final NetworkTableEntry backLatencyEntry;
   private final NetworkTableEntry backPoseJumpEntry;
+  private final NetworkTableEntry backHeadingDevEntry;
 
   // System-level NT entries
   private final NetworkTableEntry totalTagCountEntry;
@@ -122,7 +151,11 @@ public class VisionSubsystem extends SubsystemBase {
     limelightFront = new Limelight(VisionConstants.kLimelightFrontName);
     limelightBack = new Limelight(VisionConstants.kLimelightBackName);
 
-    // Configure front camera — LEDs off (AprilTag pipeline doesn't need them)
+    // Configure front camera — LEDs off (AprilTag pipeline doesn't need them).
+    // Camera offset: measured from the center of the four swerve modules to the
+    // camera lens, in WPILib robot frame (forward=+X, left=+Y, up=+Z).
+    // TODO: Measure on real robot to nearest 5mm. Even 1cm of error causes a
+    // systematic pose bias the Kalman filter cannot correct.
     limelightFront.getSettings()
         .withLimelightLEDMode(LEDMode.ForceOff)
         .withCameraOffset(new Pose3d(
@@ -134,15 +167,19 @@ public class VisionSubsystem extends SubsystemBase {
         .save();
 
     // Configure back camera — 180deg yaw because it faces rearward.
-    // TODO: Verify pitch sign empirically. If the back camera can't see tags on
-    // the far wall at 3+ meters, try changing -kBackCamPitchDeg to +kBackCamPitchDeg.
+    // Pitch is positive here: with the 180deg yaw flip, a positive pitch in the
+    // rotated frame tilts the camera upward in field space (matching a physical
+    // upward tilt). Verified by checking Rotation3d composition order (intrinsic XYZ).
+    // TODO: Measure on real robot to nearest 5mm. Verify empirically by placing
+    // the robot at a known pose 3m from a rear-facing tag — if the reported pose
+    // has range-dependent error, the pitch sign is wrong.
     limelightBack.getSettings()
         .withLimelightLEDMode(LEDMode.ForceOff)
         .withCameraOffset(new Pose3d(
             VisionConstants.kBackCamForwardM,
             VisionConstants.kBackCamLeftM,
             VisionConstants.kBackCamUpM,
-            new Rotation3d(0, Math.toRadians(-VisionConstants.kBackCamPitchDeg), Math.toRadians(180))))
+            new Rotation3d(0, Math.toRadians(VisionConstants.kBackCamPitchDeg), Math.toRadians(180))))
         .withImuMode(ImuMode.SyncInternalImu)
         .save();
 
@@ -152,11 +189,14 @@ public class VisionSubsystem extends SubsystemBase {
 
     // Cache all NetworkTable entries to avoid string lookups every cycle
     NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
-    frontTable = ntInstance.getTable(NetworkTableNames.Vision.kFrontTable);
-    backTable = ntInstance.getTable(NetworkTableNames.Vision.kBackTable);
+    frontTable = ntInstance.getTable(NetworkTableNames.Vision.kFrontTable);  // NT4 "/" creates subtable: Vision -> Front
+    backTable = ntInstance.getTable(NetworkTableNames.Vision.kBackTable);    // NT4 "/" creates subtable: Vision -> Back
     visionTable = ntInstance.getTable(NetworkTableNames.Vision.kTable);
 
-    frontPoseEntry = frontTable.getEntry(NetworkTableNames.Vision.kVisionPose);
+    // StructPublisher publishes Pose2d as a WPILib struct — AdvantageScope can overlay
+    // these directly on the field map alongside the odometry pose.
+    frontPosePublisher = frontTable
+        .getStructTopic(NetworkTableNames.Vision.kVisionPose, Pose2d.struct).publish();
     frontTagCountEntry = frontTable.getEntry(NetworkTableNames.Vision.kTagCount);
     frontAvgDistEntry = frontTable.getEntry(NetworkTableNames.Vision.kAvgTagDistance);
     frontStdDevEntry = frontTable.getEntry(NetworkTableNames.Vision.kXYStdDev);
@@ -164,8 +204,10 @@ public class VisionSubsystem extends SubsystemBase {
     frontRejectEntry = frontTable.getEntry(NetworkTableNames.Vision.kRejectReason);
     frontLatencyEntry = frontTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
     frontPoseJumpEntry = frontTable.getEntry(NetworkTableNames.Vision.kPoseJumpMeters);
+    frontHeadingDevEntry = frontTable.getEntry(NetworkTableNames.Vision.kHeadingDeviationDeg);
 
-    backPoseEntry = backTable.getEntry(NetworkTableNames.Vision.kVisionPose);
+    backPosePublisher = backTable
+        .getStructTopic(NetworkTableNames.Vision.kVisionPose, Pose2d.struct).publish();
     backTagCountEntry = backTable.getEntry(NetworkTableNames.Vision.kTagCount);
     backAvgDistEntry = backTable.getEntry(NetworkTableNames.Vision.kAvgTagDistance);
     backStdDevEntry = backTable.getEntry(NetworkTableNames.Vision.kXYStdDev);
@@ -173,6 +215,7 @@ public class VisionSubsystem extends SubsystemBase {
     backRejectEntry = backTable.getEntry(NetworkTableNames.Vision.kRejectReason);
     backLatencyEntry = backTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
     backPoseJumpEntry = backTable.getEntry(NetworkTableNames.Vision.kPoseJumpMeters);
+    backHeadingDevEntry = backTable.getEntry(NetworkTableNames.Vision.kHeadingDeviationDeg);
 
     totalTagCountEntry = visionTable.getEntry(NetworkTableNames.Vision.kTotalTagCount);
     visionHealthyEntry = visionTable.getEntry(NetworkTableNames.Vision.kVisionHealthy);
@@ -203,15 +246,19 @@ public class VisionSubsystem extends SubsystemBase {
     // Limelight has accurate data when the robot crosses the Bump (6.5" tall obstacle).
     Rotation3d currentRotation = swerveSubsystem.getGyroRotation3d();
 
-    // Use Pigeon2 yaw rate directly — more accurate than wheel-derived angular velocity
+    // Use Pigeon2 rates directly — more accurate than wheel-derived angular velocity
     // because MEMS gyros aren't affected by wheel slip during aggressive turning.
+    // Pitch and roll rates help the Limelight compensate during Bump traversal
+    // (6.5" tall obstacle that can produce 30-60 deg/s pitch transients).
+    double pitchRateDegPerSec = swerveSubsystem.getPigeon2PitchRateDegPerSec();
+    double rollRateDegPerSec = swerveSubsystem.getPigeon2RollRateDegPerSec();
     double yawRateDegPerSec = swerveSubsystem.getPigeon2YawRateDegPerSec();
 
     Orientation3d orientation = new Orientation3d(
         currentRotation,
         new AngularVelocity3d(
-            DegreesPerSecond.of(0),
-            DegreesPerSecond.of(0),
+            DegreesPerSecond.of(rollRateDegPerSec),
+            DegreesPerSecond.of(pitchRateDegPerSec),
             DegreesPerSecond.of(yawRateDegPerSec)));
 
     // withRobotOrientation() internally calls save()/flush(), so do NOT chain .save()
@@ -239,6 +286,8 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     // --- Process cameras ---
+    // "ACTIVE" refers to IMU mode state, not measurement acceptance.
+    // Camera health is tracked separately via the VisionHealthy key.
     imuPhase = "ACTIVE";
     totalTagCount = 0;
     processCamera(frontPoseEstimate, true);
@@ -262,7 +311,7 @@ public class VisionSubsystem extends SubsystemBase {
    * @param isFront         true for front camera, false for back (selects per-camera state)
    */
   private void processCamera(PoseEstimate poseEstimateObj, boolean isFront) {
-    NetworkTableEntry poseEntry = isFront ? frontPoseEntry : backPoseEntry;
+    StructPublisher<Pose2d> posePublisher = isFront ? frontPosePublisher : backPosePublisher;
     NetworkTableEntry tagCountEntry = isFront ? frontTagCountEntry : backTagCountEntry;
     NetworkTableEntry avgDistEntry = isFront ? frontAvgDistEntry : backAvgDistEntry;
     NetworkTableEntry stdDevEntry = isFront ? frontStdDevEntry : backStdDevEntry;
@@ -270,19 +319,28 @@ public class VisionSubsystem extends SubsystemBase {
     NetworkTableEntry rejectEntry = isFront ? frontRejectEntry : backRejectEntry;
     NetworkTableEntry latencyEntry = isFront ? frontLatencyEntry : backLatencyEntry;
     NetworkTableEntry poseJumpEntry = isFront ? frontPoseJumpEntry : backPoseJumpEntry;
+    NetworkTableEntry headingDevEntry = isFront ? frontHeadingDevEntry : backHeadingDevEntry;
 
     Optional<PoseEstimate> estimateOpt = poseEstimateObj.getPoseEstimate();
 
+    // Note: hasData can be false even when tagCount > 0 if the Limelight sent a
+    // truncated NT array (e.g., during pipeline switch). The hasData check here
+    // correctly gates all downstream processing.
     if (estimateOpt.isEmpty() || !estimateOpt.get().hasData) {
-      publishCameraTelemetry(poseEntry, tagCountEntry, avgDistEntry, stdDevEntry,
-          acceptedEntry, rejectEntry, latencyEntry, poseJumpEntry,
-          null, 0, 0, 0, false, "no_data", 0, 0);
+      publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, stdDevEntry,
+          acceptedEntry, rejectEntry, latencyEntry, poseJumpEntry, headingDevEntry,
+          null, 0, 0, 0, false, "no_data", 0, 0, 0);
       return;
     }
 
     PoseEstimate estimate = estimateOpt.get();
     Pose2d visionPose = estimate.pose.toPose2d();
     double now = Timer.getFPGATimestamp();
+
+    // Heading deviation: for MegaTag2, vision heading should closely match gyro heading
+    // (within 1-2 deg). Large deviation indicates a camera offset bug or IMU seeding failure.
+    double headingDeviation = Math.abs(
+        visionPose.getRotation().getDegrees() - swerveSubsystem.getHeading().getDegrees());
 
     // --- Rejection pipeline ---
     // Each filter short-circuits: first failure sets the reason and skips the rest.
@@ -324,15 +382,15 @@ public class VisionSubsystem extends SubsystemBase {
 
       totalTagCount += estimate.tagCount;
 
-      publishCameraTelemetry(poseEntry, tagCountEntry, avgDistEntry, stdDevEntry,
-          acceptedEntry, rejectEntry, latencyEntry, poseJumpEntry,
+      publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, stdDevEntry,
+          acceptedEntry, rejectEntry, latencyEntry, poseJumpEntry, headingDevEntry,
           visionPose, estimate.tagCount, estimate.avgTagDist, xyStdDev,
-          true, "", estimate.latency, poseJump);
+          true, "", estimate.latency, poseJump, headingDeviation);
     } else {
-      publishCameraTelemetry(poseEntry, tagCountEntry, avgDistEntry, stdDevEntry,
-          acceptedEntry, rejectEntry, latencyEntry, poseJumpEntry,
+      publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, stdDevEntry,
+          acceptedEntry, rejectEntry, latencyEntry, poseJumpEntry, headingDevEntry,
           visionPose, estimate.tagCount, estimate.avgTagDist, 0,
-          false, rejectReason, estimate.latency, poseJump);
+          false, rejectReason, estimate.latency, poseJump, headingDeviation);
     }
   }
 
@@ -366,7 +424,10 @@ public class VisionSubsystem extends SubsystemBase {
       return "high_ambiguity";
     }
 
-    // 5. Per-camera pose jump — vision pose moved too far from last accepted pose
+    // 5. Per-camera pose jump — vision pose moved too far from last accepted pose.
+    // Note: when lastPose is null (first measurement after enable), this stage is
+    // intentionally skipped. The first measurement must be accepted to bootstrap
+    // per-camera tracking; stage 6 (odometry cross-check) still guards against bad solves.
     Pose2d lastPose = isFront ? lastFrontPose : lastBackPose;
     if (lastPose != null) {
       double poseJump = visionPose.getTranslation().getDistance(lastPose.getTranslation());
@@ -385,9 +446,14 @@ public class VisionSubsystem extends SubsystemBase {
 
     // 6. Odometry cross-check — vision pose disagrees with current odometry estimate.
     // Catches bad solves after camera occlusion when lastPose is stale but odometry is current.
+    // Uses a relaxed threshold during the post-settle grace period because odometry may
+    // have drifted while vision was paused during IMU settling.
     double odometryJump = visionPose.getTranslation()
         .getDistance(swerveSubsystem.getPose().getTranslation());
-    if (odometryJump > VisionConstants.kMaxOdometryJumpM) {
+    double odometryLimit = (postSettleGraceCount < VisionConstants.kPostSettleGraceCycles)
+        ? VisionConstants.kMaxOdometryJumpSettlingM
+        : VisionConstants.kMaxOdometryJumpM;
+    if (odometryJump > odometryLimit) {
       return "odometry_jump";
     }
 
@@ -416,6 +482,7 @@ public class VisionSubsystem extends SubsystemBase {
     // Clear stale pose tracking — robot may have been repositioned while disabled
     lastFrontPose = null;
     lastBackPose = null;
+    DataLogManager.log("Vision: entering seed mode (SyncInternalImu)");
   }
 
   /** Enters active mode: Limelight uses its own IMU, assisted by our gyro heading. */
@@ -429,6 +496,8 @@ public class VisionSubsystem extends SubsystemBase {
     // Clear stale pose tracking — robot may have moved since last enabled
     lastFrontPose = null;
     lastBackPose = null;
+    DataLogManager.log("Vision: entering active mode, settling for "
+        + VisionConstants.kImuSettleCycles + " cycles");
   }
 
   // --- Utility methods ---
@@ -442,8 +511,12 @@ public class VisionSubsystem extends SubsystemBase {
 
   /**
    * Gets the distance to a specific AprilTag from either camera.
-   * Checks the most recent frame data from processCamera().
+   * Performs a fresh NetworkTables read from each camera (independent of the
+   * periodic() pipeline) and returns the first match found.
    * Useful for variable-distance shooting interpolation.
+   *
+   * <p>WARNING: PoseEstimate is a mutable singleton per camera. Do NOT call
+   * this method from a background thread — it shares state with periodic().
    *
    * @param tagId The AprilTag ID to find.
    * @return Distance in meters, or -1 if tag not visible or data is stale.
@@ -455,12 +528,12 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   private double getDistanceToTagFromEstimate(PoseEstimate poseEstimateWrapper, int tagId) {
-    // Re-read the estimate to get fresh data, and verify it's recent (within 2 cycles)
+    // Re-read the estimate to get fresh data, and verify it's recent
     Optional<PoseEstimate> opt = poseEstimateWrapper.getPoseEstimate();
     if (opt.isEmpty() || !opt.get().hasData) return -1;
 
     double age = Timer.getFPGATimestamp() - opt.get().timestampSeconds;
-    if (age > 0.05) return -1; // Stale data (>2.5 cycles old)
+    if (age > VisionConstants.kTagDistanceStaleSec) return -1;
 
     for (RawFiducial fiducial : opt.get().rawFiducials) {
       if (fiducial.id == tagId) {
@@ -472,17 +545,21 @@ public class VisionSubsystem extends SubsystemBase {
 
   // --- Telemetry ---
   // Published to NetworkTables for live monitoring in AdvantageScope.
-  // Per-camera: pose, tag count, distance, std dev, accept/reject status.
+  // Per-camera: pose (Pose2d struct), tag count, distance, std dev, accept/reject status,
+  //             heading deviation (vision heading vs gyro heading).
   // System-level: total tags, health status, IMU phase.
 
   private void publishCameraTelemetry(
-      NetworkTableEntry poseNt, NetworkTableEntry tagCountNt, NetworkTableEntry avgDistNt,
+      // NT publishers for this camera
+      StructPublisher<Pose2d> posePub, NetworkTableEntry tagCountNt, NetworkTableEntry avgDistNt,
       NetworkTableEntry stdDevNt, NetworkTableEntry acceptedNt, NetworkTableEntry rejectNt,
-      NetworkTableEntry latencyNt, NetworkTableEntry poseJumpNt,
+      NetworkTableEntry latencyNt, NetworkTableEntry poseJumpNt, NetworkTableEntry headingDevNt,
+      // Data values
       Pose2d pose, int tagCount, double avgTagDist, double xyStdDev,
-      boolean accepted, String rejectReason, double latencyMs, double poseJump) {
+      boolean accepted, String rejectReason, double latencyMs, double poseJump,
+      double headingDeviationDeg) {
     if (pose != null) {
-      poseNt.setDoubleArray(new double[] { pose.getX(), pose.getY(), pose.getRotation().getDegrees() });
+      posePub.set(pose);
     }
     tagCountNt.setDouble(tagCount);
     avgDistNt.setDouble(avgTagDist);
@@ -491,6 +568,7 @@ public class VisionSubsystem extends SubsystemBase {
     rejectNt.setString(rejectReason);
     latencyNt.setDouble(latencyMs);
     poseJumpNt.setDouble(poseJump);
+    headingDevNt.setDouble(headingDeviationDeg);
   }
 
   private void publishSystemTelemetry() {
