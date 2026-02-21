@@ -20,7 +20,9 @@ import frc.robot.commands.SlowHoodMove;
 import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.TeleopPathplanner;
 import frc.robot.subsystems.VisionSubsystem;
@@ -49,7 +51,9 @@ public class RobotContainer {
   private final TeleopPathplanner teleopPathplanner = new TeleopPathplanner();
   // private final VisionSubsystem visionSubsystem = new VisionSubsystem();
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+  private final HoodSubsystem hoodSubsystem = new HoodSubsystem();
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
+  private final KickerSubsystem kickerSubsystem = new KickerSubsystem();
   private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
   
@@ -78,11 +82,7 @@ public class RobotContainer {
                     () -> m_primaryController.getLeftX())
                     .withControllerRotationAxis(() -> m_primaryController.getRightX())
                     .deadband(OperatorConstants.kStickDeadband)
-                    .allianceRelativeControl(true);
-  SwerveInputStream controllerInputHubRotation = SwerveInputStream.of(driveBase.getSwerveDrive(),
-                    () -> MathUtil.applyDeadband(m_primaryController.getLeftY(), OperatorConstants.kStickDeadband),
-                    () -> MathUtil.applyDeadband(m_primaryController.getLeftX(), OperatorConstants.kStickDeadband))
-                    .aim(() -> driveBase.hubRotation()))
+                    .deadband(Constants.OperatorConstants.kStickDeadband)
                     .allianceRelativeControl(true);
 
   // Transformations for controller input for different driving commands
@@ -104,22 +104,22 @@ public class RobotContainer {
     // driveBase.setDefaultCommand(defaultDriveCommand);
 
     // Buttons
-    m_primaryController.a().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
-    m_primaryController.b().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity()));
-    m_primaryController.x().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseShooterVelocity()));
-    m_primaryController.y().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityMax)));
-    m_primaryController.start().whileTrue(new RunClimberCommand(climberSubsystem, 500).repeatedly());
-    m_primaryController.back().whileTrue(new RunClimberCommand(climberSubsystem, -500).repeatedly());
+    m_primaryController.a           ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
+    m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity()));
+    m_primaryController.x           ().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseShooterVelocity()));
+    m_primaryController.y           ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityMax)));
+    m_primaryController.start       ().whileTrue(new RunClimberCommand(climberSubsystem, 500).repeatedly());
+    m_primaryController.back        ().whileTrue(new RunClimberCommand(climberSubsystem, -500).repeatedly());
     
     // D pad
-    m_primaryController.povUp       ().whileTrue(new RunConveyorCommand(conveyorSubsystem, 500, 1500));
-    m_primaryController.povDown     ().whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000, -1000));
+    m_primaryController.povUp       ().whileTrue(new RunConveyorCommand(conveyorSubsystem, kickerSubsystem, 500, 1500));
+    m_primaryController.povDown     ().whileTrue(new RunConveyorCommand(conveyorSubsystem, kickerSubsystem, -1000, -1000));
     m_primaryController.povLeft     ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6000));
-    m_primaryController.povRight    ().whileTrue(new SlowHoodMove(shooterSubsystem));
+    m_primaryController.povRight    ().whileTrue(new SlowHoodMove(hoodSubsystem));
 
     // Axis/Triggers/Bumpers
-    m_primaryController.rightBumper ().whileTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(15)));
-    m_primaryController.leftBumper  ().whileTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(45)));
+    m_primaryController.rightBumper ().whileTrue(Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(15)));
+    m_primaryController.leftBumper  ().whileTrue(Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(45)));
 
     m_primaryController.leftTrigger (0.3).onTrue   (Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)))
                                                    .onFalse  (Commands.runOnce(() -> driveBase.setDefaultCommand(hubCenteringDriveCommand)))
@@ -131,26 +131,27 @@ public class RobotContainer {
     // Pathplanner commands
 
     // Run Intake
-    NamedCommands.registerCommand("Run Intake", new RunIntakeCommand(intakeSubsystem, 6000));
-    NamedCommands.registerCommand("Stop Intake", new RunIntakeCommand(intakeSubsystem, 0));
+    NamedCommands.registerCommand("Run Intake",           new RunIntakeCommand(intakeSubsystem, 6000));
+    NamedCommands.registerCommand("Stop Intake",          new RunIntakeCommand(intakeSubsystem, 0));
 
     // Deploy Intake
 
     // Shoot
-    NamedCommands.registerCommand("Stop Shooter", Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
-    NamedCommands.registerCommand("Run Shooter Low", Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityLow)));
-    NamedCommands.registerCommand("Run Shooter Medium", Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityMedium)));
-    NamedCommands.registerCommand("Run Shooter High", Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityHigh)));
+    NamedCommands.registerCommand("Stop Shooter",         Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
+    NamedCommands.registerCommand("Run Shooter Low",      Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityLow)));
+    NamedCommands.registerCommand("Run Shooter Medium",   Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityMedium)));
+    NamedCommands.registerCommand("Run Shooter High",     Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityHigh)));
     
     // Move hood
-    NamedCommands.registerCommand("Hood Low Position",    Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(1)));
-    NamedCommands.registerCommand("Hood Medium Position", Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(10)));
-    NamedCommands.registerCommand("Hood High Position",   Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(20)));
+    NamedCommands.registerCommand("Hood Low Position",    Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(1)));
+    NamedCommands.registerCommand("Hood Medium Position", Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(10)));
+    NamedCommands.registerCommand("Hood High Position",   Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(20)));
 
     // Climb
+
     // Conveyor/kicker
-    NamedCommands.registerCommand("Run Conveyor",         new RunConveyorCommand(conveyorSubsystem, 500, 4000));
-    NamedCommands.registerCommand("Stop Conveyor",        new RunConveyorCommand(conveyorSubsystem, 0,   0));
+    NamedCommands.registerCommand("Run Conveyor",         new RunConveyorCommand(conveyorSubsystem, kickerSubsystem, 500, 4000));
+    NamedCommands.registerCommand("Stop Conveyor",        new RunConveyorCommand(conveyorSubsystem, kickerSubsystem, 0,   0));
   }
 
   /**

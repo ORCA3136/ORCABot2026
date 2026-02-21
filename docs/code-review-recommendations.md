@@ -6,11 +6,6 @@ Comprehensive code review performed 2/20/2026. Identifies bugs, safety issues, a
 
 ## Priority 1: Show-Stoppers (Robot Won't Function)
 
-### 1a. Default drive command is disabled
-**File:** `RobotContainer.java:93`
-The line `driveBase.setDefaultCommand(defaultDriveCommand)` is commented out. The robot **will not respond to joystick input** in teleop.
-**Fix:** Uncomment the line.
-
 ### 1b. Auto chooser is null
 **File:** `RobotContainer.java:67`
 `autoChooser = null;` — autonomous routines cannot be selected or run. `getAutonomousCommand()` on line 146 will NPE.
@@ -19,21 +14,6 @@ The line `driveBase.setDefaultCommand(defaultDriveCommand)` is commented out. Th
 ---
 
 ## Priority 2: Bugs (Wrong Behavior)
-
-### 2a. `getShooterSecondaryCurrent()` returns primary motor current
-**File:** `ShooterSubsystem.java:168`
-Copy-paste bug: reads `shooterPrimaryMotor.getOutputCurrent()` instead of `shooterSecondaryMotor`.
-**Fix:** Change to `shooterSecondaryMotor.getOutputCurrent()`.
-
-### 2b. `setIntakeDeployVelocity()` controls the wrong motor
-**File:** `IntakeSubsystem.java:166`
-Sets `intakeMotor` (the roller) instead of `intakeDeployMotor` (the deploy mechanism).
-**Fix:** Change to `intakeDeployMotor.set(velocity / 6500)`.
-
-### 2c. Kicker NetworkTable logs conveyor velocity instead of kicker data
-**File:** `ConveyorSubsystem.java:81-82`
-`kickerTable` entry for `kCurrent` is set to `getConveyorVelocity()` instead of kicker data.
-**Fix:** Log `getKickerVelocity()` and consider adding proper current/velocity entries to Kicker NetworkTable names.
 
 ### 2d. VisionSubsystem angular velocity uses same axis for all 3 components
 **File:** `VisionSubsystem.java:162-164, 168-170`
@@ -45,32 +25,11 @@ All three angular velocity values use `robotAngularVelocity3dSubscriber.get()[0]
 - `bestLimelight` is initialized to `-1` and never reassigned
 - When a vision estimate passes the stddev check, `updatePose = true` is set but then `continue` skips past the fitness/bestLimelight logic
 - The final check `updatePose && bestLimelight != -1` will therefore never be true
-
 **Fix:** Rewrite the fusion logic so that passing the stddev check actually records which limelight to use.
-
-### 2f. Hood velocity scaling uses wrong max RPM
-**File:** `ShooterSubsystem.java:142-143`
-`setHoodVelocity()` divides by 6500 (Vortex max), but hood motors are NEO 550s (max ~11,000 RPM). This means hood velocity commands are ~59% too high.
-**Fix:** Use the correct NEO 550 max RPM constant. (Not urgent since `RunHoodCommand` isn't currently bound, but fix before it gets used.)
-
-### 2g. Climber position limits are both zero
-**File:** `Constants.java:69-70`
-`kClimberMaxPosition = 0` and `kClimberMinPosition = 0`. The `RunClimberCommand` checks these bounds but they're meaningless.
-**Fix:** Set actual measured position limits. (Requires physical measurement of climber travel.)
-
-### 2h. Climber method name typos
-**File:** `ClimberSubsystem.java:56, 60`
-`getMotorVlocity()` and `getClimberVlocity()` — missing 'e' in Velocity.
-**Fix:** Rename to `getMotorVelocity()` and `getClimberVelocity()`. Update all call sites.
 
 ---
 
 ## Priority 3: Missing Functionality
-
-### 3a. ClimberSubsystem.periodic() doesn't call updateNetworkTable()
-**File:** `ClimberSubsystem.java:81-83`
-The `periodic()` method is empty despite `updateNetworkTable()` being implemented.
-**Fix:** Add `updateNetworkTable()` call to `periodic()`.
 
 ### 3b. DeployIntakeCommand is an empty shell
 **File:** `commands/DeployIntakeCommand.java`

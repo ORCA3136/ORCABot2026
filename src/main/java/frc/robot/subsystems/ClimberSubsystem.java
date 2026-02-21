@@ -53,11 +53,11 @@ public class ClimberSubsystem extends SubsystemBase {
     climberPrimaryMotor.set(velocity / 6500);
   }
 
-  public double getMotorVlocity() {
+  public double getMotorVelocity() {
     return climberEncoder.getVelocity();
   }
 
-  public double getClimberVlocity() {
+  public double getClimberVelocity() {
     return climberEncoder.getVelocity() / ClimberConstants.kClimberGearRatio;
   }
 
@@ -71,7 +71,7 @@ public class ClimberSubsystem extends SubsystemBase {
 
   public void updateNetworkTable() {
     climberTable.getEntry(NetworkTableNames.Climber.kVelocityRPM)
-      .setNumber(getClimberVlocity());
+      .setNumber(getClimberVelocity());
     climberTable.getEntry(NetworkTableNames.Climber.kPositionRotations)
       .setNumber(getClimberPosition());
   }
@@ -79,7 +79,7 @@ public class ClimberSubsystem extends SubsystemBase {
   /** This method will be called once per scheduler run */
   @Override
   public void periodic() {
-
+    updateNetworkTable();
   }
 
   /** This method will be called once per scheduler run during simulation */

@@ -14,9 +14,7 @@ public class Configs {
         public static final SparkFlexConfig primaryShooterConfig = new SparkFlexConfig();
         public static final SparkFlexConfig secondaryShooterConfig = new SparkFlexConfig();
 
-        public static final SparkMaxConfig primaryHoodConfig = new SparkMaxConfig();
-        public static final SparkMaxConfig secondaryHoodConfig = new SparkMaxConfig();
-        static {
+               static {
             primaryShooterConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
@@ -27,6 +25,15 @@ public class Configs {
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             primaryShooterConfig.closedLoop
                 .pid(ShooterConstants.kP, ShooterConstants.kI, ShooterConstants.kD);
+            
+        }
+    }
+
+    public static final class HoodConfigs {
+        public static final SparkMaxConfig primaryHoodConfig = new SparkMaxConfig();
+        public static final SparkMaxConfig secondaryHoodConfig = new SparkMaxConfig();
+
+                static {
             primaryHoodConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
@@ -51,12 +58,17 @@ public class Configs {
 
     public static final class ConveyorConfigs {
         public static final SparkFlexConfig conveyorMotorConfig = new SparkFlexConfig();
-        public static final SparkFlexConfig kickerMotorConfig = new SparkFlexConfig();
         static {
             conveyorMotorConfig
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+        }
+    }
+
+    public static final class KickerConfigs {
+        public static final SparkFlexConfig kickerMotorConfig = new SparkFlexConfig();
+        static {
             kickerMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)

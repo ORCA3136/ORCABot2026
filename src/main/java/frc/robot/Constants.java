@@ -138,9 +138,6 @@ public final class Constants {
     public static final int kClimberPrimaryCanId = 19;
     public static final int kClimberSecondaryCanId = 20;
 
-    // Lidars
-    public static final int kLidarCanId = 25;
-
     // PDH
     public static final int kPDHCanId = 63;
   }
@@ -187,11 +184,13 @@ public final class Constants {
     public static final class Conveyor {
       public static final String kTable = "Conveyor";
       public static final String kVelocityRPM = "Velocity RPM";
+      public static final String kCurrentAmps = "Current Amps";
     }
 
     public static final class Kicker {
       public static final String kTable = "Kicker";
-      public static final String kCurrent = "Smart Current";
+      public static final String kVelocityRPM = "Velocity RPM";
+      public static final String kCurrentAmps = "Current Amps";
     }
 
     public static final class Intake {

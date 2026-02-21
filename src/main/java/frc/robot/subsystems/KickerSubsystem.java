@@ -27,48 +27,48 @@ import frc.robot.Constants.*;
  */
 
 
-public class ConveyorSubsystem extends SubsystemBase {
+public class KickerSubsystem extends SubsystemBase {
 
-  final SparkFlex conveyorMotor = new SparkFlex(CanIdConstants.kConveyorCanId, MotorType.kBrushless);
+  final SparkFlex kickerMotor = new SparkFlex(CanIdConstants.kKickerCanId, MotorType.kBrushless);
 
-  final RelativeEncoder conveyorEncoder = conveyorMotor.getEncoder();
+  final RelativeEncoder kickerEncoder = kickerMotor.getEncoder();
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  final NetworkTable conveyorTable = networkTable.getTable(NetworkTableNames.Conveyor.kTable);
+  final NetworkTable kickerTable = networkTable.getTable(NetworkTableNames.Kicker.kTable);
 
   /** Creates a new ConveyorSubsystem. */
-  public ConveyorSubsystem() {
+  public KickerSubsystem() {
 
-    conveyorMotor.configure(ConveyorConfigs.conveyorMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    kickerMotor.configure(KickerConfigs.kickerMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 
-  /**
+   /**
    * @param Velocity is in RPM
    */
-  public void setConveyorVelocity(double velocity) {
-    conveyorMotor.set(velocity / 6500);
+  public void setKickerVelocity(double velocity) {
+    kickerMotor.set(velocity / 6500);
   }
 
   /**
    * @return Velocity in RPM
    */
-  public double getConveyorVelocity() {
-    return conveyorEncoder.getVelocity();
+  public double getKickerVelocity() {
+    return kickerEncoder.getVelocity();
   }
 
   /**
    * @return Current is in Amps
    */
-  public double getConveyorCurrent() {
-    return conveyorMotor.getOutputCurrent();
+  public double getKickerCurrent() {
+    return kickerMotor.getOutputCurrent();
   }
 
   public void updateNetworkTable() {
-    conveyorTable.getEntry(NetworkTableNames.Conveyor.kVelocityRPM)
-      .setNumber(getConveyorVelocity());
-    conveyorTable.getEntry(NetworkTableNames.Conveyor.kCurrentAmps)
-      .setNumber(getConveyorCurrent());
+    kickerTable.getEntry(NetworkTableNames.Kicker.kVelocityRPM)
+      .setNumber(getKickerVelocity());
+    kickerTable.getEntry(NetworkTableNames.Conveyor.kCurrentAmps)
+      .setNumber(getKickerCurrent());
   }
 
   /** This method will be called once per scheduler run */

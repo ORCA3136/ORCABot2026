@@ -5,12 +5,14 @@
 package frc.robot.commands;
 
 import frc.robot.subsystems.ConveyorSubsystem;
+import frc.robot.subsystems.KickerSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 
 /** An example command that uses an example subsystem. */
 public class RunConveyorCommand extends Command {
   @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
   private final ConveyorSubsystem m_conveyorSubsystem;
+  private final KickerSubsystem m_KickerSubsystem;
   private final double velocity;
   private final double velocity2;
 
@@ -19,8 +21,9 @@ public class RunConveyorCommand extends Command {
    *
    * @param subsystem The subsystem used by this command.
    */
-  public RunConveyorCommand(ConveyorSubsystem conveyorSubsystem, double conveyorVelocity, double kickerVelocity) {
+  public RunConveyorCommand(ConveyorSubsystem conveyorSubsystem, KickerSubsystem kickerSubsystem, double conveyorVelocity, double kickerVelocity) {
     m_conveyorSubsystem = conveyorSubsystem;
+    m_KickerSubsystem = kickerSubsystem;
     velocity = conveyorVelocity;
     velocity2 = kickerVelocity;
     // Use addRequirements() here to declare subsystem dependencies.
@@ -32,7 +35,7 @@ public class RunConveyorCommand extends Command {
   public void initialize() {
     
     m_conveyorSubsystem.setConveyorVelocity(velocity);
-    m_conveyorSubsystem.setKickerVelocity(velocity2);
+    m_KickerSubsystem.setKickerVelocity(velocity2);
 
   }
 
@@ -44,7 +47,7 @@ public class RunConveyorCommand extends Command {
   @Override
   public void end(boolean interrupted) {
     m_conveyorSubsystem.setConveyorVelocity(0);
-    m_conveyorSubsystem.setKickerVelocity(0);
+    m_KickerSubsystem.setKickerVelocity(0);
   }
 
   // Returns true when the command should end.

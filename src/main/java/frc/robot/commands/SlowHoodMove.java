@@ -4,7 +4,7 @@
 
 package frc.robot.commands;
 
-import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.HoodSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj.Timer;
 
@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.Timer;
 /** An example command that uses an example subsystem. */
 public class SlowHoodMove extends Command {
   @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-  private final ShooterSubsystem m_shooterSubsystem;
+  private final HoodSubsystem m_shooterSubsystem;
 
   private final double slowHoodSpeed = 4; // Degrees per second (DPS)
 
@@ -25,7 +25,7 @@ public class SlowHoodMove extends Command {
    *
    * @param shooterSubsystem The subsystem used by this command.
    */
-  public SlowHoodMove(ShooterSubsystem shooterSubsystem) {
+  public SlowHoodMove(HoodSubsystem shooterSubsystem) {
     m_shooterSubsystem = shooterSubsystem;
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(shooterSubsystem);
