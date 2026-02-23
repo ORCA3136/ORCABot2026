@@ -13,3 +13,4 @@
 - [ ] Beam break kicker routine
 - [ ] Jam detection / resolution
 - [ ] intake out (if we need to dump into the human station)
+- [ ] Add ramp rate to the shooter flywheels (might help)
