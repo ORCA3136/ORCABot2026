@@ -43,6 +43,11 @@ public class KickerSubsystem extends SubsystemBase {
 
   }
 
+  /** @return Motor for simulation access */
+  public SparkFlex getMotor() {
+    return kickerMotor;
+  }
+
    /**
    * @param Velocity is in RPM
    */

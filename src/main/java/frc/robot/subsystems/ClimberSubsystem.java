@@ -49,6 +49,11 @@ public class ClimberSubsystem extends SubsystemBase {
 
   }
 
+  /** @return Primary motor for simulation access */
+  public SparkFlex getPrimaryMotor() {
+    return climberPrimaryMotor;
+  }
+
   public void setClimberVelocity(double velocity) {
     climberPrimaryMotor.set(velocity / 6500);
   }

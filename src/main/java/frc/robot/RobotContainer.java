@@ -185,6 +185,15 @@ public class RobotContainer {
 
   }
 
+  // Subsystem getters for simulation access
+  public SwerveSubsystem getSwerveSubsystem() { return driveBase; }
+  public ShooterSubsystem getShooterSubsystem() { return shooterSubsystem; }
+  public HoodSubsystem getHoodSubsystem() { return hoodSubsystem; }
+  public ConveyorSubsystem getConveyorSubsystem() { return conveyorSubsystem; }
+  public KickerSubsystem getKickerSubsystem() { return kickerSubsystem; }
+  public IntakeSubsystem getIntakeSubsystem() { return intakeSubsystem; }
+  public ClimberSubsystem getClimberSubsystem() { return climberSubsystem; }
+
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *

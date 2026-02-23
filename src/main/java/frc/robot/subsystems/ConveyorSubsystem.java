@@ -43,6 +43,11 @@ public class ConveyorSubsystem extends SubsystemBase {
 
   }
 
+  /** @return Motor for simulation access */
+  public SparkFlex getMotor() {
+    return conveyorMotor;
+  }
+
   /**
    * @param Velocity is in RPM
    */

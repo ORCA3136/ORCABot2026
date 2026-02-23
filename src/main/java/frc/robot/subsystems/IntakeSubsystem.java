@@ -141,6 +141,16 @@ public class IntakeSubsystem extends SubsystemBase {
     this.intakeDeployed = intakeDeployed;
   }
 
+  /** @return Intake roller motor for simulation access */
+  public SparkFlex getIntakeMotor() {
+    return intakeMotor;
+  }
+
+  /** @return Deploy motor for simulation access */
+  public SparkMax getDeployMotor() {
+    return intakeDeployMotor;
+  }
+
   /** @return Angle in Rad */
   public double getIntakeAngle() {
     return 2 * Math.PI * (intakeDeployEncoder.getPosition() / IntakeConstants.kDeployGearRatio);

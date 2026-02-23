@@ -102,6 +102,11 @@ public class HoodSubsystem extends SubsystemBase {
     hoodSecondaryMotor.set(velocity / 11000);
   }
 
+  /** @return Primary motor for simulation access */
+  public SparkMax getPrimaryMotor() {
+    return hoodPrimaryMotor;
+  }
+
   /** @return Motor Rotations */
   public double getHoodMotorRotations() {
     return hoodEncoder.getPosition();

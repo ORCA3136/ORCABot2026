@@ -120,6 +120,11 @@ public class ShooterSubsystem extends SubsystemBase {
     if (shooterVelocity < 0) shooterVelocity = 0;
   }
 
+  /** @return Primary motor for simulation access */
+  public SparkFlex getPrimaryMotor() {
+    return shooterPrimaryMotor;
+  }
+
   /** @return Velocity in RPM */
   public double getShooterVelocity() {
     return shooterEncoder.getVelocity();
