@@ -54,7 +54,7 @@ import edu.wpi.first.wpilibj.simulation.EncoderSim;
 public class IntakeSubsystem extends SubsystemBase {
 
   final DCMotor intakeDCMotor = DCMotor.getNeoVortex(1);
-  final DCMotor deployDCMotor = DCMotor.getNeoVortex(1);
+  final DCMotor deployDCMotor = DCMotor.getNeo550(1);
 
   final SparkFlex intakeMotor = new SparkFlex(CanIdConstants.kIntakeCanId, MotorType.kBrushless);
 
