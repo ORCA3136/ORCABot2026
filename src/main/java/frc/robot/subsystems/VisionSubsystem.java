@@ -8,8 +8,6 @@ import static edu.wpi.first.units.Units.DegreesPerSecond;
 
 import java.util.Optional;
 
-import au.grapplerobotics.LaserCan;
-import au.grapplerobotics.interfaces.LaserCanInterface.Measurement;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -46,9 +44,6 @@ public class VisionSubsystem extends SubsystemBase {
   Limelight limelightOne = new Limelight(VisionConstants.limelightOneName);
   Limelight limelightTwo = new Limelight(VisionConstants.limelightTwoName);
 
-  private LaserCan lidar;
-  // private LaserCan.Measurement intakeLidar;
-  // private boolean intakeStatus;
 
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kTable);
@@ -81,22 +76,6 @@ public class VisionSubsystem extends SubsystemBase {
          .save();
   }
 
-  /**
-   * @return The distance before the lidar sees something
-   */
-  public double getLidarMeasurement() {
-    Measurement it = lidar.getMeasurement();
-
-    /*
-    MOVE TO CONSTANTS
-    NetworkTableInstance.getDefault().getTable("Lidar").getEntry("Lidar status").setDouble(it.status);
-    */
-    
-    if (it == null) 
-      return 999999;
-    return it.distance_mm;
-  }
-  
   /**
    * Checks for the limelight with the best / most accurate estimate
    * If the estimate is accurate enough the odometry is updated
@@ -157,22 +136,19 @@ public class VisionSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
 
-    limelightOne.getSettings()
-		 .withRobotOrientation(new Orientation3d(robotRotation3dSubscriber.get(),
-				new AngularVelocity3d(DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]),
-															DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]),
-															DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]))))
-		 .save();
-    limelightTwo.getSettings()
-		 .withRobotOrientation(new Orientation3d(robotRotation3dSubscriber.get(),
-				new AngularVelocity3d(DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]),
-															DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]),
-															DegreesPerSecond.of(robotAngularVelocity3dSubscriber.get()[0]))))
-		 .save();
+    double[] angularVelocity = robotAngularVelocity3dSubscriber.get();
+    if (angularVelocity.length >= 3) {
+      AngularVelocity3d angVel = new AngularVelocity3d(
+          DegreesPerSecond.of(angularVelocity[0]),
+          DegreesPerSecond.of(angularVelocity[1]),
+          DegreesPerSecond.of(angularVelocity[2]));
+      Orientation3d orientation = new Orientation3d(robotRotation3dSubscriber.get(), angVel);
+      limelightOne.getSettings().withRobotOrientation(orientation).save();
+      limelightTwo.getSettings().withRobotOrientation(orientation).save();
+    }
 
     updateRobotPosition();
 
-    // NetworkTableInstance.getDefault().getTable("Lidar").getEntry("Lidar distance").setDouble(getLidarMeasurement());
 
   }
 

@@ -11,7 +11,6 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
-import au.grapplerobotics.CanBridge;
 
 /**
  * The methods in this class are called automatically corresponding to each mode, as described in
@@ -37,7 +36,6 @@ public class Robot extends TimedRobot {
     // autonomous chooser on the dashboard.
     commandScheduler = CommandScheduler.getInstance();
     m_robotContainer = new RobotContainer();
-    CanBridge.runTCP();
     CameraServer.startAutomaticCapture();
     DataLogManager.start();
     // LLSeedModeCommand = m_robotContainer.getLLSeedCommand();

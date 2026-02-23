@@ -27,7 +27,7 @@ public class RunConveyorCommand extends Command {
     velocity = conveyorVelocity;
     velocity2 = kickerVelocity;
     // Use addRequirements() here to declare subsystem dependencies.
-    addRequirements(conveyorSubsystem);
+    addRequirements(conveyorSubsystem, kickerSubsystem);
   }
 
   // Called when the command is initially scheduled.

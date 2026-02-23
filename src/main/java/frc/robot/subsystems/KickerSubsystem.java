@@ -67,7 +67,7 @@ public class KickerSubsystem extends SubsystemBase {
   public void updateNetworkTable() {
     kickerTable.getEntry(NetworkTableNames.Kicker.kVelocityRPM)
       .setNumber(getKickerVelocity());
-    kickerTable.getEntry(NetworkTableNames.Conveyor.kCurrentAmps)
+    kickerTable.getEntry(NetworkTableNames.Kicker.kCurrentAmps)
       .setNumber(getKickerCurrent());
   }
 
