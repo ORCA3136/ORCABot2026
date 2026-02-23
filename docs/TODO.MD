@@ -14,3 +14,4 @@
 - [ ] Jam detection / resolution
 - [ ] intake out (if we need to dump into the human station)
 - [ ] Add ramp rate to the shooter flywheels (might help)
+- [ ] Power management - think about what we might need to do to manage the ppower needs of the robot.
