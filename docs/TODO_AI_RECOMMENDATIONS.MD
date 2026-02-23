@@ -5,7 +5,144 @@
 
 ## Current State Summary
 
-The robot code has a solid command-based foundation with YAGSL swerve drive, PID-controlled shooter and hood, and all subsystems structurally in place. However, there are **10 bugs** that need fixing, **no competition button bindings** (only test bindings are active), **a non-functional vision system**, and **incomplete autonomous routines**. The code needs focused work to be competition-ready.
+All individual subsystems are working and tested on the robot: swerve drive, shooter (RPM control), hood (angle control), intake (rollers + deploy), conveyor, kicker, and climber. The test bindings let us manually adjust each mechanism in isolation.
+
+**What's missing:** Nothing is *coordinated*. A driver can't press one button to shoot - they'd have to manually set RPM, set hood angle, then trigger the conveyor/kicker. There are no gameplay sequences, no shooting presets, and most critically: **we don't yet know what RPM + hood angle combinations actually score at different distances.**
+
+**The path to competition-ready has two parallel tracks:**
+1. **On-robot characterization** - Discover the right shooting parameters through testing (team task)
+2. **Code coordination** - Build the sequences, bindings, and autos that use those parameters (coding task)
+
+---
+
+## PHASE 0: SHOOTING CHARACTERIZATION (On-Robot Testing)
+*This is the #1 blocker. Everything else depends on knowing what values work.*
+
+### What we need to figure out
+A lookup table of **distance → (shooter RPM, hood angle)** that reliably scores in the Hub. We need at minimum 3-4 data points:
+
+| Distance from Hub | Shooter RPM | Hood Angle (degrees) | Notes |
+|-------------------|-------------|---------------------|-------|
+| Point blank (~2 ft) | ? | ? | Dump shot |
+| Close (~5 ft) | ? | ? | |
+| Medium (~10 ft) | ? | ? | Primary shooting distance |
+| Far (~15+ ft) | ? | ? | Cross-field shot |
+
+### How to collect this data
+The current test bindings are almost good enough for this. We need:
+
+1. **Improve characterization controls** (small code change)
+   - Current test bindings let you increase/decrease RPM and hood angle
+   - Need: Display current RPM + hood angle + distance to hub clearly on dashboard/Shuffleboard
+   - Need: A "feed one ball" button (run kicker for ~0.5 sec then stop) so you can take single shots
+
+2. **Testing procedure** (team activity, ~1-2 hours on robot)
+   - Place robot at known distances from Hub
+   - Dial in RPM and hood angle until balls consistently go in
+   - Record the values in the table above
+   - Test at 3-4 distances minimum
+   - **Tip:** Start with medium distance, find values that work, then adjust from there
+
+3. **Record results into Constants.java**
+   - These become the presets that drive everything else (competition bindings, auto routines, etc.)
+
+### Dependencies
+- Bug fix #9 (intake deploy config mismatch) should be done first to avoid startup issues
+- Bug fix #1 (conveyor command requirement) should be done so the kicker doesn't conflict during testing
+
+---
+
+## PHASE 1: COORDINATION - Making the Robot Playable (~8-10 hours)
+*Build sequences that let a driver actually play the game. Can start in parallel with Phase 0.*
+
+### Step 1: Bug fixes that affect testing (~2 hours)
+Fix the bugs that could cause issues during characterization and gameplay. See full bug list below.
+
+**Priority order for fixes:**
+1. Bug #1 (ConveyorCommand missing kicker requirement) - causes kicker conflicts
+2. Bug #9 (IntakeDeployMotor config mismatch) - could crash on startup
+3. Bug #2 (Kicker NT key wrong) - affects telemetry reading during characterization
+4. Bug #6 (Climber limits) - safety concern
+5. Bug #8 (LaserCan removal) - cleanup
+6. Bugs #3, #4, #5, #7 - lower priority, fix when convenient
+
+### Step 2: Shooting sequence command (~2 hours)
+**New command: `ShootSequenceCommand`**
+- Input: shooterRPM, hoodAngleDegrees (from the characterization table)
+- Behavior: Set shooter + hood in parallel → wait until at target → feed with conveyor + kicker
+- Needs: `ShooterSubsystem.isAtTarget(toleranceRPM)` and `HoodSubsystem.isAtTarget(toleranceDeg)` methods
+- Create preset factories: `closeShot()`, `mediumShot()`, `farShot()` using characterized values
+
+### Step 3: Intake sequence (~1 hour)
+**Coordinated intake:** One trigger does everything:
+- Deploy intake mechanism
+- Run intake rollers
+- Run conveyor inward to stage fuel
+- On release: retract intake, stop rollers
+
+Requires re-enabling intake deploy PID (Bug #4 in the intake - currently commented out).
+
+### Step 4: Competition button bindings (~2 hours)
+Wire the sequences into driver-friendly controls:
+
+**Driver (Xbox, Port 0):**
+| Control | Action |
+|---------|--------|
+| Left Stick | Drive |
+| Right Stick | Rotate |
+| Left Trigger (hold) | Full intake sequence (deploy + rollers + conveyor) |
+| Right Trigger (hold) | Feed into shooter (conveyor + kicker) |
+| Right Bumper | Preset: Medium shot (most common distance) |
+| Left Bumper | Preset: Close/dump shot |
+| A | Stop shooter |
+| B | Zero gyro |
+| Start (hold) | Climber up |
+| Back (hold) | Climber down |
+| D-Pad Up/Down | Manual conveyor fwd/rev (unjam) |
+
+**Operator (Button Board, Port 1):**
+| Button | Action |
+|--------|--------|
+| 1 | Shooting preset: Close |
+| 2 | Shooting preset: Medium |
+| 3 | Shooting preset: Far |
+| 4 | Stop shooter |
+| 5-6 | Hood fine adjust down/up |
+| 7-8 | Manual conveyor fwd/rev (unjam) |
+| 9 | Emergency stop all |
+| 10 | Manual intake deploy toggle |
+
+### Step 5: Basic autonomous routines (~2 hours)
+Using characterized shooting values:
+1. **"Score and Taxi"** - Shoot preload at known angle/RPM, drive away
+2. **"Score and Collect"** - Shoot, intake from depot, shoot again
+3. **"Score and Climb"** - Shoot, drive to tower, climb
+
+Requires fixing named commands first (current `RunConveyorCommand` blocks auto sequences because it never finishes).
+
+---
+
+## PHASE 2: COMPETITIVE EDGE (~10 hours, after Phase 1 is solid)
+
+### Step 6: Fix and enable vision (~3.5 hours)
+Vision-corrected odometry for accurate autos and potential auto-aim.
+
+### Step 7: Beam break integration (~2.5 hours)
+Automated fuel detection for smarter feeding (shoot only when loaded, rapid-fire mode).
+
+### Step 8: Distance-based auto-tuning (~2 hours)
+Interpolation table from distance → (RPM, hood angle) so the robot auto-adjusts shooting parameters based on position. Uses the characterization data from Phase 0 plus vision for distance.
+
+### Step 9: More autonomous routines (~2 hours)
+Multi-ball autos leveraging vision accuracy.
+
+---
+
+## PHASE 3: POLISH (remaining time)
+
+### Step 10: Hub auto-aim (~2 hours)
+### Step 11: Shift timer display (~1 hour)
+### Step 12: Code cleanup (~0.5 hours)
 
 ---
 
@@ -65,140 +202,17 @@ The robot code has a solid command-based foundation with YAGSL swerve drive, PID
 
 ---
 
-## TIER 1: MUST HAVE FOR COMPETITION (~12 hours)
-
-### 1. Competition Button Bindings (~2.5 hours)
-**Current state:** Only `configureTestBindings()` is active, with shooter speed increment buttons. No intake deploy, no shooting sequence, no climber controls.
-
-**Proposed layout:**
-
-**Driver (Xbox Controller, Port 0):**
-| Control | Action |
-|---------|--------|
-| Left Stick | Drive translation |
-| Right Stick | Drive rotation |
-| Left Trigger (hold) | Intake sequence: deploy intake + run rollers + run conveyor inward |
-| Right Trigger (hold) | Feed/shoot: run conveyor + kicker into spinning shooter |
-| Right Bumper | Preset: Hub shot (set shooter RPM + hood angle) |
-| Left Bumper | Preset: Close/dump shot |
-| A | Stop shooter |
-| B | Zero gyro |
-| Start (hold) | Climber up |
-| Back (hold) | Climber down |
-| D-Pad Up/Down | Manual conveyor forward/reverse (unjam) |
-
-**Operator (Button Board, Port 1):**
-| Button | Action |
-|--------|--------|
-| 1 | Shooter preset: Close shot (Low RPM + low hood) |
-| 2 | Shooter preset: Medium shot |
-| 3 | Shooter preset: Far shot (High RPM + high hood) |
-| 4 | Stop shooter |
-| 5 | Hood angle fine adjust down |
-| 6 | Hood angle fine adjust up |
-| 7 | Manual conveyor forward (unjam) |
-| 8 | Manual conveyor reverse (unjam) |
-| 9 | Emergency stop all mechanisms |
-| 10 | Toggle intake deploy (manual override) |
-
-**Team discussion needed:** Review this layout with drivers. Adjust based on driver preference.
-
-### 2. Automated Shooting Sequence Command (~2.5 hours)
-**Problem:** Currently there's no coordinated shooting - the driver has to manually set shooter speed, manually set hood angle, and manually trigger the conveyor/kicker in the right order.
-
-**Solution:** New `ShootSequenceCommand` that:
-1. Sets shooter RPM and hood angle simultaneously
-2. Waits until both reach their targets
-3. Runs conveyor + kicker to feed fuel
-
-Needs new methods: `ShooterSubsystem.isAtTarget()` and `HoodSubsystem.isAtTarget()` to check if mechanisms are at setpoint.
-
-Create preset shooting configs (close/medium/far) tied to button board buttons and driver bumpers.
-
-### 3. Re-enable Intake Deploy PID (~1 hour)
-**Problem:** `IntakeSubsystem.java` line 213 has `setPIDAngle()` commented out. The intake has PID configured in Configs.java but never actually uses it. Deploy/retract is not position-controlled.
-
-**Fix:** Uncomment, verify position limits match physical hardware, wire into trigger binding (hold trigger = deploy + spin rollers, release = retract).
-
-### 4. Fix Named Commands for PathPlanner (~1 hour)
-**Problem:** `RunConveyorCommand` has `isFinished()` returning `false` (never finishes). When used in sequential auto groups, this blocks the entire auto routine from progressing. Several autonomous routines are broken because of this.
-
-**Fix:** Change named commands for "Run Conveyor" and "Stop Conveyor" to use `Commands.runOnce()` that just sets velocities:
-```java
-// Instead of new RunConveyorCommand(...) which never finishes:
-NamedCommands.registerCommand("Run Conveyor", Commands.runOnce(() -> {
-    conveyorSubsystem.setConveyorVelocity(500);
-    kickerSubsystem.setKickerVelocity(4000);
-}));
-```
-
-### 5. Working Autonomous Routines (~3 hours)
-**Goal:** 3 reliable autos that actually score fuel in the 20-second auto period.
-
-1. **"Score and Taxi"** - Shoot preloaded fuel, drive away. Simple, reliable fallback.
-2. **"Score and Collect"** - Shoot preload, drive to depot/outpost, intake more fuel, return and shoot again.
-3. **"Score and Climb"** - Shoot preload, drive to tower, climb for endgame points early.
-
-All autos need the fixed named commands from item 4 above, plus the new shooting sequence registered as a named command.
-
----
-
-## TIER 2: HIGH VALUE - Competitive Advantage (~10 hours)
-
-### 6. Fix and Enable Vision System (~3.5 hours)
-**Why it matters:** Vision-corrected odometry is critical for accurate autonomous paths and could enable features like auto-aim. Without it, the robot relies purely on wheel odometry which drifts over time.
-
-**Work needed:**
-- Rewrite `VisionSubsystem.updateRobotPosition()` with working logic
-- Enable VisionSubsystem in RobotContainer (currently commented out)
-- Add proper standard deviations for vision measurements in odometry fusion
-- Test with AprilTags on practice field
-
-### 7. Beam Break Sensor Integration (~2.5 hours)
-**Status:** Sensor physically installed between kicker and shooter, needs to be wired.
-
-**What it enables:**
-- Know when fuel is loaded and ready to shoot
-- Automated feed-until-empty for rapid fire
-- Prevents feeding into a shooter that isn't spun up
-
-**Implementation:** Create BeamBreakSensor wrapper, integrate into shooting sequence, publish to NetworkTables. **Important:** Design so shooting still works time-based if beam break isn't available.
-
-### 8. Improved Autonomous Routines (~3 hours)
-With vision online, create more aggressive multi-ball autos:
-- 3-Ball Left Depot Auto
-- 3-Ball Right Outpost Auto
-- 5-Ball Center Auto (ambitious)
-
----
-
-## TIER 3: NICE TO HAVE (if time permits)
-
-### 9. Hub Auto-Aim (~2 hours)
-Hold a button to automatically rotate the robot to face the hub while driver controls translation. Uses field element position tracking from SwerveSubsystem.
-
-### 10. Distance-Based Shooter Auto-Tuning (~1.5 hours)
-Automatically set shooter RPM and hood angle based on distance to hub using interpolation tables. Requires empirical data from testing shots at multiple distances.
-
-### 11. Shift Timer Display (~1 hour)
-Track the 25-second hub shift schedule during teleop. Display which hub is currently active on the dashboard.
-
-### 12. Code Cleanup (~0.5 hours)
-Remove ExampleSubsystem/Command, ShooterSelfFeedCommand stub, and dead commented-out code throughout the project.
-
----
-
 ## Suggested Session Schedule
 
-| Session | Hours | Work Items |
-|---------|-------|------------|
-| 1 | ~4 hrs | Bug fixes (all 10) + start competition bindings |
-| 2 | ~4 hrs | Finish bindings + shooting sequence command + intake PID |
-| 3 | ~4 hrs | Fix named commands + auto routines + **test on robot** |
-| 4 | ~4 hrs | Vision system fix + test with AprilTags |
-| 5 | ~4 hrs | Beam break integration (when wired) + improved autos |
-| 6 | ~4 hrs | Tier 3 items + competition prep tuning |
-| Pre-comp | Bring laptop | Field testing, preset tuning, path adjustments |
+| Session | Hours | Focus | Work Items |
+|---------|-------|-------|------------|
+| 1 | ~4 hrs | Fix + Characterize | Critical bug fixes + improve test bindings for characterization |
+| 2 | ~2 hrs | **ON ROBOT** | Shooting characterization - find RPM + hood values at 3-4 distances |
+| 3 | ~4 hrs | Coordinate | Shooting sequence command + intake sequence + competition bindings |
+| 4 | ~4 hrs | Automate | Fix named commands + build 3 auto routines + **test on robot** |
+| 5 | ~4 hrs | Vision | Fix VisionSubsystem + enable + test with AprilTags |
+| 6 | ~4 hrs | Polish | Beam break + distance-based tuning + improved autos |
+| Pre-comp | Bring laptop | Tune | Field testing, preset adjustments, path corrections |
 
 ---
 
@@ -206,7 +220,8 @@ Remove ExampleSubsystem/Command, ShooterSelfFeedCommand stub, and dead commented
 
 | Risk | Mitigation |
 |------|-----------|
-| Beam break not wired in time | Shooting sequence falls back to time-based feeding |
+| Don't find good shooting values | Start with medium distance, work outward. Even 2 good presets is enough for competition. |
+| Beam break not wired in time | Shooting sequence works time-based without it |
 | Vision estimates noisy | Start with conservative trust levels, tighten after validation |
 | Auto paths don't match field | Always have "Score and Taxi" as failsafe auto |
 | Intake PID values wrong | Output already clamped to ±0.5 in config, test on blocks first |
