@@ -599,8 +599,6 @@ public class SwerveSubsystem extends SubsystemBase {
 
     swerveDrive.updateOdometry();
     getVisionUpdate();
-
-    PowerDistribution pdh = new PowerDistribution(1, ModuleType.kRev);
     
   }
 

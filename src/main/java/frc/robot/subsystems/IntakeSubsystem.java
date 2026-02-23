@@ -17,6 +17,7 @@ import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkSim;
 
@@ -52,12 +53,12 @@ import edu.wpi.first.wpilibj.simulation.EncoderSim;
 
 public class IntakeSubsystem extends SubsystemBase {
 
-  final DCMotor deployDCMotor = DCMotor.getNeoVortex(1);
   final DCMotor intakeDCMotor = DCMotor.getNeoVortex(1);
+  final DCMotor deployDCMotor = DCMotor.getNeoVortex(1);
 
   final SparkFlex intakeMotor = new SparkFlex(CanIdConstants.kIntakeCanId, MotorType.kBrushless);
 
-  final SparkFlex intakeDeployMotor = new SparkFlex(CanIdConstants.kIntakeDeployCanId, MotorType.kBrushless);
+  final SparkMax intakeDeployMotor = new SparkMax(CanIdConstants.kIntakeDeployCanId, MotorType.kBrushless);
 
   // final SparkSim deployMotorSim = new SparkSim(intakeDeployMotor, deployDCMotor);
   // final SparkSim intakeMotorSim = new SparkSim(intakeMotor, intakeDCMotor);
@@ -145,6 +146,11 @@ public class IntakeSubsystem extends SubsystemBase {
     return 2 * Math.PI * (intakeDeployEncoder.getPosition() / IntakeConstants.kDeployGearRatio);
   }
 
+  /** True makes the intake vibrate if it is down, or stop if it is given false */
+  public void vibrateIntake(boolean vibrate) {
+    vibrateIntake = vibrate;
+  }
+
   /**
    * @param Velocity is in RPM
    */
@@ -159,11 +165,25 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeEncoder.getVelocity();
   }
 
+   /**
+   * @param Velocity is in RPM
+   */
+  public void setIntakeDeployVelocity(double velocity) {
+    intakeDeployMotor.set(velocity / 11000);
+  }
+
   /**
    * @return Velocity in RPM
    */
   public double getIntakeDeployVelocity() {
     return intakeDeployEncoder.getVelocity();
+  }
+
+  /**
+   * @return Velocity in RPM
+   */
+  public double getIntakeDeployPosition() {
+    return intakeDeployEncoder.getPosition();
   }
 
   /**
@@ -180,6 +200,8 @@ public class IntakeSubsystem extends SubsystemBase {
       .setNumber(getIntakeVelocity());
     intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM)
       .setNumber(getIntakeDeployVelocity());
+    intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kPositionRotations)
+      .setNumber(getIntakeDeployPosition());
   }
 
   /** This method will be called once per scheduler run */
@@ -188,7 +210,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     updateNetworkTable();
 
-    setPIDAngle();
+    // setPIDAngle();
   }
 
   /** This method will be called once per scheduler run during simulation */

@@ -69,11 +69,23 @@ public class ClimberSubsystem extends SubsystemBase {
     return climberEncoder.getPosition() / ClimberConstants.kClimberGearRatio;
   }
 
+  public double getClimberPrimaryCurrent() {
+    return climberPrimaryMotor.getOutputCurrent();
+  }
+
+  public double getClimberSecondaryCurrent() {
+    return climberSecondaryMotor.getOutputCurrent();
+  }
+
   public void updateNetworkTable() {
     climberTable.getEntry(NetworkTableNames.Climber.kVelocityRPM)
       .setNumber(getClimberVelocity());
     climberTable.getEntry(NetworkTableNames.Climber.kPositionRotations)
       .setNumber(getClimberPosition());
+    climberTable.getEntry(NetworkTableNames.Climber.kPrimaryCurrent)
+      .setNumber(getClimberPrimaryCurrent());
+    climberTable.getEntry(NetworkTableNames.Climber.kSecondaryCurrent)
+      .setNumber(getClimberSecondaryCurrent());
   }
 
   /** This method will be called once per scheduler run */

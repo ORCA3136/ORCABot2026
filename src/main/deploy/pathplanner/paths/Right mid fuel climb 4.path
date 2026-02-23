@@ -3,42 +3,37 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.096,
-        "y": 4.89251111111111
+        "x": 2.589,
+        "y": 2.817
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.7254111111111117,
-        "y": 5.418711111111111
+        "x": 2.5808507562641916,
+        "y": 3.0668671443518223
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 0.800113525871998,
-        "y": 5.977181759103921
+        "x": 1.5755666666666666,
+        "y": 3.2749333333333333
       },
       "prevControl": {
-        "x": 1.687500788604305,
-        "y": 5.918348959718223
+        "x": 1.9458555555555557,
+        "y": 3.2554444444444437
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": null
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 0.5496855345911973,
-      "rotationDegrees": 171.76136514706664
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 4.0,
+    "maxVelocity": 2.0,
     "maxAcceleration": 4.0,
     "maxAngularVelocity": 360.0,
     "maxAngularAcceleration": 360.0,
@@ -47,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -179.9634709924192
+    "rotation": 0.0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Right mid fuel then climb",
   "idealStartingState": {
-    "velocity": 0,
-    "rotation": -36.38435181583595
+    "velocity": 0.0,
+    "rotation": 29.999999999999996
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

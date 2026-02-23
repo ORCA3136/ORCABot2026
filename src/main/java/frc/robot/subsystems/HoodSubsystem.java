@@ -50,6 +50,7 @@ public class HoodSubsystem extends SubsystemBase {
     hoodPrimaryMotor.configure(HoodConfigs.primaryHoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     hoodSecondaryMotor.configure(HoodConfigs.secondaryHoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+    updateHoodTarget(0);
   }
 
   /** Calculates the current hood feedforward
@@ -67,7 +68,15 @@ public class HoodSubsystem extends SubsystemBase {
   /** Updates the rotations variable which is used in the setPIDAngle method
    * @param angle is in Degrees */
   public void updateHoodTarget(double angle) {
-    rotations = (angle / 360) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+    rotations = HoodConstants.kEncoderOffset + (angle / 360) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+  }
+
+  public void increaseHoodAngle() {
+    rotations += (1. / 360.) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+  }
+
+  public void decreaseHoodAngle() {
+    rotations -= (1. / 360.) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
   }
 
   public void setHoodTarget(double target) {
@@ -100,7 +109,7 @@ public class HoodSubsystem extends SubsystemBase {
 
   /** @return Angle in Rad */
   public double getHoodAngle() {
-    return 2 * Math.PI * (hoodEncoder.getPosition() / (HoodConstants.kMotorGearRatio * HoodConstants.kEncoderGearRatio));
+    return 2 * Math.PI * ((hoodEncoder.getPosition() - HoodConstants.kEncoderOffset) / (HoodConstants.kMotorGearRatio * HoodConstants.kEncoderGearRatio));
   }
 
   /** @return Velocity in RPM */

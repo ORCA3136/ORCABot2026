@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.418002853067047,
-        "y": 6.6809557774607695
+        "x": 4.001933333333334,
+        "y": 0.488022222222221
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.3003333333333336,
-        "y": 6.198266666666666
+        "x": 7.8315,
+        "y": 0.8290777777777771
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.0762111111111112,
-        "y": 4.980211111111112
+        "x": 7.783,
+        "y": 2.5830777777777767
       },
       "prevControl": {
-        "x": 3.193144444444445,
-        "y": 5.467433333333335
+        "x": 7.685555555555557,
+        "y": 1.9399444444444427
       },
       "nextControl": null,
       "isLocked": false,
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -34.755912553541286
+    "rotation": 81.703
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Right mid fuel then climb",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -59.53445508054016
+    "rotation": 0.0
   },
   "useDefaultConstraints": true
 }

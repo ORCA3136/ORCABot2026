@@ -19,11 +19,15 @@ public class Configs {
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
-            secondaryShooterConfig // making the secondary shooter follow the primary uninverts it, and that makes them fight each other
+            secondaryShooterConfig
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             primaryShooterConfig.closedLoop
+                .feedbackSensor(FeedbackSensor.kDetachedRelativeEncoder)
+                .pid(ShooterConstants.kP, ShooterConstants.kI, ShooterConstants.kD);
+            secondaryShooterConfig.closedLoop
+                .feedbackSensor(FeedbackSensor.kDetachedRelativeEncoder)
                 .pid(ShooterConstants.kP, ShooterConstants.kI, ShooterConstants.kD);
             
         }
@@ -43,7 +47,6 @@ public class Configs {
                 .follow(CanIdConstants.kHoodPrimaryCanId, true)
                 .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
             primaryHoodConfig.absoluteEncoder
-                .zeroOffset(.125)
                 .positionConversionFactor(HoodConstants.kMotorGearRatio)
                 .velocityConversionFactor(HoodConstants.kMotorGearRatio);
             primaryHoodConfig.closedLoop
@@ -87,12 +90,15 @@ public class Configs {
                 .smartCurrentLimit(CurrentConstants.AMP30, CurrentConstants.AMP20);
             IntakeDeployMotorConfig
                 .inverted(false)
-                .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
+                .idleMode(IdleMode.kBrake)
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+            IntakeDeployMotorConfig.absoluteEncoder
+                .positionConversionFactor(IntakeConstants.kDeployGearRatio)
+                .velocityConversionFactor(IntakeConstants.kDeployGearRatio);
             IntakeDeployMotorConfig.closedLoop
                 .positionWrappingEnabled(true)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-                .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD)
+                .pid(IntakeConstants.kP, IntakeConstants.kI, IntakeConstants.kD)
                 .outputRange(-0.5, 0.5); // Old was +-0.8
             // primaryHoodConfig.closedLoop.feedForward
             //     .kG(HoodConstants.kG);
@@ -106,12 +112,12 @@ public class Configs {
         static {
             climberPrimaryMotor
                 .inverted(false)
-                .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
+                .idleMode(IdleMode.kBrake)
+                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
             climberSecondaryMotor
-                .idleMode(IdleMode.kCoast)
-                .follow(CanIdConstants.kClimberPrimaryCanId, true)
-                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
+                .idleMode(IdleMode.kBrake)
+                .follow(CanIdConstants.kClimberPrimaryCanId, false)
+                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
         }
     }
 

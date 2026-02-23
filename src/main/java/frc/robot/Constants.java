@@ -28,21 +28,24 @@ public final class Constants {
     public static final double kVelocityHigh = 5000;
     public static final double kVelocityMax = 6500;
 
-    public static final double kP = 0.;
+    public static final double kP = 0.001;
     public static final double kI = 0.;
-    public static final double kD = 0.;
+    public static final double kD = 0.25;
     public static final double kG = 0.;
-    public static final double kS = 0.;
+    public static final double kS = 1;
+    public static final double kVelocityModifier = .002;
     // public static final double kV = 0;
     // public static final double kA = 0;
   }
 
   public static final class HoodConstants {
-    public static final double kP = 0.1;
+    public static final double kEncoderOffset = 1.35; // in hood/motor rotations
+
+    public static final double kP = 0.3;
     public static final double kI = 0.;
-    public static final double kD = 1.5;
-    public static final double kG = 0.5;
-    public static final double kS = 0.;
+    public static final double kD = 5.;
+    public static final double kG = 0.4; // 0.4
+    public static final double kS = 0.2; // 0.2
     // public static final double kV = 0;
     // public static final double kA = 0;
 
@@ -65,8 +68,8 @@ public final class Constants {
     // public static final double kV = 0;
     // public static final double kA = 0;
 
-    public static final double kMaxDeployPosition = 60;
-    public static final double kMinDeployPosition = 30;
+    public static final double kMaxDeployPosition = .5;
+    public static final double kMinDeployPosition = 0;
 
     public static final double kDeployGearRatio = 15. / 36;
     public static final double kIntakeGearRatio = 1;
@@ -168,6 +171,7 @@ public final class Constants {
     public static final class Shooter {
       public static final String kTable = "Shooter";
       public static final String kVelocityRPM = "Velocity RPM";
+      public static final String kTargetRPM = "Target RPM";
       public static String kPrimaryCurrent = "Primary Current";
     public static String kSecondaryCurrent = "Secondary Current";
     }
@@ -201,12 +205,16 @@ public final class Constants {
     public static final class IntakeDeploy {
       public static final String kTable = "IntakeDeploy";
       public static final String kVelocityRPM = "Velocity RPM";
+      public static final String kPositionRotations = "Position Rotations";
     }
 
     public static final class Climber {
       public static final String kTable = "Climber";
       public static final String kVelocityRPM = "Velocity RPM";
       public static final String kPositionRotations = "Position Rotations";
+      public static final String kPrimaryCurrent = "Primary Current Amps";
+      public static final String kSecondaryCurrent = "Secondary Current Amps";
+
     }
   }
 
