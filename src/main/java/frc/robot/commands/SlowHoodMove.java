@@ -47,7 +47,7 @@ public class SlowHoodMove extends Command {
     }
     dTime = Timer.getTimestamp() - currentTime;
     targetPosition += slowHoodSpeed * dTime * (m_hoodSubsystem.getHoodMovingForward() ? 1 : -1);
-    // m_hoodSubsystem.setHoodTarget(targetPosition);
+    m_hoodSubsystem.setHoodTarget(targetPosition);
     currentTime = Timer.getTimestamp();
   }
 

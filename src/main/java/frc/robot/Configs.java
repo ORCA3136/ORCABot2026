@@ -81,7 +81,7 @@ public class Configs {
 
     public static final class IntakeConfigs {
         public static final SparkFlexConfig intakeMotorConfig = new SparkFlexConfig();
-        public static final SparkFlexConfig IntakeDeployMotorConfig = new SparkFlexConfig();        
+        public static final SparkMaxConfig IntakeDeployMotorConfig = new SparkMaxConfig();        
         
         static {
             intakeMotorConfig

@@ -75,9 +75,9 @@ public class SwerveSubsystem extends SubsystemBase {
   final NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kTable);
   final NetworkTable visionTable = networkTable.getTable(NetworkTableNames.Vision.kTable);
 
-  Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
+  Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityZDevice().asSupplier();
   Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
-  Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
+  Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityYDevice().asSupplier();
 
   StructPublisher<Pose2d> robotPose2dPublisher = odometryTable
       .getStructTopic(NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();
@@ -540,13 +540,13 @@ public class SwerveSubsystem extends SubsystemBase {
 
     switch (element) {
       case kHub:
-        swerveDrive.getPose().getTranslation().minus(positions.get(0));
+        return swerveDrive.getPose().getTranslation().minus(positions.get(0));
       case kOutpost:
-        swerveDrive.getPose().getTranslation().minus(positions.get(1));
+        return swerveDrive.getPose().getTranslation().minus(positions.get(1));
       case kTower:
-        swerveDrive.getPose().getTranslation().minus(positions.get(2));
+        return swerveDrive.getPose().getTranslation().minus(positions.get(2));
       case kDepot:
-        swerveDrive.getPose().getTranslation().minus(positions.get(3));
+        return swerveDrive.getPose().getTranslation().minus(positions.get(3));
       default:
         return null;
     }
