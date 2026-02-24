@@ -13,7 +13,7 @@ import frc.robot.subsystems.SwerveSubsystem;
 
 /**
  * Simulates Limelight vision measurements by:
- * 1. Getting ground truth pose from maple-sim drivetrain
+ * 1. Getting the current odometry pose as ground truth
  * 2. Adding Gaussian noise scaled by distance
  * 3. Rate-limiting to ~15 Hz with simulated latency
  * 4. Publishing to the same NT keys that SwerveSubsystem.getVisionUpdate() reads
@@ -45,12 +45,13 @@ public class VisionSim {
         }
         lastUpdateTime = now;
 
-        // Get ground truth pose from maple-sim
-        Pose2d groundTruth;
-        try {
-            groundTruth = swerve.getMapleSimPose();
-        } catch (Exception e) {
-            return; // maple-sim drive not available
+        // Get odometry pose as ground truth for vision noise simulation
+        Pose2d groundTruth = swerve.getPose();
+
+        // Guard against corrupted sim state (NaN pose from MapleSim motor model mismatch)
+        if (Double.isNaN(groundTruth.getX()) || Double.isNaN(groundTruth.getY())
+            || Double.isNaN(groundTruth.getRotation().getCos())) {
+            return;
         }
 
         // Add Gaussian noise

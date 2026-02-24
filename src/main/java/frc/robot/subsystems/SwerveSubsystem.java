@@ -6,11 +6,8 @@ package frc.robot.subsystems;
 
 import java.io.File;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
-
-// import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -23,12 +20,10 @@ import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import swervelib.parser.SwerveParser;
-import swervelib.simulation.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 import swervelib.SwerveDrive;
@@ -49,8 +44,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.*;
 
-import static edu.wpi.first.units.Units.Meter;
-
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -110,15 +104,16 @@ public class SwerveSubsystem extends SubsystemBase {
 
     try
     {
-      swerveDrive = new SwerveParser(directory).createSwerveDrive(RobotConstants.kDriveMaxSpeedMps,
-                                                                  new Pose2d(new Translation2d(Meter.of(0),
-                                                                                               Meter.of(0)),
-                                                                             Rotation2d.fromDegrees(0)));
-      // DataLogManager.log("Found and read the file");
+      // In simulation, start the robot inside the field (default Pose2d.kZero is the field corner).
+      // On real robot, auto routines reset the pose via PathPlanner.
+      Pose2d initialPose = RobotBase.isSimulation()
+          ? new Pose2d(2.0, 4.0, new Rotation2d())  // ~2m from blue wall, centered on Y axis
+          : Pose2d.kZero;
 
-      
-      // Alternative method if you don't want to supply the conversion factor via JSON files.
-      // swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, angleConversionFactor, driveConversionFactor);
+      swerveDrive = new SwerveParser(directory).createSwerveDrive(RobotConstants.kDriveMaxSpeedMps, initialPose);
+
+      // Note: YAGSL 2026.2.24 fixed SparkFlexSwerve.getSimMotor() to return the correct
+      // motor type instead of hardcoding NeoVortex. No workaround needed.
     } catch (Exception e)
     {
       throw new RuntimeException(e);
@@ -323,14 +318,6 @@ public class SwerveSubsystem extends SubsystemBase {
     return swerveDrive.getPose();
   }
 
-  public Optional<SwerveDriveSimulation> getMapleSimDrive(){
-    return swerveDrive.getMapleSimDrive();
-  }
-
-  public Pose2d getMapleSimPose(){
-    return getMapleSimDrive().get().getSimulatedDriveTrainPose();
-  }
- 
   /**
    * Resets the gyro angle to zero and resets odometry to the same position, but facing toward 0.
    */
@@ -565,13 +552,21 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Update swervedrive when a new pose estimate is available */
   public void getVisionUpdate() {
     double visionTimestamp = visionTable.getEntry(NetworkTableNames.Vision.kVisionEstimateTimestamp).getDouble(0);
-    if (visionTimestamp == 0) 
+    if (visionTimestamp == 0)
       return;
 
     if (lastVisionUpdateTime == visionTimestamp)
       return;
 
     Pose2d visionEstimate = visionEstimateSubscriber.get();
+
+    // Guard against NaN/invalid pose data (can occur in sim when MapleSim state is corrupted)
+    if (Double.isNaN(visionEstimate.getX()) || Double.isNaN(visionEstimate.getY())
+        || Double.isNaN(visionEstimate.getRotation().getCos())) {
+      return;
+    }
+
+    lastVisionUpdateTime = visionTimestamp;
     swerveDrive.addVisionMeasurement(visionEstimate, visionTimestamp);
   }
 
@@ -581,15 +576,21 @@ public class SwerveSubsystem extends SubsystemBase {
     networkTable.getTable(NetworkTableNames.Robot.kTable).getEntry(NetworkTableNames.Robot.kBatteryVoltage).setDouble(RobotController.getBatteryVoltage());
     networkTable.getTable(NetworkTableNames.Robot.kTable).getEntry(NetworkTableNames.Robot.kBatteryBrownout).setDouble(RobotController.getBrownoutVoltage());
 
-    robotPose2dPublisher.set(swerveDrive.getPose());
-    robotRotation3dPublisher.set(swerveDrive.getGyroRotation3d());
-    
-    robotVelocityPublisher.set(new double[] {swerveDrive.getRobotVelocity().vxMetersPerSecond,
-                                             swerveDrive.getRobotVelocity().vyMetersPerSecond,
-                                             0}, 0);
-    robotAngularVelocity3dPublisher.set(new double[] {pitchSupplier.get().baseUnitMagnitude(), 
-                                                      rollSupplier.get().baseUnitMagnitude(), 
-                                                      yawSupplier.get().baseUnitMagnitude()}, 0);
+    try {
+      robotPose2dPublisher.set(swerveDrive.getPose());
+      robotRotation3dPublisher.set(swerveDrive.getGyroRotation3d());
+
+      ChassisSpeeds velocity = swerveDrive.getRobotVelocity();
+      robotVelocityPublisher.set(new double[] {velocity.vxMetersPerSecond,
+                                               velocity.vyMetersPerSecond,
+                                               0}, 0);
+      robotAngularVelocity3dPublisher.set(new double[] {pitchSupplier.get().baseUnitMagnitude(),
+                                                        rollSupplier.get().baseUnitMagnitude(),
+                                                        yawSupplier.get().baseUnitMagnitude()}, 0);
+    } catch (Exception e) {
+      // Swallow errors from corrupted sim state (NaN Rotation2d from MapleSim)
+      // to prevent cascading failures in the scheduler loop
+    }
   }
 
   /** This method will be called once per scheduler run */
@@ -597,7 +598,8 @@ public class SwerveSubsystem extends SubsystemBase {
   public void periodic() {
     updateNetworkTable();
 
-    swerveDrive.updateOdometry();
+    // Note: updateOdometry() runs automatically on YAGSL's internal Notifier thread.
+    // Do NOT call it here to avoid conflicts with the threaded odometry updates.
     getVisionUpdate();
     
   }

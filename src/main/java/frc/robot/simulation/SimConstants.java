@@ -50,7 +50,7 @@ public final class SimConstants {
     public static final double kClimberMinHeightMeters = 0.0;
     public static final double kClimberMaxHeightMeters = 0.5;
 
-    // Intake simulation (maple-sim game piece acquisition)
+    // Intake simulation
     public static final double kIntakeWidthMeters = 0.4; // width of intake zone TODO: measure
     public static final double kIntakeExtensionMeters = 0.15; // how far intake extends past bumpers TODO: measure
     public static final int kIntakeCapacity = 5; // max fuel held

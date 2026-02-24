@@ -3,38 +3,52 @@ package frc.robot.simulation;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.simulation.DIOSim;
-import swervelib.simulation.ironmaple.simulation.IntakeSimulation;
 
 /**
  * Tracks fuel through the robot pipeline: INTAKE -> CONVEYOR -> STAGED -> LAUNCHED.
  * Manages a simulated beam break sensor (DIOSim) that trips when fuel is staged
  * at the kicker position, ready for the shooter.
+ *
+ * Fuel acquisition is driven externally via acquireFuel() (e.g. when intake is
+ * running and the robot is near game pieces on the field).
  */
 public class GamePieceTracker {
 
     public enum FuelState {
         EMPTY,      // no fuel in pipeline
-        IN_INTAKE,  // fuel acquired from field, in intake
+        IN_INTAKE,  // fuel acquired, in intake
         IN_CONVEYOR,// fuel moving through conveyor
         STAGED,     // fuel at beam break, ready to shoot
         LAUNCHING   // fuel being fed to shooter
     }
 
-    private final IntakeSimulation intakeSim;
     private final DIOSim beamBreakSim;
 
     private FuelState state = FuelState.EMPTY;
     private boolean launchRequested = false;
+    private int heldFuelCount = 0;
     private int totalLaunched = 0;
 
     private final NetworkTable simTable;
 
-    public GamePieceTracker(IntakeSimulation intakeSim) {
-        this.intakeSim = intakeSim;
+    public GamePieceTracker() {
         this.beamBreakSim = new DIOSim(SimConstants.kBeamBreakDIOPort);
         beamBreakSim.setValue(true); // beam not broken = no fuel
 
         simTable = NetworkTableInstance.getDefault().getTable("Simulation");
+    }
+
+    /**
+     * Simulate acquiring a fuel game piece (e.g. intake picked one up).
+     * Only acquires if under capacity.
+     */
+    public void acquireFuel() {
+        if (heldFuelCount < SimConstants.kIntakeCapacity) {
+            heldFuelCount++;
+            if (state == FuelState.EMPTY) {
+                state = FuelState.IN_INTAKE;
+            }
+        }
     }
 
     /**
@@ -51,10 +65,7 @@ public class GamePieceTracker {
 
         switch (state) {
             case EMPTY:
-                // Check if intake has acquired a game piece from the field
-                if (intakeSim.getGamePiecesAmount() > 0) {
-                    state = FuelState.IN_INTAKE;
-                }
+                // Waiting for acquireFuel() to be called externally
                 break;
 
             case IN_INTAKE:
@@ -81,12 +92,12 @@ public class GamePieceTracker {
 
             case LAUNCHING:
                 // Consume the fuel and signal projectile launch
-                intakeSim.obtainGamePieceFromIntake();
+                heldFuelCount = Math.max(0, heldFuelCount - 1);
                 beamBreakSim.setValue(true); // beam unbroken
                 launchRequested = true;
                 totalLaunched++;
                 // Check if more fuel is available to cycle
-                state = intakeSim.getGamePiecesAmount() > 0 ? FuelState.IN_INTAKE : FuelState.EMPTY;
+                state = heldFuelCount > 0 ? FuelState.IN_INTAKE : FuelState.EMPTY;
                 break;
         }
 
@@ -96,7 +107,7 @@ public class GamePieceTracker {
 
     private void publishNT() {
         simTable.getEntry("Kicker/BeamBreakTripped").setBoolean(state == FuelState.STAGED || state == FuelState.LAUNCHING);
-        simTable.getEntry("Robot/HeldFuelCount").setInteger(intakeSim.getGamePiecesAmount());
+        simTable.getEntry("Robot/HeldFuelCount").setInteger(heldFuelCount);
         simTable.getEntry("Robot/FuelState").setString(state.name());
         simTable.getEntry("Robot/TotalLaunched").setInteger(totalLaunched);
     }
@@ -106,7 +117,7 @@ public class GamePieceTracker {
     }
 
     public int getHeldFuelCount() {
-        return intakeSim.getGamePiecesAmount();
+        return heldFuelCount;
     }
 
     public boolean isBeamBreakTripped() {
