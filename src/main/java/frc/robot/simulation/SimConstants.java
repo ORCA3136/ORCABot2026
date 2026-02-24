@@ -55,6 +55,10 @@ public final class SimConstants {
     public static final double kIntakeExtensionMeters = 0.15; // how far intake extends past bumpers TODO: measure
     public static final int kIntakeCapacity = 5; // max fuel held
 
+    // Fuel game piece (2026 REBUILT)
+    public static final double kFuelDiameterMeters = Units.inchesToMeters(5.91);
+    public static final double kFuelMassKg = Units.lbsToKilograms(0.5);
+
     // Shooter geometry for projectile launching
     public static final double kShooterHeightMeters = 0.4; // height of shooter exit TODO: measure
     public static final double kShooterOffsetX = 0.0; // shooter X offset from robot center TODO: measure

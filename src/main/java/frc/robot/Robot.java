@@ -6,11 +6,14 @@ package frc.robot;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.simulation.SimulationManager;
+import swervelib.simulation.ironmaple.simulation.SimulatedArena;
+import swervelib.simulation.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt;
 
 
 /**
@@ -36,6 +39,11 @@ public class Robot extends TimedRobot {
   public Robot() {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
+    // Override the arena BEFORE RobotContainer so YAGSL registers its drive with the REBUILT arena
+    if (RobotBase.isSimulation()) {
+      SimulatedArena.overrideInstance(new Arena2026Rebuilt());
+    }
+
     commandScheduler = CommandScheduler.getInstance();
     m_robotContainer = new RobotContainer();
     CameraServer.startAutomaticCapture();
