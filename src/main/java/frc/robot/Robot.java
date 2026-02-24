@@ -5,7 +5,6 @@
 package frc.robot;
 
 import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 
@@ -44,16 +43,22 @@ public class Robot extends TimedRobot {
       SimulatedArena.overrideInstance(new Arena2026Rebuilt());
     }
 
+    // Start data logging before subsystems so early messages are captured
+    RobotLogger.init(false); // Set to true for USB logging at competition
+
     commandScheduler = CommandScheduler.getInstance();
     m_robotContainer = new RobotContainer();
     CameraServer.startAutomaticCapture();
-    DataLogManager.start();
-    // LLSeedModeCommand = m_robotContainer.getLLSeedCommand();
-    // LLInternalModeCommand = m_robotContainer.getLLInternalCommand();
 
-    // commandScheduler.schedule(LLSeedModeCommand);
-    
-    // addPeriodic(Intake::operate, Constants.intakeCycleTime);
+    // Register subsystems for shot logging
+    RobotLogger.registerSubsystems(
+        m_robotContainer.getShooterSubsystem(),
+        m_robotContainer.getHoodSubsystem(),
+        m_robotContainer.getKickerSubsystem(),
+        m_robotContainer.getSwerveSubsystem());
+
+    // Log every command start/stop for AdvantageScope review
+    RobotLogger.registerCommandLogging();
   }
 
   /**
@@ -75,7 +80,7 @@ public class Robot extends TimedRobot {
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
   public void disabledInit() {
-    // commandScheduler.schedule(LLSeedModeCommand);
+    RobotLogger.log("MODE: Disabled");
   }
 
   @Override
@@ -84,7 +89,7 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    // commandScheduler.schedule(LLInternalModeCommand);
+    RobotLogger.log("MODE: Autonomous");
 
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
@@ -100,11 +105,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
-    // This makes sure that the autonomous stops running when
-    // teleop starts running. If you want the autonomous to
-    // continue until interrupted by another command, remove
-    // this line or comment it out.
-    // commandScheduler.schedule(LLInternalModeCommand);
+    RobotLogger.log("MODE: Teleop");
 
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
@@ -117,7 +118,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testInit() {
-    // Cancels all running commands at the start of test mode.
+    RobotLogger.log("MODE: Test");
     CommandScheduler.getInstance().cancelAll();
   }
 

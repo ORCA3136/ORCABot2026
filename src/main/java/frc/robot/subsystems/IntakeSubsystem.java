@@ -208,6 +208,10 @@ public class IntakeSubsystem extends SubsystemBase {
   public void updateNetworkTable() {
     intakeTable.getEntry(NetworkTableNames.Intake.kVelocityRPM)
       .setNumber(getIntakeVelocity());
+    intakeTable.getEntry(NetworkTableNames.Intake.kCurrentAmps)
+      .setNumber(intakeMotor.getOutputCurrent());
+    intakeTable.getEntry(NetworkTableNames.Intake.kDeployCurrentAmps)
+      .setNumber(intakeDeployMotor.getOutputCurrent());
     intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM)
       .setNumber(getIntakeDeployVelocity());
     intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kPositionRotations)

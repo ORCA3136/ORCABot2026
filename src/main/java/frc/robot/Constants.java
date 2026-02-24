@@ -176,6 +176,7 @@ public final class Constants {
       public static final String kTable = "Shooter";
       public static final String kVelocityRPM = "Velocity RPM";
       public static final String kTargetRPM = "Target RPM";
+      public static final String kRampedSetpoint = "Ramped Setpoint RPM";
       public static String kPrimaryCurrent = "Primary Current";
     public static String kSecondaryCurrent = "Secondary Current";
     }
@@ -185,6 +186,7 @@ public final class Constants {
       public static final String kVelocityRPM = "Velocity RPM";
       public static final String kPositionRotations = "Position Rotations";
       public static final String kTargetRotations = "Target Position Rotations";
+      public static final String kAngleDegrees = "Angle Degrees";
     public static String kPrimaryCurrent = "Primary Current";
     public static String kSecondaryCurrent = "Secondary Current";
     }
@@ -204,6 +206,8 @@ public final class Constants {
     public static final class Intake {
       public static final String kTable = "Intake";
       public static final String kVelocityRPM = "Velocity RPM";
+      public static final String kCurrentAmps = "Current Amps";
+      public static final String kDeployCurrentAmps = "Deploy Current Amps";
     }
 
     public static final class IntakeDeploy {

@@ -15,6 +15,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.*;
 import frc.robot.Constants.*;
+import frc.robot.RobotLogger;
 
 
 /*
@@ -28,6 +29,10 @@ import frc.robot.Constants.*;
 
 
 public class KickerSubsystem extends SubsystemBase {
+
+  // Shot detection: log once when kicker spins up past threshold, reset when it drops
+  private static final double SHOT_VELOCITY_THRESHOLD = 500.0; // RPM
+  private boolean shotDetected = false;
 
   final SparkFlex kickerMotor = new SparkFlex(CanIdConstants.kKickerCanId, MotorType.kBrushless);
 
@@ -79,8 +84,16 @@ public class KickerSubsystem extends SubsystemBase {
   /** This method will be called once per scheduler run */
   @Override
   public void periodic() {
-
     updateNetworkTable();
+
+    // Shot detection: log once per shot when kicker exceeds threshold
+    double velocity = getKickerVelocity();
+    if (velocity > SHOT_VELOCITY_THRESHOLD && !shotDetected) {
+      shotDetected = true;
+      RobotLogger.logShot();
+    } else if (velocity < SHOT_VELOCITY_THRESHOLD) {
+      shotDetected = false;
+    }
   }
 
   /** This method will be called once per scheduler run during simulation */

@@ -84,6 +84,11 @@ public class ShooterSubsystem extends SubsystemBase {
     return shooterVelocityTarget;
   }
 
+  /** @return The current ramped setpoint being fed to PID */
+  public double getRampedSetpoint() {
+    return shooterVelocity;
+  }
+
   public void setToggleDirection(boolean toggle) {
     toggleDirection = toggle;
   };
@@ -148,6 +153,8 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterTable.getEntry(NetworkTableNames.Shooter.kTargetRPM)
       .setNumber(getShooterTarget());
 
+    shooterTable.getEntry(NetworkTableNames.Shooter.kRampedSetpoint)
+      .setNumber(getRampedSetpoint());
     shooterTable.getEntry(NetworkTableNames.Shooter.kPrimaryCurrent)
       .setNumber(getShooterPrimaryCurrent());
     shooterTable.getEntry(NetworkTableNames.Shooter.kSecondaryCurrent)

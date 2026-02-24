@@ -141,6 +141,8 @@ public class HoodSubsystem extends SubsystemBase {
     hoodTable.getEntry(NetworkTableNames.Hood.kTargetRotations)
       .setNumber(rotations);
 
+    hoodTable.getEntry(NetworkTableNames.Hood.kAngleDegrees)
+      .setNumber(Math.toDegrees(getHoodAngle()));
     hoodTable.getEntry(NetworkTableNames.Hood.kPrimaryCurrent)
       .setNumber(getHoodPrimaryCurrent());
     hoodTable.getEntry(NetworkTableNames.Hood.kSecondaryCurrent)
