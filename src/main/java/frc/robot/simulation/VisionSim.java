@@ -2,13 +2,10 @@ package frc.robot.simulation;
 
 import java.util.Random;
 
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.Timer;
-import frc.robot.Constants.NetworkTableNames;
 import frc.robot.subsystems.SwerveSubsystem;
 
 /**
@@ -16,7 +13,7 @@ import frc.robot.subsystems.SwerveSubsystem;
  * 1. Getting the current odometry pose as ground truth
  * 2. Adding Gaussian noise scaled by distance
  * 3. Rate-limiting to ~15 Hz with simulated latency
- * 4. Publishing to the same NT keys that SwerveSubsystem.getVisionUpdate() reads
+ * 4. Fusing directly into the swerve drive's pose estimator
  */
 public class VisionSim {
 
@@ -26,14 +23,8 @@ public class VisionSim {
     private double lastUpdateTime = 0;
     private final double updatePeriod = 1.0 / SimConstants.kVisionUpdateRateHz;
 
-    private final NetworkTable visionTable;
-    private final StructPublisher<Pose2d> visionPosePublisher;
-
     public VisionSim(SwerveSubsystem swerve) {
         this.swerve = swerve;
-        visionTable = NetworkTableInstance.getDefault().getTable(NetworkTableNames.Vision.kTable);
-        visionPosePublisher = visionTable
-            .getStructTopic(NetworkTableNames.Vision.kVisionEstimatePose2d, Pose2d.struct).publish();
     }
 
     public void update() {
@@ -64,10 +55,12 @@ public class VisionSim {
 
         Pose2d noisyPose = new Pose2d(noisyX, noisyY, new Rotation2d(noisyRot));
 
-        // Publish with simulated latency
+        // Fuse directly into the pose estimator with simulated latency and std devs
         double timestamp = now - SimConstants.kVisionLatencySeconds;
-
-        visionPosePublisher.set(noisyPose);
-        visionTable.getEntry(NetworkTableNames.Vision.kVisionEstimateTimestamp).setDouble(timestamp);
+        swerve.addVisionMeasurement(noisyPose, timestamp,
+            VecBuilder.fill(
+                SimConstants.kVisionPositionStdDev,
+                SimConstants.kVisionPositionStdDev,
+                SimConstants.kVisionRotationStdDev));
     }
 }

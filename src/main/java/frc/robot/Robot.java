@@ -23,8 +23,6 @@ import swervelib.simulation.ironmaple.simulation.seasonspecific.rebuilt2026.Aren
  */
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
-  private Command LLSeedModeCommand;
-  private Command LLInternalModeCommand;
 
   private final CommandScheduler commandScheduler;
 
@@ -48,12 +46,6 @@ public class Robot extends TimedRobot {
     m_robotContainer = new RobotContainer();
     CameraServer.startAutomaticCapture();
     DataLogManager.start();
-    // LLSeedModeCommand = m_robotContainer.getLLSeedCommand();
-    // LLInternalModeCommand = m_robotContainer.getLLInternalCommand();
-
-    // commandScheduler.schedule(LLSeedModeCommand);
-    
-    // addPeriodic(Intake::operate, Constants.intakeCycleTime);
   }
 
   /**
@@ -74,9 +66,7 @@ public class Robot extends TimedRobot {
 
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
-  public void disabledInit() {
-    // commandScheduler.schedule(LLSeedModeCommand);
-  }
+  public void disabledInit() {}
 
   @Override
   public void disabledPeriodic() {}
@@ -84,8 +74,6 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    // commandScheduler.schedule(LLInternalModeCommand);
-
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     // schedule the autonomous command (example)
@@ -101,11 +89,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     // This makes sure that the autonomous stops running when
-    // teleop starts running. If you want the autonomous to
-    // continue until interrupted by another command, remove
-    // this line or comment it out.
-    // commandScheduler.schedule(LLInternalModeCommand);
-
+    // teleop starts running.
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }

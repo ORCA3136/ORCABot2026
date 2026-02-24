@@ -84,8 +84,49 @@ public final class Constants {
   }
 
   public static final class VisionConstants {
-    public static final String limelightOneName = "limelight-left";
-    public static final String limelightTwoName = "limelight-right";
+    // Camera names — must match the names configured in the Limelight web interface.
+    public static final String kLimelightFrontName = "limelight-front";
+    public static final String kLimelightBackName = "limelight-back";
+
+    // Front camera mount offsets (TODO: measure on real robot to nearest mm)
+    public static final double kFrontCamForwardM = 0.30;
+    public static final double kFrontCamLeftM = 0.0;
+    public static final double kFrontCamUpM = 0.25;
+    public static final double kFrontCamPitchDeg = 15.0;
+
+    // Back camera mount offsets (TODO: measure on real robot to nearest mm)
+    public static final double kBackCamForwardM = -0.30;
+    public static final double kBackCamLeftM = 0.0;
+    public static final double kBackCamUpM = 0.25;
+    public static final double kBackCamPitchDeg = 15.0;
+
+    // --- Rejection thresholds ---
+    public static final double kMaxYawRateDegPerSec = 270.0;
+    public static final double kMaxAmbiguitySingleTag = 0.5;
+    public static final double kMaxPoseJumpMultiTag = 0.75;
+    public static final double kMaxPoseJumpSingleTag = 0.5;
+    public static final double kMaxPoseJumpSettling = 1.5;
+    public static final double kMaxOdometryJumpM = 1.0;
+    public static final double kMaxOdometryJumpSettlingM = 2.0;
+    public static final double kMaxTimestampAgeSec = 0.5;
+
+    // 2026 REBUILT field boundary + 0.5m margin (field is 16.54m x 8.21m)
+    public static final double kFieldMinX = -0.5;
+    public static final double kFieldMaxX = 17.04;
+    public static final double kFieldMinY = -0.5;
+    public static final double kFieldMaxY = 8.71;
+
+    // --- Std dev tuning ---
+    public static final double kXYStdDevBase = 0.5;
+    public static final double kSingleTagPenalty = 2.0;
+    public static final double kMinXYStdDev = 0.1;
+
+    // --- IMU settling ---
+    public static final int kImuSettleCycles = 25;
+    public static final int kPostSettleGraceCycles = 5;
+
+    public static final double kVisionHealthyTimeoutSec = 0.5;
+    public static final double kTagDistanceStaleSec = 0.08;
   }
   
   public static final class OperatorConstants {
@@ -164,8 +205,26 @@ public final class Constants {
 
     public static final class Vision {
       public static final String kTable = "Vision";
-      public static final String kVisionEstimatePose2d = "Vision Estimate Pose 2d";
-      public static final String kVisionEstimateTimestamp = "Vision Estimate Timestamp";
+
+      // Per-camera table prefixes
+      public static final String kFrontTable = "Vision/Front";
+      public static final String kBackTable = "Vision/Back";
+
+      // Per-camera keys
+      public static final String kVisionPose = "VisionPose";
+      public static final String kTagCount = "TagCount";
+      public static final String kAvgTagDistance = "AvgTagDistance";
+      public static final String kXYStdDev = "XYStdDev";
+      public static final String kAccepted = "Accepted";
+      public static final String kRejectReason = "RejectReason";
+      public static final String kLatencyMs = "LatencyMs";
+      public static final String kPoseJumpMeters = "PoseJumpMeters";
+      public static final String kHeadingDeviationDeg = "HeadingDeviationDeg";
+
+      // System-level keys
+      public static final String kTotalTagCount = "TotalTagCount";
+      public static final String kVisionHealthy = "VisionHealthy";
+      public static final String kImuPhase = "ImuPhase";
     }
 
     public static final class Shooter {

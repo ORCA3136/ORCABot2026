@@ -49,7 +49,8 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
   // private final TeleopPathplanner teleopPathplanner = new TeleopPathplanner();
-  // private final VisionSubsystem visionSubsystem = new VisionSubsystem();
+  @SuppressWarnings("unused") // periodic() runs vision fusion automatically — no commands needed
+  private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveBase);
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final HoodSubsystem hoodSubsystem = new HoodSubsystem();
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
@@ -203,21 +204,4 @@ public class RobotContainer {
     return autoChooser.getSelected();
   }
 
-  /**
-   * Use this to pass the limelight command to the main {@link Robot} class.
-   *
-   * @return the command to run in disabled
-   */
-  public Command getLLSeedCommand() {
-      return null; //visionSubsystem.getLLSeedCommand();
-  }
-
-  /**
-   * Use this to pass the limelight command to the main {@link Robot} class.
-   *
-   * @return the command to run in auto and teleop
-   */
-  public Command getLLInternalCommand() {
-      return null; //visionSubsystem.getLLInternalCommand();
-  }
 }
