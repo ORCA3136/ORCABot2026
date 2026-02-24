@@ -34,8 +34,12 @@ public final class Constants {
     public static final double kG = 0.;
     public static final double kS = 1;
     public static final double kVelocityModifier = .002;
-    // public static final double kV = 0;
-    // public static final double kA = 0;
+
+    // Setpoint ramp rates (RPM per 20ms cycle)
+    // At 200 RPM/cycle spin-up: 0 → 5000 RPM takes ~0.5 seconds
+    // At 400 RPM/cycle spin-down: 5000 → 0 RPM takes ~0.25 seconds
+    public static final double kRampUpRate = 200.0;
+    public static final double kRampDownRate = 400.0;
   }
 
   public static final class HoodConstants {

@@ -36,7 +36,8 @@ import frc.robot.Constants.*;
 
 public class ShooterSubsystem extends SubsystemBase {
 
-  double shooterVelocity = 0;
+  double shooterVelocityTarget = 0;  // Where we want to be (set by commands)
+  double shooterVelocity = 0;        // Current ramped setpoint (fed to PID each cycle)
   boolean toggleDirection = false;
   
   final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
@@ -75,12 +76,12 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void setShooterVelocityTarget(double target) {
-    shooterVelocity = target;
+    shooterVelocityTarget = target;
   }
 
-  /**  */
+  /** @return The final target velocity (before ramping) */
   public double getShooterTarget() {
-    return shooterVelocity;
+    return shooterVelocityTarget;
   }
 
   public void setToggleDirection(boolean toggle) {
@@ -90,34 +91,34 @@ public class ShooterSubsystem extends SubsystemBase {
   /** Increases the speed of the shooter by ~ 100 RPM */
   public void increaseShooterVelocity(int level) {
     if (level == 1) {
-      if (!toggleDirection) shooterVelocity += 5;
-      else shooterVelocity -= 5;
+      if (!toggleDirection) shooterVelocityTarget += 5;
+      else shooterVelocityTarget -= 5;
     }
 
     if (level == 2) {
-      if (!toggleDirection) shooterVelocity += 50;
-      else shooterVelocity -= 50;
+      if (!toggleDirection) shooterVelocityTarget += 50;
+      else shooterVelocityTarget -= 50;
     }
 
     if (level == 3) {
-      if (!toggleDirection) shooterVelocity += 100;
-      else shooterVelocity -= 100;
+      if (!toggleDirection) shooterVelocityTarget += 100;
+      else shooterVelocityTarget -= 100;
     }
 
     if (level == 4) {
-      if (!toggleDirection) shooterVelocity += 500;
-      else shooterVelocity -= 500;
+      if (!toggleDirection) shooterVelocityTarget += 500;
+      else shooterVelocityTarget -= 500;
     }
 
-    
-    if (shooterVelocity > 6500) shooterVelocity = 6500;
-    if (shooterVelocity < 0) shooterVelocity = 0;
+
+    if (shooterVelocityTarget > 6500) shooterVelocityTarget = 6500;
+    if (shooterVelocityTarget < 0) shooterVelocityTarget = 0;
   }
 
-  /** Decreases the speed of the shooter by ~ 100 RPM */ 
+  /** Decreases the speed of the shooter by ~ 100 RPM */
   public void decreaseShooterVelocity() {
-    shooterVelocity -= 100;
-    if (shooterVelocity < 0) shooterVelocity = 0;
+    shooterVelocityTarget -= 100;
+    if (shooterVelocityTarget < 0) shooterVelocityTarget = 0;
   }
 
   /** @return Primary motor for simulation access */
@@ -154,12 +155,20 @@ public class ShooterSubsystem extends SubsystemBase {
 
   }
 
+  /** Ramp the setpoint toward the target each cycle. */
+  private void rampSetpoint() {
+    if (shooterVelocity < shooterVelocityTarget) {
+      shooterVelocity = Math.min(shooterVelocity + ShooterConstants.kRampUpRate, shooterVelocityTarget);
+    } else if (shooterVelocity > shooterVelocityTarget) {
+      shooterVelocity = Math.max(shooterVelocity - ShooterConstants.kRampDownRate, shooterVelocityTarget);
+    }
+  }
+
   /** This method will be called once per scheduler run */
   @Override
   public void periodic() {
-    
+    rampSetpoint();
     updateNetworkTable();
-
     setShooterPIDVelocity();
   }
 
