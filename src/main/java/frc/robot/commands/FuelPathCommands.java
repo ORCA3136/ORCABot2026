@@ -100,6 +100,7 @@ public final class FuelPathCommands {
     })
     .finallyDo(interrupted -> {
       intake.ocillateIntake(false);
+      intake.deployIntake(false);
     })
     .withName("FullFuelPath");
   }
@@ -121,6 +122,7 @@ public final class FuelPathCommands {
     })
     .finallyDo(interrupted -> {
       intake.ocillateIntake(false);
+      intake.deployIntake(false);
     })
     .withName("FullFuelPathJamProtected");
   }
@@ -130,22 +132,24 @@ public final class FuelPathCommands {
   /** Jog conveyor forward then reverse briefly to clear a minor blockage. Runs once. */
   public static Command conveyorJog(ConveyorSubsystem conveyor) {
     return Commands.sequence(
-        Commands.runOnce(() -> conveyor.setConveyorVelocity(FuelPathConstants.kConveyorJogSpeed)),
+        Commands.runOnce(() -> conveyor.setConveyorVelocity(FuelPathConstants.kConveyorJogSpeed), conveyor),
         Commands.waitSeconds(FuelPathConstants.kConveyorJogDurationSec),
         Commands.runOnce(() -> conveyor.setConveyorVelocity(-FuelPathConstants.kConveyorJogSpeed)),
         Commands.waitSeconds(FuelPathConstants.kConveyorJogDurationSec),
         Commands.runOnce(() -> conveyor.setConveyorVelocity(0))
-    ).withInterruptBehavior(Command.InterruptionBehavior.kCancelSelf)
+    ).finallyDo(interrupted -> { if (interrupted) conveyor.setConveyorVelocity(0); })
+     .withInterruptBehavior(Command.InterruptionBehavior.kCancelSelf)
      .withName("ConveyorJog");
   }
 
   /** Brief kicker burst for single-ball feeding. Runs once. */
   public static Command kickerPulse(KickerSubsystem kicker) {
     return Commands.sequence(
-        Commands.runOnce(() -> kicker.setKickerVelocity(FuelPathConstants.kKickerPulseSpeed)),
+        Commands.runOnce(() -> kicker.setKickerVelocity(FuelPathConstants.kKickerPulseSpeed), kicker),
         Commands.waitSeconds(FuelPathConstants.kKickerPulseDurationSec),
         Commands.runOnce(() -> kicker.setKickerVelocity(0))
-    ).withInterruptBehavior(Command.InterruptionBehavior.kCancelSelf)
+    ).finallyDo(interrupted -> { if (interrupted) kicker.setKickerVelocity(0); })
+     .withInterruptBehavior(Command.InterruptionBehavior.kCancelSelf)
      .withName("KickerPulse");
   }
 
@@ -178,7 +182,8 @@ public final class FuelPathCommands {
               }
             }, kicker
         ).finallyDo(interrupted -> kicker.setKickerVelocity(0))
-    ).withName("MeteredFeed");
+    ).beforeStarting(() -> feeding[0] = false)
+     .withName("MeteredFeed");
   }
 
   /** Reverse everything at high speed. For clearing jams or ejecting fuel. */

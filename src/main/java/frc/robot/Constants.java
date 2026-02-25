@@ -40,6 +40,9 @@ public final class Constants {
     // At 400 RPM/cycle spin-down: 5000 → 0 RPM takes ~0.25 seconds
     public static final double kRampUpRate = 200.0;
     public static final double kRampDownRate = 400.0;
+
+    // Flywheel is "ready" when within this tolerance of target RPM
+    public static final double kReadyToleranceRPM = 200;
   }
 
   public static final class HoodConstants {
@@ -356,9 +359,6 @@ public final class Constants {
     public static final double kJamReverseDurationSec = 0.3;
     public static final double kJamReverseSpeed = -2000;
     public static final int kJamMaxRetries = 3;
-
-    // Metered feed (shooter "ready" tolerance)
-    public static final double kShooterReadyToleranceRPM = 200;
 
     // Emergency reverse (all motors reverse at high speed)
     public static final double kEmergencyIntakeSpeed = -5000;

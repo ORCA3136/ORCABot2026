@@ -44,11 +44,11 @@ public class KickerJamProtectionCommand extends Command {
   public void execute() {
     switch (m_state) {
       case RUNNING:
-        if (m_kicker.getKickerCurrent() > FuelPathConstants.kJamCurrentThresholdAmps) {
+        double current = m_kicker.getKickerCurrent();
+        if (current > FuelPathConstants.kJamCurrentThresholdAmps) {
           if (m_timer.hasElapsed(FuelPathConstants.kJamDetectionTimeSec)) {
             // Jam detected — reverse
             m_retryCount++;
-            double current = m_kicker.getKickerCurrent();
             RobotLogger.log("FUEL JAM detected (attempt " + m_retryCount + "/" + FuelPathConstants.kJamMaxRetries
                 + ", current: " + String.format("%.1f", current) + "A)");
             if (m_retryCount > FuelPathConstants.kJamMaxRetries) {

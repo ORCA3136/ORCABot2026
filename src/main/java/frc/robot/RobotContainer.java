@@ -194,7 +194,11 @@ public class RobotContainer {
     // Fuel path commands
     NamedCommands.registerCommand("Full Fuel Path",       FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
     NamedCommands.registerCommand("Stop Fuel Path",       Commands.parallel(
-        Commands.runOnce(() -> intakeSubsystem.setIntakeVelocity(0), intakeSubsystem),
+        Commands.runOnce(() -> {
+            intakeSubsystem.setIntakeVelocity(0);
+            intakeSubsystem.ocillateIntake(false);
+            intakeSubsystem.deployIntake(false);
+        }, intakeSubsystem),
         Commands.runOnce(() -> conveyorSubsystem.setConveyorVelocity(0), conveyorSubsystem),
         Commands.runOnce(() -> kickerSubsystem.setKickerVelocity(0), kickerSubsystem)
     ));
