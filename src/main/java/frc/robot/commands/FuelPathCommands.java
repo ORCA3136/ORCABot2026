@@ -3,6 +3,7 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FuelPathConstants;
+import frc.robot.RobotLogger;
 import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
@@ -72,7 +73,7 @@ public final class FuelPathCommands {
     return Commands.parallel(
         new RunIntakeCommand(intake, FuelPathConstants.kIntakeInStandard),
         new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn)
-    );
+    ).withName("IntakeAndConveyor");
   }
 
   /** Conveyor + kicker running together. */
@@ -80,7 +81,7 @@ public final class FuelPathCommands {
     return Commands.parallel(
         new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn),
         new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed)
-    );
+    ).withName("ConveyorAndKicker");
   }
 
   /**
@@ -99,7 +100,8 @@ public final class FuelPathCommands {
     })
     .finallyDo(interrupted -> {
       intake.ocillateIntake(false);
-    });
+    })
+    .withName("FullFuelPath");
   }
 
   /**
@@ -119,7 +121,8 @@ public final class FuelPathCommands {
     })
     .finallyDo(interrupted -> {
       intake.ocillateIntake(false);
-    });
+    })
+    .withName("FullFuelPathJamProtected");
   }
 
   // ── Specialty ───────────────────────────────────────────────────────
@@ -132,7 +135,8 @@ public final class FuelPathCommands {
         Commands.runOnce(() -> conveyor.setConveyorVelocity(-FuelPathConstants.kConveyorJogSpeed)),
         Commands.waitSeconds(FuelPathConstants.kConveyorJogDurationSec),
         Commands.runOnce(() -> conveyor.setConveyorVelocity(0))
-    ).withInterruptBehavior(Command.InterruptionBehavior.kCancelSelf);
+    ).withInterruptBehavior(Command.InterruptionBehavior.kCancelSelf)
+     .withName("ConveyorJog");
   }
 
   /** Brief kicker burst for single-ball feeding. Runs once. */
@@ -141,7 +145,8 @@ public final class FuelPathCommands {
         Commands.runOnce(() -> kicker.setKickerVelocity(FuelPathConstants.kKickerPulseSpeed)),
         Commands.waitSeconds(FuelPathConstants.kKickerPulseDurationSec),
         Commands.runOnce(() -> kicker.setKickerVelocity(0))
-    ).withInterruptBehavior(Command.InterruptionBehavior.kCancelSelf);
+    ).withInterruptBehavior(Command.InterruptionBehavior.kCancelSelf)
+     .withName("KickerPulse");
   }
 
   /**
@@ -151,18 +156,29 @@ public final class FuelPathCommands {
    */
   public static Command meteredFeed(
       ConveyorSubsystem conveyor, KickerSubsystem kicker, ShooterSubsystem shooter) {
+    // Track gating state so we only log on transitions, not every cycle
+    boolean[] feeding = {false};
     return Commands.parallel(
         new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn),
         Commands.run(
             () -> {
-              if (shooter.isShooterReady()) {
+              boolean ready = shooter.isShooterReady();
+              if (ready) {
                 kicker.setKickerVelocity(FuelPathConstants.kKickerFeed);
+                if (!feeding[0]) {
+                  RobotLogger.log("METERED FEED: shooter ready, kicker feeding");
+                  feeding[0] = true;
+                }
               } else {
                 kicker.setKickerVelocity(0);
+                if (feeding[0]) {
+                  RobotLogger.log("METERED FEED: shooter not ready, kicker gated");
+                  feeding[0] = false;
+                }
               }
             }, kicker
         ).finallyDo(interrupted -> kicker.setKickerVelocity(0))
-    );
+    ).withName("MeteredFeed");
   }
 
   /** Reverse everything at high speed. For clearing jams or ejecting fuel. */
@@ -172,7 +188,7 @@ public final class FuelPathCommands {
         new RunIntakeCommand(intake, FuelPathConstants.kEmergencyIntakeSpeed),
         new RunConveyorCommand(conveyor, FuelPathConstants.kEmergencyConveyorSpeed),
         new RunKickerCommand(kicker, FuelPathConstants.kEmergencyKickerSpeed)
-    );
+    ).withName("EmergencyReverse");
   }
 
   /** Wraps KickerJamProtectionCommand for use as a standalone. */
@@ -188,6 +204,6 @@ public final class FuelPathCommands {
     return Commands.parallel(
         new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn),
         new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed)
-    );
+    ).withName("FeedUntilLoaded");
   }
 }

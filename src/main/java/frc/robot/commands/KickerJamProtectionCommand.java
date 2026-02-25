@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.FuelPathConstants;
+import frc.robot.RobotLogger;
 import frc.robot.subsystems.KickerSubsystem;
 
 /**
@@ -47,9 +48,13 @@ public class KickerJamProtectionCommand extends Command {
           if (m_timer.hasElapsed(FuelPathConstants.kJamDetectionTimeSec)) {
             // Jam detected — reverse
             m_retryCount++;
+            double current = m_kicker.getKickerCurrent();
+            RobotLogger.log("FUEL JAM detected (attempt " + m_retryCount + "/" + FuelPathConstants.kJamMaxRetries
+                + ", current: " + String.format("%.1f", current) + "A)");
             if (m_retryCount > FuelPathConstants.kJamMaxRetries) {
               m_state = State.FAILED;
               m_kicker.setKickerVelocity(0);
+              RobotLogger.log("FUEL JAM FAILED — max retries exceeded");
               DriverStation.reportWarning("Kicker jam protection: max retries exceeded", false);
             } else {
               m_state = State.REVERSING;
@@ -69,6 +74,7 @@ public class KickerJamProtectionCommand extends Command {
           m_state = State.RUNNING;
           m_timer.restart();
           m_kicker.setKickerVelocity(m_forwardSpeed);
+          RobotLogger.log("FUEL JAM retrying forward (attempt " + m_retryCount + "/" + FuelPathConstants.kJamMaxRetries + ")");
         }
         break;
 

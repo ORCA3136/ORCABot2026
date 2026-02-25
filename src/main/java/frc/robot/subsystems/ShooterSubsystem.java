@@ -165,6 +165,8 @@ public class ShooterSubsystem extends SubsystemBase {
       .setNumber(getShooterPrimaryCurrent());
     shooterTable.getEntry(NetworkTableNames.Shooter.kSecondaryCurrent)
       .setNumber(getShooterSecondaryCurrent());
+    shooterTable.getEntry("Ready")
+      .setBoolean(isShooterReady());
 
   }
 
