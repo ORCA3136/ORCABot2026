@@ -89,9 +89,9 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean stateDriven = true;
   
   private boolean intakeDeployed = false;
-  private boolean vibrateIntake = false;
-  private double vibrationMagnitude = 1;
-  private double vibrationFrequency = 1;
+  private boolean ocillateIntake = false;
+  private double ocillationMagnitude = 1;
+  private double ocillationFrequency = 1;
 
 
   /** Creates a new IntakeSubsystem. */
@@ -113,13 +113,13 @@ public class IntakeSubsystem extends SubsystemBase {
 
     double tempTargetPosition;
 
-    if (intakeDeployed) 
+    if (intakeDeployed)
       tempTargetPosition = IntakeConstants.kMinDeployPosition;
     else
       tempTargetPosition = IntakeConstants.kMaxDeployPosition;
 
-    if (intakeDeployed && vibrateIntake) {
-      tempTargetPosition += vibrationMagnitude * (1 + Math.sin(Timer.getTimestamp() * vibrationFrequency));
+    if (intakeDeployed && ocillateIntake) {
+      tempTargetPosition += ocillationMagnitude * (1 + Math.sin(Timer.getTimestamp() * ocillationFrequency));
     }
 
     if (tempTargetPosition > IntakeConstants.kMaxDeployPosition)
@@ -135,7 +135,7 @@ public class IntakeSubsystem extends SubsystemBase {
     IntakePIDController.setSetpoint(calculatePosition(), ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
   }
 
-  /** Updates the rotations variable which is used in the setPIDAngle method
+  /** Updates a boolean used in the calsulatePosition() method, true = deploy
    * @param angle is in Degrees */
   public void deployIntake(boolean intakeDeployed) {
     this.intakeDeployed = intakeDeployed;
@@ -156,9 +156,9 @@ public class IntakeSubsystem extends SubsystemBase {
     return 2 * Math.PI * (intakeDeployEncoder.getPosition() / IntakeConstants.kDeployGearRatio);
   }
 
-  /** True makes the intake vibrate if it is down, or stop if it is given false */
-  public void vibrateIntake(boolean vibrate) {
-    vibrateIntake = vibrate;
+  /** True makes the intake ocillate if it's down, false stops it */
+  public void ocillateIntake(boolean ocillate) {
+    ocillateIntake = ocillate;
   }
 
   /**
