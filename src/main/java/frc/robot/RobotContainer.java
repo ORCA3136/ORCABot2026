@@ -107,8 +107,10 @@ public class RobotContainer {
     m_primaryController.x           ().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseShooterVelocity()));
     m_primaryController.y           ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(500)));
 
-    m_primaryController.start       ().whileTrue(new RunClimberCommand(climberSubsystem, 1000).repeatedly());
-    m_primaryController.back        ().whileTrue(new RunClimberCommand(climberSubsystem, -1000).repeatedly());
+    m_primaryController.start       ().onTrue(Commands.runOnce(driveBase::zeroGyro));
+
+    m_primaryController.leftStick   ().whileTrue(new RunClimberCommand(climberSubsystem, 1000).repeatedly());
+    m_primaryController.rightStick  ().whileTrue(new RunClimberCommand(climberSubsystem, -1000).repeatedly());
 
     // m_primaryController.start       ().whileTrue(Commands.runOnce(() -> intakeSubsystem.deployIntake(true)));
     // m_primaryController.back        ().whileTrue(Commands.runOnce(() -> intakeSubsystem.vibrateIntake(true)));
@@ -142,6 +144,8 @@ public class RobotContainer {
     m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
     m_primaryController.x           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(3)));
     m_primaryController.y           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
+
+    m_primaryController.start       ().onTrue(Commands.runOnce(driveBase::zeroGyro));
 
     m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> hoodSubsystem.increaseHoodAngle()));
     m_primaryController.leftBumper  ().onTrue(Commands.runOnce(() -> hoodSubsystem.decreaseHoodAngle()));
