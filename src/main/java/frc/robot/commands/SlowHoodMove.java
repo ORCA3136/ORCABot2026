@@ -4,27 +4,34 @@
 
 package frc.robot.commands;
 
+import frc.robot.Constants.HoodConstants;
 import frc.robot.subsystems.HoodSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj.Timer;
 
 
-/** An example command that uses an example subsystem. */
+/**
+ * Slowly oscillates the hood between LOWER_BOUND and UPPER_BOUND (in encoder position units).
+ * The hood reverses direction when it reaches either limit.
+ * Used for testing and calibration via the D-pad.
+ */
 public class SlowHoodMove extends Command {
-  @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
   private final HoodSubsystem m_hoodSubsystem;
 
-  private final double slowHoodSpeed = 4; // Degrees per second (DPS)
+  // TODO: TUNE ON ROBOT — verify degrees per second feels right on the actual robot
+  private static final double DEGREES_PER_SECOND = 4;
+  /** Converts degrees/sec to encoder position units/sec so we can add it to the hood target. */
+  private static final double ENCODER_UNITS_PER_DEGREE =
+      (1.0 / 360.0) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+
+  private static final double UPPER_BOUND = 5;  // max target (encoder position units)
+  private static final double LOWER_BOUND = 1;  // min target (encoder position units)
 
   double currentTime;
   double dTime; // Delta time
   double targetPosition; // Rotations
 
-  /**
-   * Creates a new ExampleCommand.
-   *
-   * @param hoodSubsystem The subsystem used by this command.
-   */
+  /** @param hoodSubsystem The hood subsystem to oscillate */
   public SlowHoodMove(HoodSubsystem hoodSubsystem) {
     m_hoodSubsystem = hoodSubsystem;
     // Use addRequirements() here to declare subsystem dependencies.
@@ -34,7 +41,6 @@ public class SlowHoodMove extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    m_hoodSubsystem.getClass();
     currentTime = Timer.getTimestamp();
   }
 
@@ -42,16 +48,17 @@ public class SlowHoodMove extends Command {
   @Override
   public void execute() {
     targetPosition = m_hoodSubsystem.getHoodTarget();
-    if (targetPosition >= 5 && m_hoodSubsystem.getHoodMovingForward() == true || targetPosition <= 1 && m_hoodSubsystem.getHoodMovingForward() == false) {
+    if ((targetPosition >= UPPER_BOUND && m_hoodSubsystem.getHoodMovingForward()) || (targetPosition <= LOWER_BOUND && !m_hoodSubsystem.getHoodMovingForward())) {
       m_hoodSubsystem.changeHoodDirection();
     }
     dTime = Timer.getTimestamp() - currentTime;
-    targetPosition += slowHoodSpeed * dTime * (m_hoodSubsystem.getHoodMovingForward() ? 1 : -1);
+    targetPosition += DEGREES_PER_SECOND * ENCODER_UNITS_PER_DEGREE * dTime * (m_hoodSubsystem.getHoodMovingForward() ? 1 : -1);
     m_hoodSubsystem.setHoodTarget(targetPosition);
     currentTime = Timer.getTimestamp();
   }
 
   // Called once the command ends or is interrupted.
+  // Intentionally does not reset the hood target — the PID holds the last position.
   @Override
   public void end(boolean interrupted) {}
 

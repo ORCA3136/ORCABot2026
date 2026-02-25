@@ -4,11 +4,6 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.Rotations;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
-
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -19,27 +14,15 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkSim;
 
-import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.*;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.simulation.AddressableLEDSim;
-import edu.wpi.first.wpilibj.simulation.BatterySim;
-import edu.wpi.first.wpilibj.simulation.FlywheelSim;
-import edu.wpi.first.wpilibj.simulation.LinearSystemSim;
-// import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
-import edu.wpi.first.wpilibj.simulation.RoboRioSim;
-import edu.wpi.first.wpilibj.simulation.BuiltInAccelerometerSim;
-import edu.wpi.first.wpilibj.simulation.EncoderSim;
 
 /*
  * 
@@ -86,8 +69,13 @@ public class IntakeSubsystem extends SubsystemBase {
   final NetworkTable intakeTable = networkTable.getTable(NetworkTableNames.Intake.kTable);
   final NetworkTable intakeDeployTable = networkTable.getTable(NetworkTableNames.IntakeDeploy.kTable);
 
-  private boolean stateDriven = true;
-  
+  // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
+  private final NetworkTableEntry intakeVelocityEntry = intakeTable.getEntry(NetworkTableNames.Intake.kVelocityRPM);
+  private final NetworkTableEntry intakeCurrentEntry = intakeTable.getEntry(NetworkTableNames.Intake.kCurrentAmps);
+  private final NetworkTableEntry deployCurrentEntry = intakeTable.getEntry(NetworkTableNames.Intake.kDeployCurrentAmps);
+  private final NetworkTableEntry deployVelocityEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM);
+  private final NetworkTableEntry deployPositionEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kPositionRotations);
+
   private boolean intakeDeployed = false;
   private boolean ocillateIntake = false;
   private double ocillationMagnitude = 1;
@@ -98,7 +86,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public IntakeSubsystem() {
 
     intakeMotor.configure(IntakeConfigs.intakeMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    intakeDeployMotor.configure(IntakeConfigs.IntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    intakeDeployMotor.configure(IntakeConfigs.intakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 
@@ -162,10 +150,12 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /**
-   * @param Velocity is in RPM
+   * Sets intake roller motor output. Takes an RPM-scale value and normalizes it to [-1, 1]
+   * duty cycle by dividing by the NEO Vortex free speed (6500 RPM).
+   * @param speed RPM-scale value (e.g. 4000 for intaking, -3000 for outtaking)
    */
-  public void setIntakeVelocity(double velocity) {
-    intakeMotor.set(velocity / 6500);
+  public void setIntakeDutyCycle(double speed) {
+    intakeMotor.set(speed / RobotConstants.kNeoVortexFreeSpeedRPM);
   }
 
   /**
@@ -175,11 +165,13 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeEncoder.getVelocity();
   }
 
-   /**
-   * @param Velocity is in RPM
+  /**
+   * Sets intake deploy motor output. Takes an RPM-scale value and normalizes it to [-1, 1]
+   * duty cycle by dividing by the NEO 550 free speed (11000 RPM).
+   * @param speed RPM-scale value (e.g. 3000 to deploy, -3000 to retract)
    */
-  public void setIntakeDeployVelocity(double velocity) {
-    intakeDeployMotor.set(velocity / 11000);
+  public void setIntakeDeployDutyCycle(double speed) {
+    intakeDeployMotor.set(speed / RobotConstants.kNeo550FreeSpeedRPM);
   }
 
   /**
@@ -206,16 +198,11 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void updateNetworkTable() {
-    intakeTable.getEntry(NetworkTableNames.Intake.kVelocityRPM)
-      .setNumber(getIntakeVelocity());
-    intakeTable.getEntry(NetworkTableNames.Intake.kCurrentAmps)
-      .setNumber(intakeMotor.getOutputCurrent());
-    intakeTable.getEntry(NetworkTableNames.Intake.kDeployCurrentAmps)
-      .setNumber(intakeDeployMotor.getOutputCurrent());
-    intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM)
-      .setNumber(getIntakeDeployVelocity());
-    intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kPositionRotations)
-      .setNumber(getIntakeDeployPosition());
+    intakeVelocityEntry.setDouble(getIntakeVelocity());
+    intakeCurrentEntry.setDouble(intakeMotor.getOutputCurrent());
+    deployCurrentEntry.setDouble(intakeDeployMotor.getOutputCurrent());
+    deployVelocityEntry.setDouble(getIntakeDeployVelocity());
+    deployPositionEntry.setDouble(getIntakeDeployPosition());
   }
 
   /** This method will be called once per scheduler run */
@@ -224,6 +211,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     updateNetworkTable();
 
+    // TODO: Uncomment setPIDAngle() when deploy PID is tuned on robot
     // setPIDAngle();
   }
 

@@ -11,6 +11,7 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.*;
@@ -36,6 +37,10 @@ public class ConveyorSubsystem extends SubsystemBase {
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable conveyorTable = networkTable.getTable(NetworkTableNames.Conveyor.kTable);
 
+  // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
+  private final NetworkTableEntry velocityEntry = conveyorTable.getEntry(NetworkTableNames.Conveyor.kVelocityRPM);
+  private final NetworkTableEntry currentEntry = conveyorTable.getEntry(NetworkTableNames.Conveyor.kCurrentAmps);
+
   /** Creates a new ConveyorSubsystem. */
   public ConveyorSubsystem() {
 
@@ -49,10 +54,13 @@ public class ConveyorSubsystem extends SubsystemBase {
   }
 
   /**
-   * @param Velocity is in RPM
+   * Sets conveyor motor output. Takes an RPM-scale value and normalizes it to [-1, 1]
+   * duty cycle by dividing by the NEO Vortex free speed (6500 RPM).
+   * Example: setConveyorDutyCycle(3250) → motor runs at ~50% power.
+   * @param speed RPM-scale value (e.g. 500 for slow forward, -1000 for reverse)
    */
-  public void setConveyorVelocity(double velocity) {
-    conveyorMotor.set(velocity / 6500);
+  public void setConveyorDutyCycle(double speed) {
+    conveyorMotor.set(speed / RobotConstants.kNeoVortexFreeSpeedRPM);
   }
 
   /**
@@ -70,10 +78,8 @@ public class ConveyorSubsystem extends SubsystemBase {
   }
 
   public void updateNetworkTable() {
-    conveyorTable.getEntry(NetworkTableNames.Conveyor.kVelocityRPM)
-      .setNumber(getConveyorVelocity());
-    conveyorTable.getEntry(NetworkTableNames.Conveyor.kCurrentAmps)
-      .setNumber(getConveyorCurrent());
+    velocityEntry.setDouble(getConveyorVelocity());
+    currentEntry.setDouble(getConveyorCurrent());
   }
 
   /** This method will be called once per scheduler run */

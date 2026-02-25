@@ -11,6 +11,7 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.*;
@@ -41,7 +42,11 @@ public class KickerSubsystem extends SubsystemBase {
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable kickerTable = networkTable.getTable(NetworkTableNames.Kicker.kTable);
 
-  /** Creates a new ConveyorSubsystem. */
+  // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
+  private final NetworkTableEntry velocityEntry = kickerTable.getEntry(NetworkTableNames.Kicker.kVelocityRPM);
+  private final NetworkTableEntry currentEntry = kickerTable.getEntry(NetworkTableNames.Kicker.kCurrentAmps);
+
+  /** Creates a new KickerSubsystem. */
   public KickerSubsystem() {
 
     kickerMotor.configure(KickerConfigs.kickerMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -53,11 +58,13 @@ public class KickerSubsystem extends SubsystemBase {
     return kickerMotor;
   }
 
-   /**
-   * @param Velocity is in RPM
+  /**
+   * Sets kicker motor output. Takes an RPM-scale value and normalizes it to [-1, 1]
+   * duty cycle by dividing by the NEO Vortex free speed (6500 RPM).
+   * @param speed RPM-scale value (e.g. 4000 for feeding, -2000 for reverse)
    */
-  public void setKickerVelocity(double velocity) {
-    kickerMotor.set(velocity / 6500);
+  public void setKickerDutyCycle(double speed) {
+    kickerMotor.set(speed / RobotConstants.kNeoVortexFreeSpeedRPM);
   }
 
   /**
@@ -75,10 +82,8 @@ public class KickerSubsystem extends SubsystemBase {
   }
 
   public void updateNetworkTable() {
-    kickerTable.getEntry(NetworkTableNames.Kicker.kVelocityRPM)
-      .setNumber(getKickerVelocity());
-    kickerTable.getEntry(NetworkTableNames.Kicker.kCurrentAmps)
-      .setNumber(getKickerCurrent());
+    velocityEntry.setDouble(getKickerVelocity());
+    currentEntry.setDouble(getKickerCurrent());
   }
 
   /** This method will be called once per scheduler run */

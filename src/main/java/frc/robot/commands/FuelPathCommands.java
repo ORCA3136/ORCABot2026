@@ -23,47 +23,47 @@ public final class FuelPathCommands {
   // ── Individual: Intake ──────────────────────────────────────────────
 
   public static Command intakeIn(IntakeSubsystem intake) {
-    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeInStandard);
+    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeInStandard).withName("IntakeIn");
   }
 
   public static Command intakeInSlow(IntakeSubsystem intake) {
-    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeInSlow);
+    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeInSlow).withName("IntakeInSlow");
   }
 
   public static Command intakeInFast(IntakeSubsystem intake) {
-    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeInFast);
+    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeInFast).withName("IntakeInFast");
   }
 
   public static Command intakeOut(IntakeSubsystem intake) {
-    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeOutStandard);
+    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeOutStandard).withName("IntakeOut");
   }
 
   public static Command intakeOutSlow(IntakeSubsystem intake) {
-    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeOutSlow);
+    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeOutSlow).withName("IntakeOutSlow");
   }
 
   public static Command intakeOutFast(IntakeSubsystem intake) {
-    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeOutFast);
+    return new RunIntakeCommand(intake, FuelPathConstants.kIntakeOutFast).withName("IntakeOutFast");
   }
 
   // ── Individual: Conveyor ────────────────────────────────────────────
 
   public static Command conveyorIn(ConveyorSubsystem conveyor) {
-    return new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn);
+    return new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn).withName("ConveyorIn");
   }
 
   public static Command conveyorOut(ConveyorSubsystem conveyor) {
-    return new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorOut);
+    return new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorOut).withName("ConveyorOut");
   }
 
   // ── Individual: Kicker ──────────────────────────────────────────────
 
   public static Command kickerFeed(KickerSubsystem kicker) {
-    return new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed);
+    return new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed).withName("KickerFeed");
   }
 
   public static Command kickerOut(KickerSubsystem kicker) {
-    return new RunKickerCommand(kicker, FuelPathConstants.kKickerOut);
+    return new RunKickerCommand(kicker, FuelPathConstants.kKickerOut).withName("KickerOut");
   }
 
   // ── Multi-subsystem compositions ────────────────────────────────────
@@ -132,12 +132,12 @@ public final class FuelPathCommands {
   /** Jog conveyor forward then reverse briefly to clear a minor blockage. Runs once. */
   public static Command conveyorJog(ConveyorSubsystem conveyor) {
     return Commands.sequence(
-        Commands.runOnce(() -> conveyor.setConveyorVelocity(FuelPathConstants.kConveyorJogSpeed), conveyor),
+        Commands.runOnce(() -> conveyor.setConveyorDutyCycle(FuelPathConstants.kConveyorJogSpeed), conveyor),
         Commands.waitSeconds(FuelPathConstants.kConveyorJogDurationSec),
-        Commands.runOnce(() -> conveyor.setConveyorVelocity(-FuelPathConstants.kConveyorJogSpeed)),
+        Commands.runOnce(() -> conveyor.setConveyorDutyCycle(-FuelPathConstants.kConveyorJogSpeed), conveyor),
         Commands.waitSeconds(FuelPathConstants.kConveyorJogDurationSec),
-        Commands.runOnce(() -> conveyor.setConveyorVelocity(0))
-    ).finallyDo(interrupted -> { if (interrupted) conveyor.setConveyorVelocity(0); })
+        Commands.runOnce(() -> conveyor.setConveyorDutyCycle(0), conveyor)
+    ).finallyDo(interrupted -> { if (interrupted) conveyor.setConveyorDutyCycle(0); })
      .withInterruptBehavior(Command.InterruptionBehavior.kCancelSelf)
      .withName("ConveyorJog");
   }
@@ -145,10 +145,10 @@ public final class FuelPathCommands {
   /** Brief kicker burst for single-ball feeding. Runs once. */
   public static Command kickerPulse(KickerSubsystem kicker) {
     return Commands.sequence(
-        Commands.runOnce(() -> kicker.setKickerVelocity(FuelPathConstants.kKickerPulseSpeed), kicker),
+        Commands.runOnce(() -> kicker.setKickerDutyCycle(FuelPathConstants.kKickerPulseSpeed), kicker),
         Commands.waitSeconds(FuelPathConstants.kKickerPulseDurationSec),
-        Commands.runOnce(() -> kicker.setKickerVelocity(0))
-    ).finallyDo(interrupted -> { if (interrupted) kicker.setKickerVelocity(0); })
+        Commands.runOnce(() -> kicker.setKickerDutyCycle(0), kicker)
+    ).finallyDo(interrupted -> { if (interrupted) kicker.setKickerDutyCycle(0); })
      .withInterruptBehavior(Command.InterruptionBehavior.kCancelSelf)
      .withName("KickerPulse");
   }
@@ -168,22 +168,35 @@ public final class FuelPathCommands {
             () -> {
               boolean ready = shooter.isShooterReady();
               if (ready) {
-                kicker.setKickerVelocity(FuelPathConstants.kKickerFeed);
+                kicker.setKickerDutyCycle(FuelPathConstants.kKickerFeed);
                 if (!feeding[0]) {
                   RobotLogger.log("METERED FEED: shooter ready, kicker feeding");
                   feeding[0] = true;
                 }
               } else {
-                kicker.setKickerVelocity(0);
+                kicker.setKickerDutyCycle(0);
                 if (feeding[0]) {
                   RobotLogger.log("METERED FEED: shooter not ready, kicker gated");
                   feeding[0] = false;
                 }
               }
             }, kicker
-        ).finallyDo(interrupted -> kicker.setKickerVelocity(0))
+        ).finallyDo(interrupted -> kicker.setKickerDutyCycle(0))
     ).beforeStarting(() -> feeding[0] = false)
      .withName("MeteredFeed");
+  }
+
+  /** Instantly stops all fuel path motors and retracts the intake. One-shot command. */
+  public static Command stopAll(IntakeSubsystem intake, ConveyorSubsystem conveyor, KickerSubsystem kicker) {
+    return Commands.parallel(
+        Commands.runOnce(() -> {
+            intake.setIntakeDutyCycle(0);
+            intake.ocillateIntake(false);
+            intake.deployIntake(false);
+        }, intake),
+        Commands.runOnce(() -> conveyor.setConveyorDutyCycle(0), conveyor),
+        Commands.runOnce(() -> kicker.setKickerDutyCycle(0), kicker)
+    ).withName("StopFuelPath");
   }
 
   /** Reverse everything at high speed. For clearing jams or ejecting fuel. */

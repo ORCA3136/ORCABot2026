@@ -7,17 +7,14 @@ package frc.robot.commands;
 import frc.robot.subsystems.IntakeSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 
-/** An example command that uses an example subsystem. */
+/** Runs the intake roller at a fixed speed. Stops when the command ends. */
 public class RunIntakeCommand extends Command {
-  @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
   private final IntakeSubsystem m_intakeSubsystem;
-
-  private double intakeVelocity;
+  private final double intakeVelocity;
 
   /**
-   * Creates a new ExampleCommand.
-   *
-   * @param intakeSubsystem The subsystem used by this command.
+   * @param intakeSubsystem The intake subsystem
+   * @param intakeVelocity RPM-scale speed (positive = intake fuel, negative = outtake)
    */
   public RunIntakeCommand(IntakeSubsystem intakeSubsystem, double intakeVelocity) {
     m_intakeSubsystem = intakeSubsystem;
@@ -31,18 +28,19 @@ public class RunIntakeCommand extends Command {
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {
-    m_intakeSubsystem.setIntakeVelocity(intakeVelocity);
-  }
+  public void initialize() {}
 
   // Called every time the scheduler runs while the command is scheduled.
+  // Motor is commanded every cycle so it recovers automatically from CAN bus glitches.
   @Override
-  public void execute() {}
+  public void execute() {
+    m_intakeSubsystem.setIntakeDutyCycle(intakeVelocity);
+  }
 
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    m_intakeSubsystem.setIntakeVelocity(0);
+    m_intakeSubsystem.setIntakeDutyCycle(0);
   }
 
   // Returns true when the command should end.

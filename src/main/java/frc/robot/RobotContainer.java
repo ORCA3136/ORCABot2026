@@ -14,9 +14,7 @@ import frc.robot.Constants.ShooterConstants;
 import frc.robot.commands.FuelPathCommands;
 import frc.robot.commands.RunClimberCommand;
 import frc.robot.commands.RunConveyorAndKickerCommand;
-import frc.robot.commands.RunHoodCommand;
 import frc.robot.commands.RunIntakeCommand;
-import frc.robot.commands.RunShooterCommand;
 import frc.robot.commands.SlowHoodMove;
 import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.ConveyorSubsystem;
@@ -25,19 +23,15 @@ import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
-import frc.robot.subsystems.TeleopPathplanner;
 import frc.robot.subsystems.VisionSubsystem;
 import swervelib.SwerveInputStream;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.Subsystem;
-import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 
 /**
@@ -69,11 +63,17 @@ public class RobotContainer {
   public RobotContainer() {
     DriverStation.silenceJoystickConnectionWarning(true);
 
-    // Configure the trigger bindings
-    configureTestBindings();
+    // Configure the trigger bindings (set to false for test bindings)
+    boolean useProductionBindings = true;
+    if (useProductionBindings) {
+      configureBindings();
+    } else {
+      configureTestBindings();
+    }
     configureNamedCommands();
 
     autoChooser = AutoBuilder.buildAutoChooser(); //pick a default
+    SmartDashboard.putData("Auto Chooser", autoChooser);
 
   }
 
@@ -110,8 +110,8 @@ public class RobotContainer {
 
     m_primaryController.start       ().onTrue(Commands.runOnce(driveBase::zeroGyro));
 
-    m_primaryController.leftStick   ().whileTrue(new RunClimberCommand(climberSubsystem, 1000).repeatedly());
-    m_primaryController.rightStick  ().whileTrue(new RunClimberCommand(climberSubsystem, -1000).repeatedly());
+    m_primaryController.leftStick   ().whileTrue(new RunClimberCommand(climberSubsystem, 1000));
+    m_primaryController.rightStick  ().whileTrue(new RunClimberCommand(climberSubsystem, -1000));
 
     // m_primaryController.start       ().whileTrue(Commands.runOnce(() -> intakeSubsystem.deployIntake(true)));
     // m_primaryController.back        ().whileTrue(Commands.runOnce(() -> intakeSubsystem.vibrateIntake(true)));
@@ -131,10 +131,10 @@ public class RobotContainer {
     //                                                .whileTrue(null); // Shooting routine
     // m_primaryController.rightTrigger(0.3).whileTrue(teleopPathplanner.createTrenchPathCommand(driveBase));
 
-    m_primaryController.leftTrigger (0.3).onTrue   (Commands.runOnce(() -> intakeSubsystem.setIntakeDeployVelocity(3000)))
-                                                   .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployVelocity(0)));
-    m_primaryController.rightTrigger (0.3).onTrue   (Commands.runOnce(() -> intakeSubsystem.setIntakeDeployVelocity(-3000)))
-                                                   .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployVelocity(0)));
+    m_primaryController.leftTrigger (0.3).onTrue   (Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(3000), intakeSubsystem))
+                                                   .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0), intakeSubsystem));
+    m_primaryController.rightTrigger (0.3).onTrue   (Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-3000), intakeSubsystem))
+                                                   .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0), intakeSubsystem));
   }
 
   // Testing buttons
@@ -159,7 +159,9 @@ public class RobotContainer {
     m_primaryController.povLeft     ().whileTrue(new RunIntakeCommand(intakeSubsystem, 4000));
 		m_primaryController.povRight    ().whileTrue(new RunIntakeCommand(intakeSubsystem, 0));
 
-   m_primaryController.rightTrigger (0.3).onTrue (Commands.runOnce(() -> shooterSubsystem.setToggleDirection(true )))
+    m_primaryController.leftTrigger  (0.3).whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+
+    m_primaryController.rightTrigger (0.3).onTrue (Commands.runOnce(() -> shooterSubsystem.setToggleDirection(true )))
                                                    .onFalse(Commands.runOnce(() -> shooterSubsystem.setToggleDirection(false)));
   }
 
@@ -168,7 +170,7 @@ public class RobotContainer {
 
     // Run Intake
     NamedCommands.registerCommand("Run Intake",           new RunIntakeCommand(intakeSubsystem, 6000));
-    NamedCommands.registerCommand("Stop Intake",          new RunIntakeCommand(intakeSubsystem, 0));
+    NamedCommands.registerCommand("Stop Intake",          Commands.runOnce(() -> intakeSubsystem.setIntakeDutyCycle(0), intakeSubsystem));
 
     // Deploy Intake
     NamedCommands.registerCommand("Deploy Intake" ,         Commands.runOnce(() -> intakeSubsystem.deployIntake(true )));
@@ -189,19 +191,11 @@ public class RobotContainer {
 
     // Conveyor/kicker
     NamedCommands.registerCommand("Run Conveyor",         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 500, 4000));
-    NamedCommands.registerCommand("Stop Conveyor",        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 0,   0));
+    NamedCommands.registerCommand("Stop Conveyor",        Commands.runOnce(() -> { conveyorSubsystem.setConveyorDutyCycle(0); kickerSubsystem.setKickerDutyCycle(0); }, conveyorSubsystem, kickerSubsystem));
 
     // Fuel path commands
     NamedCommands.registerCommand("Full Fuel Path",       FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
-    NamedCommands.registerCommand("Stop Fuel Path",       Commands.parallel(
-        Commands.runOnce(() -> {
-            intakeSubsystem.setIntakeVelocity(0);
-            intakeSubsystem.ocillateIntake(false);
-            intakeSubsystem.deployIntake(false);
-        }, intakeSubsystem),
-        Commands.runOnce(() -> conveyorSubsystem.setConveyorVelocity(0), conveyorSubsystem),
-        Commands.runOnce(() -> kickerSubsystem.setKickerVelocity(0), kickerSubsystem)
-    ));
+    NamedCommands.registerCommand("Stop Fuel Path",       FuelPathCommands.stopAll(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
     NamedCommands.registerCommand("Intake And Conveyor",  FuelPathCommands.intakeAndConveyor(intakeSubsystem, conveyorSubsystem));
     NamedCommands.registerCommand("Metered Feed",         FuelPathCommands.meteredFeed(conveyorSubsystem, kickerSubsystem, shooterSubsystem));
     NamedCommands.registerCommand("Kicker Pulse",         FuelPathCommands.kickerPulse(kickerSubsystem));

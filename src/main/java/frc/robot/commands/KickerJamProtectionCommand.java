@@ -37,7 +37,7 @@ public class KickerJamProtectionCommand extends Command {
     m_state = State.RUNNING;
     m_retryCount = 0;
     m_timer.restart();
-    m_kicker.setKickerVelocity(m_forwardSpeed);
+    m_kicker.setKickerDutyCycle(m_forwardSpeed);
   }
 
   @Override
@@ -53,13 +53,13 @@ public class KickerJamProtectionCommand extends Command {
                 + ", current: " + String.format("%.1f", current) + "A)");
             if (m_retryCount > FuelPathConstants.kJamMaxRetries) {
               m_state = State.FAILED;
-              m_kicker.setKickerVelocity(0);
+              m_kicker.setKickerDutyCycle(0);
               RobotLogger.log("FUEL JAM FAILED — max retries exceeded");
               DriverStation.reportWarning("Kicker jam protection: max retries exceeded", false);
             } else {
               m_state = State.REVERSING;
               m_timer.restart();
-              m_kicker.setKickerVelocity(FuelPathConstants.kJamReverseSpeed);
+              m_kicker.setKickerDutyCycle(FuelPathConstants.kJamReverseSpeed);
             }
           }
         } else {
@@ -73,7 +73,7 @@ public class KickerJamProtectionCommand extends Command {
           // Done reversing — try forward again
           m_state = State.RUNNING;
           m_timer.restart();
-          m_kicker.setKickerVelocity(m_forwardSpeed);
+          m_kicker.setKickerDutyCycle(m_forwardSpeed);
           RobotLogger.log("FUEL JAM retrying forward (attempt " + m_retryCount + "/" + FuelPathConstants.kJamMaxRetries + ")");
         }
         break;
@@ -86,7 +86,7 @@ public class KickerJamProtectionCommand extends Command {
 
   @Override
   public void end(boolean interrupted) {
-    m_kicker.setKickerVelocity(0);
+    m_kicker.setKickerDutyCycle(0);
     m_timer.stop();
   }
 

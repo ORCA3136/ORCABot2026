@@ -8,13 +8,10 @@ import java.util.Optional;
 import java.util.Set;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
-import edu.wpi.first.networktables.PubSubOptions;
 import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -84,8 +81,8 @@ public class TeleopPathplanner extends SubsystemBase {
       // Make the path
       // Make the command
 
-      Command pathCommand = null;
-      return pathCommand;
+      // TODO: Implement trench path generation
+      return Commands.none();
     }, Set.of(m_drive));
   }
 
