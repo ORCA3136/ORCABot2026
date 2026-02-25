@@ -22,8 +22,6 @@ import swervelib.simulation.ironmaple.simulation.seasonspecific.rebuilt2026.Aren
  */
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
-  private Command LLSeedModeCommand;
-  private Command LLInternalModeCommand;
 
   private final CommandScheduler commandScheduler;
 
