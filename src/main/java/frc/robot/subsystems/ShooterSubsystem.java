@@ -131,6 +131,12 @@ public class ShooterSubsystem extends SubsystemBase {
     return shooterPrimaryMotor;
   }
 
+  /** @return true if the shooter is spinning and within tolerance of its target RPM */
+  public boolean isShooterReady() {
+    return shooterVelocityTarget > 0
+        && Math.abs(getShooterVelocity() - shooterVelocityTarget) < FuelPathConstants.kShooterReadyToleranceRPM;
+  }
+
   /** @return Velocity in RPM */
   public double getShooterVelocity() {
     return shooterEncoder.getVelocity();

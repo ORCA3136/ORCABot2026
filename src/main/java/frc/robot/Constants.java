@@ -325,6 +325,47 @@ public final class Constants {
 
   }
 
+  public static final class FuelPathConstants {
+    // Intake roller speeds (RPM)
+    public static final double kIntakeInSlow = 2000;
+    public static final double kIntakeInStandard = 4000;
+    public static final double kIntakeInFast = 6000;
+    public static final double kIntakeOutSlow = -1500;
+    public static final double kIntakeOutStandard = -3000;
+    public static final double kIntakeOutFast = -5000;
+
+    // Conveyor speeds (RPM)
+    public static final double kConveyorIn = 500;
+    public static final double kConveyorOut = -1000;
+
+    // Conveyor jog (nudge to clear minor blockages)
+    public static final double kConveyorJogSpeed = 400;
+    public static final double kConveyorJogDurationSec = 0.15;
+
+    // Kicker speeds (RPM)
+    public static final double kKickerFeed = 4000;
+    public static final double kKickerOut = -2000;
+
+    // Kicker pulse (single-ball burst)
+    public static final double kKickerPulseSpeed = 3000;
+    public static final double kKickerPulseDurationSec = 0.15;
+
+    // Jam detection
+    public static final double kJamCurrentThresholdAmps = 35.0;
+    public static final double kJamDetectionTimeSec = 0.25;
+    public static final double kJamReverseDurationSec = 0.3;
+    public static final double kJamReverseSpeed = -2000;
+    public static final int kJamMaxRetries = 3;
+
+    // Metered feed (shooter "ready" tolerance)
+    public static final double kShooterReadyToleranceRPM = 200;
+
+    // Emergency reverse (all motors reverse at high speed)
+    public static final double kEmergencyIntakeSpeed = -5000;
+    public static final double kEmergencyConveyorSpeed = -2000;
+    public static final double kEmergencyKickerSpeed = -3000;
+  }
+
   public static final class LedColors {
 
     //These are all the led options, if you want more you will have to go to a REV website called "LED BLINKIN DRIVER"

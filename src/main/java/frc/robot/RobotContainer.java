@@ -11,6 +11,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.commands.FuelPathCommands;
 import frc.robot.commands.RunClimberCommand;
 import frc.robot.commands.RunConveyorAndKickerCommand;
 import frc.robot.commands.RunHoodCommand;
@@ -189,6 +190,18 @@ public class RobotContainer {
     // Conveyor/kicker
     NamedCommands.registerCommand("Run Conveyor",         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 500, 4000));
     NamedCommands.registerCommand("Stop Conveyor",        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 0,   0));
+
+    // Fuel path commands
+    NamedCommands.registerCommand("Full Fuel Path",       FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+    NamedCommands.registerCommand("Stop Fuel Path",       Commands.parallel(
+        Commands.runOnce(() -> intakeSubsystem.setIntakeVelocity(0), intakeSubsystem),
+        Commands.runOnce(() -> conveyorSubsystem.setConveyorVelocity(0), conveyorSubsystem),
+        Commands.runOnce(() -> kickerSubsystem.setKickerVelocity(0), kickerSubsystem)
+    ));
+    NamedCommands.registerCommand("Intake And Conveyor",  FuelPathCommands.intakeAndConveyor(intakeSubsystem, conveyorSubsystem));
+    NamedCommands.registerCommand("Metered Feed",         FuelPathCommands.meteredFeed(conveyorSubsystem, kickerSubsystem, shooterSubsystem));
+    NamedCommands.registerCommand("Kicker Pulse",         FuelPathCommands.kickerPulse(kickerSubsystem));
+    NamedCommands.registerCommand("Emergency Reverse",    FuelPathCommands.emergencyReverseAll(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
 
   }
 
