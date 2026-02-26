@@ -49,8 +49,10 @@ public class Configs {
                 .positionConversionFactor(HoodConstants.kMotorGearRatio)
                 .velocityConversionFactor(HoodConstants.kMotorGearRatio);
             // TODO: TUNE ON ROBOT — verify encoder conversion factor (12x) matches target calculation (26.67x) in HoodSubsystem
+            // Position wrapping must stay enabled — the SparkMax PID with absolute encoder
+            // requires it for correct error calculation. Disabling it breaks hood position control.
             primaryHoodConfig.closedLoop
-                .positionWrappingEnabled(false)
+                .positionWrappingEnabled(true)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
                 .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD)
                 .outputRange(-0.7, 0.7); // Old was +-0.8
