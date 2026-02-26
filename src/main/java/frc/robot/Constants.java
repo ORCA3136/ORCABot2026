@@ -184,7 +184,7 @@ public final class Constants {
     // Intake Vortex
     public static final int kIntakeCanId = 17;
 
-    // Intake Deployment Vortex
+    // Intake Deployment 550
     public static final int kIntakeDeployCanId = 18;
 
     // Climber Vortexes
