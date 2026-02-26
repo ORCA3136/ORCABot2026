@@ -4,21 +4,21 @@
 
 package frc.robot.subsystems;
 
-import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
-import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.ClimberConfigs;
 import frc.robot.Constants.CanIdConstants;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.NetworkTableNames;
+import frc.robot.Constants.RobotConstants;
 
 
 /*
@@ -41,6 +41,12 @@ public class ClimberSubsystem extends SubsystemBase {
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable climberTable = networkTable.getTable(NetworkTableNames.Climber.kTable);
 
+  // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
+  private final NetworkTableEntry velocityEntry = climberTable.getEntry(NetworkTableNames.Climber.kVelocityRPM);
+  private final NetworkTableEntry positionEntry = climberTable.getEntry(NetworkTableNames.Climber.kPositionRotations);
+  private final NetworkTableEntry primaryCurrentEntry = climberTable.getEntry(NetworkTableNames.Climber.kPrimaryCurrent);
+  private final NetworkTableEntry secondaryCurrentEntry = climberTable.getEntry(NetworkTableNames.Climber.kSecondaryCurrent);
+
   /** Creates a new ClimberSubsystem. */
   public ClimberSubsystem() {
 
@@ -54,8 +60,14 @@ public class ClimberSubsystem extends SubsystemBase {
     return climberPrimaryMotor;
   }
 
-  public void setClimberVelocity(double velocity) {
-    climberPrimaryMotor.set(velocity / 6500);
+  /**
+   * Sets climber motor output. Takes an RPM-scale value and normalizes it to [-1, 1]
+   * duty cycle by dividing by the NEO Vortex free speed (6500 RPM).
+   * Only commands the primary motor — the secondary is a follower.
+   * @param speed RPM-scale value (e.g. 1000 for extending, -1000 for retracting)
+   */
+  public void setClimberDutyCycle(double speed) {
+    climberPrimaryMotor.set(speed / RobotConstants.kNeoVortexFreeSpeedRPM);
   }
 
   public double getMotorVelocity() {
@@ -83,14 +95,10 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   public void updateNetworkTable() {
-    climberTable.getEntry(NetworkTableNames.Climber.kVelocityRPM)
-      .setNumber(getClimberVelocity());
-    climberTable.getEntry(NetworkTableNames.Climber.kPositionRotations)
-      .setNumber(getClimberPosition());
-    climberTable.getEntry(NetworkTableNames.Climber.kPrimaryCurrent)
-      .setNumber(getClimberPrimaryCurrent());
-    climberTable.getEntry(NetworkTableNames.Climber.kSecondaryCurrent)
-      .setNumber(getClimberSecondaryCurrent());
+    velocityEntry.setDouble(getClimberVelocity());
+    positionEntry.setDouble(getClimberPosition());
+    primaryCurrentEntry.setDouble(getClimberPrimaryCurrent());
+    secondaryCurrentEntry.setDouble(getClimberSecondaryCurrent());
   }
 
   /** This method will be called once per scheduler run */

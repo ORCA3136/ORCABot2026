@@ -38,6 +38,7 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -67,6 +68,12 @@ public class SwerveSubsystem extends SubsystemBase {
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kTable);
+  final NetworkTable robotTable = networkTable.getTable(NetworkTableNames.Robot.kTable);
+
+  // Cached Robot table entries — avoids hash lookups every cycle (50Hz)
+  private final NetworkTableEntry enabledEntry = robotTable.getEntry(NetworkTableNames.Robot.kEnabled);
+  private final NetworkTableEntry batteryVoltageEntry = robotTable.getEntry(NetworkTableNames.Robot.kBatteryVoltage);
+  private final NetworkTableEntry batteryBrownoutEntry = robotTable.getEntry(NetworkTableNames.Robot.kBatteryBrownout);
 
   // Pigeon2 angular velocity suppliers — X=pitch, Y=roll, Z=yaw in device frame
   Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityZDevice().asSupplier();
@@ -295,11 +302,9 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Checks the current zone the robot is in 
    *  @return Blue, Middle, Red */
 
-  /** @return The current alliance */
+  /** @return The current alliance, defaulting to Blue if not yet set */
   public Alliance getAlliance() {
-    if (DriverStation.getAlliance().isPresent())
-      return DriverStation.getAlliance().get();
-    return null;
+    return DriverStation.getAlliance().orElse(Alliance.Blue);
   }
 
  
@@ -517,9 +522,9 @@ public class SwerveSubsystem extends SubsystemBase {
    *  @return The translation2d to the specified game element */
   public Translation2d getTranslationToFieldElement(FieldTargets element, boolean opponentSide) {
     if (DriverStation.getAlliance().isEmpty())
-      return null;
+      return new Translation2d();
 
-    List<Translation2d> positions = (opponentSide ^ getAlliance() == Alliance.Blue ? FieldPositions.kBlueFieldElements : FieldPositions.kRedFieldElements);
+    List<Translation2d> positions = ((opponentSide ^ (getAlliance() == Alliance.Blue)) ? FieldPositions.kBlueFieldElements : FieldPositions.kRedFieldElements);
 
     switch (element) {
       case kHub:
@@ -531,7 +536,7 @@ public class SwerveSubsystem extends SubsystemBase {
       case kDepot:
         return swerveDrive.getPose().getTranslation().minus(positions.get(3));
       default:
-        return null;
+        return new Translation2d();
     }
   }
 
@@ -541,6 +546,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public double getDistanceToNearestBump() {
+    if (FieldPositions.bumpPoses.isEmpty()) return Double.MAX_VALUE;
     Translation2d robotTranslation = swerveDrive.getPose().getTranslation();
     return robotTranslation.nearest(FieldPositions.bumpPoses).getDistance(robotTranslation);
   }
@@ -574,9 +580,9 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
-    networkTable.getTable(NetworkTableNames.Robot.kTable).getEntry(NetworkTableNames.Robot.kEnabled).setBoolean(DriverStation.isEnabled());
-    networkTable.getTable(NetworkTableNames.Robot.kTable).getEntry(NetworkTableNames.Robot.kBatteryVoltage).setDouble(RobotController.getBatteryVoltage());
-    networkTable.getTable(NetworkTableNames.Robot.kTable).getEntry(NetworkTableNames.Robot.kBatteryBrownout).setDouble(RobotController.getBrownoutVoltage());
+    enabledEntry.setBoolean(DriverStation.isEnabled());
+    batteryVoltageEntry.setDouble(RobotController.getBatteryVoltage());
+    batteryBrownoutEntry.setDouble(RobotController.getBrownoutVoltage());
 
     try {
       robotPose2dPublisher.set(swerveDrive.getPose());

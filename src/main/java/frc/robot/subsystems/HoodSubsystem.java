@@ -6,19 +6,16 @@ package frc.robot.subsystems;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
-import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkClosedLoopController;
-import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.*;
 import frc.robot.Constants.*;
@@ -44,6 +41,14 @@ public class HoodSubsystem extends SubsystemBase {
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable hoodTable = networkTable.getTable(NetworkTableNames.Hood.kTable);
 
+  // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
+  private final NetworkTableEntry velocityEntry = hoodTable.getEntry(NetworkTableNames.Hood.kVelocityRPM);
+  private final NetworkTableEntry positionEntry = hoodTable.getEntry(NetworkTableNames.Hood.kPositionRotations);
+  private final NetworkTableEntry targetEntry = hoodTable.getEntry(NetworkTableNames.Hood.kTargetRotations);
+  private final NetworkTableEntry angleEntry = hoodTable.getEntry(NetworkTableNames.Hood.kAngleDegrees);
+  private final NetworkTableEntry primaryCurrentEntry = hoodTable.getEntry(NetworkTableNames.Hood.kPrimaryCurrent);
+  private final NetworkTableEntry secondaryCurrentEntry = hoodTable.getEntry(NetworkTableNames.Hood.kSecondaryCurrent);
+
   /** Creates a new HoodSubsystem. */
   public HoodSubsystem() {
 
@@ -66,7 +71,8 @@ public class HoodSubsystem extends SubsystemBase {
   }
 
   /** Updates the rotations variable which is used in the setPIDAngle method
-   * @param angle is in Degrees */
+   * @param angle is in Degrees
+   * TODO: TUNE ON ROBOT — verify this calculation matches the encoder conversion factor in Configs.java */
   public void updateHoodTarget(double angle) {
     rotations = HoodConstants.kEncoderOffset + (angle / 360) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
   }
@@ -95,11 +101,16 @@ public class HoodSubsystem extends SubsystemBase {
     return hoodMovingForward;
   }
 
-  // We may want to remove this as we are controlling the hood via PID
-  /** @param Velocity is in RPM */
-  public void setHoodVelocity(double velocity) {
-    hoodPrimaryMotor.set(velocity / 11000);
-    hoodSecondaryMotor.set(velocity / 11000);
+  /**
+   * Sets hood motor output. Takes an RPM-scale value and normalizes it to [-1, 1]
+   * duty cycle by dividing by the NEO 550 free speed (11000 RPM).
+   * Only commands the primary motor — the secondary is a follower.
+   * Note: The hood also has PID position control via setHoodPIDAngle(). Use this
+   * method only for manual/testing control.
+   * @param speed RPM-scale value (e.g. 3000 for forward, -3000 for reverse)
+   */
+  public void setHoodDutyCycle(double speed) {
+    hoodPrimaryMotor.set(speed / RobotConstants.kNeo550FreeSpeedRPM);
   }
 
   /** @return Primary motor for simulation access */
@@ -134,19 +145,12 @@ public class HoodSubsystem extends SubsystemBase {
 
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
-    hoodTable.getEntry(NetworkTableNames.Hood.kVelocityRPM)
-      .setNumber(getHoodVelocity());
-    hoodTable.getEntry(NetworkTableNames.Hood.kPositionRotations)
-      .setNumber(getHoodMotorRotations());
-    hoodTable.getEntry(NetworkTableNames.Hood.kTargetRotations)
-      .setNumber(rotations);
-
-    hoodTable.getEntry(NetworkTableNames.Hood.kAngleDegrees)
-      .setNumber(Math.toDegrees(getHoodAngle()));
-    hoodTable.getEntry(NetworkTableNames.Hood.kPrimaryCurrent)
-      .setNumber(getHoodPrimaryCurrent());
-    hoodTable.getEntry(NetworkTableNames.Hood.kSecondaryCurrent)
-      .setNumber(getHoodSecondaryCurrent());
+    velocityEntry.setDouble(getHoodVelocity());
+    positionEntry.setDouble(getHoodMotorRotations());
+    targetEntry.setDouble(rotations);
+    angleEntry.setDouble(Math.toDegrees(getHoodAngle()));
+    primaryCurrentEntry.setDouble(getHoodPrimaryCurrent());
+    secondaryCurrentEntry.setDouble(getHoodSecondaryCurrent());
   }
 
   /** This method will be called once per scheduler run */

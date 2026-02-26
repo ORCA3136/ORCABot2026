@@ -7,42 +7,39 @@ package frc.robot.commands;
 import frc.robot.subsystems.HoodSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 
-/** An example command that uses an example subsystem. */
+/** Runs the hood motor at a fixed duty cycle speed. Stops when the command ends. */
 public class RunHoodCommand extends Command {
-  @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-  private final HoodSubsystem m_shooterSubsystem;
-
-  private double velocity;
+  private final HoodSubsystem m_hoodSubsystem;
+  private final double velocity;
 
   /**
-   * Creates a new ExampleCommand.
-   *
-   * @param subsystem The subsystem used by this command.
+   * @param hoodSubsystem The hood subsystem
+   * @param velocity RPM-scale speed for manual hood control
    */
-  public RunHoodCommand(HoodSubsystem shooterSubsystem, double velocity) {
-    m_shooterSubsystem = shooterSubsystem;
+  public RunHoodCommand(HoodSubsystem hoodSubsystem, double velocity) {
+    m_hoodSubsystem = hoodSubsystem;
 
     this.velocity = velocity;
 
     // Use addRequirements() here to declare subsystem dependencies.
-    addRequirements(shooterSubsystem);
+    addRequirements(hoodSubsystem);
   }
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {
-    m_shooterSubsystem.setHoodVelocity(velocity);
-  }
+  public void initialize() {}
 
   // Called every time the scheduler runs while the command is scheduled.
+  // Motor is commanded every cycle so it recovers automatically from CAN bus glitches.
   @Override
   public void execute() {
+    m_hoodSubsystem.setHoodDutyCycle(velocity);
   }
 
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    m_shooterSubsystem.setHoodVelocity(0);
+    m_hoodSubsystem.setHoodDutyCycle(0);
   }
 
   // Returns true when the command should end.

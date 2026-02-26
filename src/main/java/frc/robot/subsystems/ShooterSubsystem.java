@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems;
 
-import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -13,12 +12,10 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkMax;
 
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.*;
 import frc.robot.Constants.*;
@@ -51,6 +48,14 @@ public class ShooterSubsystem extends SubsystemBase {
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable shooterTable = networkTable.getTable(NetworkTableNames.Shooter.kTable);
 
+  // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
+  private final NetworkTableEntry velocityEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kVelocityRPM);
+  private final NetworkTableEntry targetEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kTargetRPM);
+  private final NetworkTableEntry rampedSetpointEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kRampedSetpoint);
+  private final NetworkTableEntry primaryCurrentEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kPrimaryCurrent);
+  private final NetworkTableEntry secondaryCurrentEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kSecondaryCurrent);
+  private final NetworkTableEntry readyEntry = shooterTable.getEntry("Ready");
+
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem() {
 
@@ -71,8 +76,11 @@ public class ShooterSubsystem extends SubsystemBase {
    * use "setShooterVelocityTarget" to change shooterVelocity variable in this subsystem
    */
   private void setShooterPIDVelocity() {
-    shooterPrimaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, calculateFeedForward());
-    shooterSecondaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, calculateFeedForward());
+    // Calculate FF once and reuse — it uses the ramped setpoint (not the final target)
+    // so the FF matches what the PID is currently tracking.
+    double ff = calculateFeedForward();
+    shooterPrimaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ff);
+    shooterSecondaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ff);
   }
 
   public void setShooterVelocityTarget(double target) {
@@ -116,7 +124,7 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
 
-    if (shooterVelocityTarget > 6500) shooterVelocityTarget = 6500;
+    if (shooterVelocityTarget > ShooterConstants.kVelocityMax) shooterVelocityTarget = ShooterConstants.kVelocityMax;
     if (shooterVelocityTarget < 0) shooterVelocityTarget = 0;
   }
 
@@ -129,6 +137,13 @@ public class ShooterSubsystem extends SubsystemBase {
   /** @return Primary motor for simulation access */
   public SparkFlex getPrimaryMotor() {
     return shooterPrimaryMotor;
+  }
+
+  /** @return true if the shooter ramp has finished and flywheel is within tolerance of target RPM */
+  public boolean isShooterReady() {
+    return shooterVelocityTarget > 0
+        && shooterVelocity >= shooterVelocityTarget
+        && Math.abs(getShooterVelocity() - shooterVelocityTarget) < ShooterConstants.kReadyToleranceRPM;
   }
 
   /** @return Velocity in RPM */
@@ -148,18 +163,12 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
-    shooterTable.getEntry(NetworkTableNames.Shooter.kVelocityRPM)
-      .setNumber(getShooterVelocity());
-    shooterTable.getEntry(NetworkTableNames.Shooter.kTargetRPM)
-      .setNumber(getShooterTarget());
-
-    shooterTable.getEntry(NetworkTableNames.Shooter.kRampedSetpoint)
-      .setNumber(getRampedSetpoint());
-    shooterTable.getEntry(NetworkTableNames.Shooter.kPrimaryCurrent)
-      .setNumber(getShooterPrimaryCurrent());
-    shooterTable.getEntry(NetworkTableNames.Shooter.kSecondaryCurrent)
-      .setNumber(getShooterSecondaryCurrent());
-
+    velocityEntry.setDouble(getShooterVelocity());
+    targetEntry.setDouble(getShooterTarget());
+    rampedSetpointEntry.setDouble(getRampedSetpoint());
+    primaryCurrentEntry.setDouble(getShooterPrimaryCurrent());
+    secondaryCurrentEntry.setDouble(getShooterSecondaryCurrent());
+    readyEntry.setBoolean(isShooterReady());
   }
 
   /** Ramp the setpoint toward the target each cycle. */

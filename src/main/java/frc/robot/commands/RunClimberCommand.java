@@ -8,20 +8,18 @@ import frc.robot.Constants.ClimberConstants;
 import frc.robot.subsystems.ClimberSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 
-/** An example command that uses an example subsystem. */
+/**
+ * Runs the climber at a fixed speed until a position limit is reached.
+ * Stops automatically if the climber exceeds max or min position (safety limit).
+ */
 public class RunClimberCommand extends Command {
-  @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
   private final ClimberSubsystem m_climberSubsystem;
-
-  double climberPosition;
-  double velocity;
-
-  
+  private double climberPosition;
+  private final double velocity;
 
   /**
-   * Creates a new ExampleCommand.
-   *
-   * @param subsystem The subsystem used by this command.
+   * @param subsystem The climber subsystem
+   * @param inputVelocity RPM-scale speed (positive = extend, negative = retract)
    */
   public RunClimberCommand(ClimberSubsystem subsystem, double inputVelocity) {
     m_climberSubsystem = subsystem;
@@ -35,28 +33,29 @@ public class RunClimberCommand extends Command {
   @Override
   public void initialize() {
     climberPosition = m_climberSubsystem.getClimberPosition();
-    m_climberSubsystem.setClimberVelocity(velocity);
   }
 
   // Called every time the scheduler runs while the command is scheduled.
+  // Motor is commanded every cycle so it recovers automatically from CAN bus glitches.
   @Override
   public void execute() {
     climberPosition = m_climberSubsystem.getClimberPosition();
+    m_climberSubsystem.setClimberDutyCycle(velocity);
   }
 
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    m_climberSubsystem.setClimberVelocity(0);
+    m_climberSubsystem.setClimberDutyCycle(0);
   }
 
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    // if (climberPosition > ClimberConstants.kClimberMaxPosition && velocity > 0)
-    //   return true;
-    // if (climberPosition < ClimberConstants.kClimberMinPosition && velocity < 0)
-    //   return true;
+    if (climberPosition > ClimberConstants.kClimberMaxPosition && velocity > 0)
+      return true;
+    if (climberPosition < ClimberConstants.kClimberMinPosition && velocity < 0)
+      return true;
     return false;
   }
 }
