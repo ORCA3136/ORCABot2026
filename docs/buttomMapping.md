@@ -10,7 +10,8 @@ Right Bumper -- Pass (?) {TBD}
 
 Y -- Intake to "Out" Position (Max extension) ---{Toggle}
 A -- Intake to "Safe" Position (For transportation) ---{Toggle}
-B -- Hood To Starting Position (For climb) ---{Toggle}
+X -- Intake to Starting Position (For Climb) ---{Toggle}
+B -- Hood To Starting Position ---{Toggle}
 
 POV Up -- Kicker In
 POV Down -- Kicker Out
