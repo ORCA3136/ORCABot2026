@@ -25,12 +25,20 @@ import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.*;
 
 /*
- * 
  * This subsystem is for fuel interactions
  * Including:
  *    Intaking/outaking fuel from the floor
  *    Transporting fuel to the shooter
- * 
+ *
+ * === INTAKE DEPLOY PID TUNING STEPS ===
+ * 1. Deploy with kG = 0 (current state) — verify both up and down move symmetrically
+ * 2. Hold arm perfectly horizontal, read "IntakeDeploy/Position" from NetworkTables
+ * 3. Put that value in Constants.java IntakeConstants.kEncoderHorizontalOffset
+ * 4. Set kG = 0.05, deploy, and slowly increase until the arm holds position with low current
+ *
+ * If the arm is too slow in both directions: increase kP (try 1.5, then 3.0)
+ * If the arm overshoots and bounces: increase kD (try 3.0) or reduce kP
+ * If the arm drifts slowly: add small kI (try 0.001) — use sparingly
  */
 
 
@@ -139,9 +147,9 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeDeployMotor;
   }
 
-  /** @return Angle in Rad */
+  /** @return Angle in radians relative to horizontal (0 = horizontal, positive = above, negative = below) */
   public double getIntakeAngle() {
-    return 2 * Math.PI * (intakeDeployEncoder.getPosition() / IntakeConstants.kDeployGearRatio);
+    return 2 * Math.PI * (intakeDeployEncoder.getPosition() - IntakeConstants.kEncoderHorizontalOffset);
   }
 
   /** True makes the intake ocillate if it's down, false stops it */
@@ -212,7 +220,7 @@ public class IntakeSubsystem extends SubsystemBase {
     updateNetworkTable();
 
     // TODO: Uncomment setPIDAngle() when deploy PID is tuned on robot
-    // setPIDAngle();
+    setPIDAngle();
   }
 
   /** This method will be called once per scheduler run during simulation */

@@ -105,7 +105,7 @@ public class Configs {
                 .positionWrappingEnabled(false)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
                 .pid(IntakeConstants.kP, IntakeConstants.kI, IntakeConstants.kD)
-                .outputRange(-0.5, 0.5); // Old was +-0.8
+                .outputRange(-0.8, 0.8); // Old was +-0.8
             // primaryHoodConfig.closedLoop.feedForward
             //     .kG(HoodConstants.kG);
         }
