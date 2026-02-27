@@ -141,7 +141,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** @return Angle in Rad */
   public double getIntakeAngle() {
-    return 2 * Math.PI * (intakeDeployEncoder.getPosition() / IntakeConstants.kDeployGearRatio);
+    return 2 * Math.PI * (intakeDeployEncoder.getPosition()); /// IntakeConstants.kDeployGearRatio);
   }
 
   /** True makes the intake ocillate if it's down, false stops it */
@@ -212,7 +212,7 @@ public class IntakeSubsystem extends SubsystemBase {
     updateNetworkTable();
 
     // TODO: Uncomment setPIDAngle() when deploy PID is tuned on robot
-    // setPIDAngle();
+    setPIDAngle();
   }
 
   /** This method will be called once per scheduler run during simulation */
