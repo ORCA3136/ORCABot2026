@@ -76,10 +76,10 @@ public final class Constants {
     // public static final double kV = 0;
     // public static final double kA = 0;
 
-    public static final double kMaxDeployPosition = .5;
-    public static final double kMinDeployPosition = 0;
+    public static final double kMaxDeployPosition = 2.9;
+    public static final double kMinDeployPosition = 0.1;
 
-    public static final double kDeployGearRatio = 15. / 36;
+    public static final double kDeployGearRatio = 18. / 22;
     public static final double kIntakeGearRatio = 1;
   }
 
