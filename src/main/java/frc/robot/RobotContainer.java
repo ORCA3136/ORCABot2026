@@ -64,7 +64,7 @@ public class RobotContainer {
     DriverStation.silenceJoystickConnectionWarning(true);
 
     // Configure the trigger bindings (set to false for test bindings)
-    boolean useProductionBindings = true;
+    boolean useProductionBindings = false;
     if (useProductionBindings) {
       configureBindings();
     } else {
