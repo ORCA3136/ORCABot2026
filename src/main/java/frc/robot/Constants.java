@@ -74,8 +74,8 @@ public final class Constants {
     // TODO: TUNE ON ROBOT — kG gravity FF disabled because getIntakeAngle() doesn't return
     // the true physical angle. To re-enable: measure encoder position when arm is horizontal,
     // subtract that offset in getIntakeAngle(), then tune kG starting at ~0.1
-    public static final double kG = 0;
-    public static final double kS = 0.;
+    public static final double kG = 0.0;
+    public static final double kS = 0.0;
     // public static final double kV = 0;
     // public static final double kA = 0;
 

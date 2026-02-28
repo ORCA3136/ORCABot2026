@@ -92,7 +92,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public double calculateShooterFeedForward() {
     // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
     double ff = ShooterConstants.kS + shooterVelocity * ShooterConstants.kVelocityModifier;
-    return shooterVelocity == 0 ? 0 : ff;
+    return shooterVelocity < 100 ? 0 : ff;
   }
 
   /** Calculates the current hood feedforward

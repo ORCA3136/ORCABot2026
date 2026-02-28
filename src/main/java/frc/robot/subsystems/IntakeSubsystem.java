@@ -88,7 +88,13 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean ocillateIntake = false;
   private double ocillationMagnitude = 1;
   private double ocillationFrequency = 1;
-  private String intakeDeployTarget = "Down";
+  private Setpoint intakeDeployTarget = Setpoint.kUp;
+
+  public enum Setpoint{
+    kDown,
+    kSafe,
+    kUp;
+  }
 
 
   /** Creates a new IntakeSubsystem. */
@@ -110,15 +116,15 @@ public class IntakeSubsystem extends SubsystemBase {
 
     double tempTargetPosition;
 
-    if (intakeDeployTarget == "Down")
+    if (intakeDeployTarget == Setpoint.kDown)
       tempTargetPosition = IntakeConstants.kMinDeployPosition;
-    else if (intakeDeployTarget == "Safe")
+    else if (intakeDeployTarget == Setpoint.kSafe)
       tempTargetPosition = IntakeConstants.kSafeDeployPosition;
     else
       tempTargetPosition = IntakeConstants.kMaxDeployPosition;
 
     // This was adding rotations which would be way too big a change, so I changed it to degrees for the time being
-    if (intakeDeployTarget == "Up" && ocillateIntake) {
+    if (intakeDeployTarget == Setpoint.kUp && ocillateIntake) {
       tempTargetPosition += (ocillationMagnitude * (1 + Math.sin(Timer.getTimestamp() * ocillationFrequency)) / 360);
     }
 
@@ -141,7 +147,7 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /** Sets the intakeDeployTarget variable */
-  public void setIntakeDeployTarget(String position) {
+  public void setIntakeDeployTarget(Setpoint position) {
     intakeDeployTarget = position;
   }
 
