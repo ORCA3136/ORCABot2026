@@ -103,19 +103,18 @@ public class RobotContainer {
     driveBase.setDefaultCommand(defaultDriveCommand);
 
     // Buttons
-    m_primaryController.a           ().onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget("Safe")));
+    m_primaryController.a           ().onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
     m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(0)));
-    m_primaryController.x           ().onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget("Up")));
-    m_primaryController.y           ().onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget("Down")));
+    m_primaryController.x           ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
+    m_primaryController.y           ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
 
     m_primaryController.start       (); // Unbound for now
-    m_primaryController.back().and(m_primaryController.povUp()).whileTrue(new RunKickerCommand(kickerSubsystem, -2500));
-
+    
     // D pad
-    m_primaryController.povUp       ().whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
-		// m_primaryController.povDown     ().whileTrue(new RunKickerCommand(kickerSubsystem, -2500));
-    m_primaryController.povLeft     ().whileTrue(new RunConveyorCommand(conveyorSubsystem, 1000));
-		m_primaryController.povRight    ().whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000));
+    m_primaryController.povUp       ().and(m_primaryController.back().negate()).whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
+		m_primaryController.povDown     ().and(m_primaryController.back().negate()).whileTrue(new RunKickerCommand(kickerSubsystem, -2500));
+    m_primaryController.povLeft     ().and(m_primaryController.back().negate()).whileTrue(new RunConveyorCommand(conveyorSubsystem, 1000));
+		m_primaryController.povRight    ().and(m_primaryController.back().negate()).whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000));
 
     // Axis/Triggers/Sticks
     m_primaryController.rightBumper (); // Unbound for now
@@ -126,6 +125,17 @@ public class RobotContainer {
 
     m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
 
+    // Toggled button options (active while holding back button)
+    m_primaryController.back().and(m_primaryController.a()); // add a .negate() to normal buttons if you use these
+    m_primaryController.back().and(m_primaryController.b());
+    m_primaryController.back().and(m_primaryController.x()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
+    m_primaryController.back().and(m_primaryController.y()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
+
+    m_primaryController.back().and(m_primaryController.povUp()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
+    m_primaryController.back().and(m_primaryController.povDown()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
+    m_primaryController.back().and(m_primaryController.povLeft()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
+    m_primaryController.back().and(m_primaryController.povRight()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
+    
       }
 
   // Testing buttons
