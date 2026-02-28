@@ -15,6 +15,9 @@ import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.NetworkTableNames;
 import frc.robot.Constants.VisionConstants;
@@ -83,36 +86,39 @@ public class VisionSubsystem extends SubsystemBase {
   private int totalTagCount = 0;
 
   // --- Cached NetworkTable entries ---
-  private final NetworkTable frontTable;
-  private final NetworkTable backTable;
-  private final NetworkTable visionTable;
+  NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
+  private final NetworkTable frontTable = ntInstance.getTable(NetworkTableNames.Vision.kFrontTable);
+  private final NetworkTable backTable = ntInstance.getTable(NetworkTableNames.Vision.kBackTable);
+  private final NetworkTable visionTable = ntInstance.getTable(NetworkTableNames.Vision.kTable);
 
   // Front camera NT entries
-  private final StructPublisher<Pose2d> frontPosePublisher;
-  private final NetworkTableEntry frontTagCountEntry;
-  private final NetworkTableEntry frontAvgDistEntry;
-  private final NetworkTableEntry frontStdDevEntry;
-  private final NetworkTableEntry frontAcceptedEntry;
-  private final NetworkTableEntry frontRejectEntry;
-  private final NetworkTableEntry frontLatencyEntry;
-  private final NetworkTableEntry frontPoseJumpEntry;
-  private final NetworkTableEntry frontHeadingDevEntry;
+  private final StructPublisher<Pose2d> frontPosePublisher = frontTable
+        .getStructTopic(NetworkTableNames.Vision.kVisionPose, Pose2d.struct).publish();
+  private final NetworkTableEntry frontTagCountEntry = frontTable.getEntry(NetworkTableNames.Vision.kTagCount);
+  private final NetworkTableEntry frontAvgDistEntry = frontTable.getEntry(NetworkTableNames.Vision.kAvgTagDistance);
+  private final NetworkTableEntry frontStdDevEntry = frontTable.getEntry(NetworkTableNames.Vision.kXYStdDev);
+  private final NetworkTableEntry frontAcceptedEntry = frontTable.getEntry(NetworkTableNames.Vision.kAccepted);
+  private final NetworkTableEntry frontRejectEntry = frontTable.getEntry(NetworkTableNames.Vision.kRejectReason);
+  private final NetworkTableEntry frontLatencyEntry = frontTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
+  private final NetworkTableEntry frontPoseJumpEntry = frontTable.getEntry(NetworkTableNames.Vision.kPoseJumpMeters);
+  private final NetworkTableEntry frontHeadingDevEntry = frontTable.getEntry(NetworkTableNames.Vision.kHeadingDeviationDeg);
 
   // Back camera NT entries
-  private final StructPublisher<Pose2d> backPosePublisher;
-  private final NetworkTableEntry backTagCountEntry;
-  private final NetworkTableEntry backAvgDistEntry;
-  private final NetworkTableEntry backStdDevEntry;
-  private final NetworkTableEntry backAcceptedEntry;
-  private final NetworkTableEntry backRejectEntry;
-  private final NetworkTableEntry backLatencyEntry;
-  private final NetworkTableEntry backPoseJumpEntry;
-  private final NetworkTableEntry backHeadingDevEntry;
+  private final StructPublisher<Pose2d> backPosePublisher = backTable
+        .getStructTopic(NetworkTableNames.Vision.kVisionPose, Pose2d.struct).publish();
+  private final NetworkTableEntry backTagCountEntry = backTable.getEntry(NetworkTableNames.Vision.kTagCount);
+  private final NetworkTableEntry backAvgDistEntry = backTable.getEntry(NetworkTableNames.Vision.kAvgTagDistance);
+  private final NetworkTableEntry backStdDevEntry = backTable.getEntry(NetworkTableNames.Vision.kXYStdDev);
+  private final NetworkTableEntry backAcceptedEntry = backTable.getEntry(NetworkTableNames.Vision.kAccepted);
+  private final NetworkTableEntry backRejectEntry = backTable.getEntry(NetworkTableNames.Vision.kRejectReason);
+  private final NetworkTableEntry backLatencyEntry = backTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
+  private final NetworkTableEntry backPoseJumpEntry = backTable.getEntry(NetworkTableNames.Vision.kPoseJumpMeters);
+  private final NetworkTableEntry backHeadingDevEntry = backTable.getEntry(NetworkTableNames.Vision.kHeadingDeviationDeg);
 
   // System-level NT entries
-  private final NetworkTableEntry totalTagCountEntry;
-  private final NetworkTableEntry visionHealthyEntry;
-  private final NetworkTableEntry imuPhaseEntry;
+  private final NetworkTableEntry totalTagCountEntry = visionTable.getEntry(NetworkTableNames.Vision.kTotalTagCount);
+  private final NetworkTableEntry visionHealthyEntry = visionTable.getEntry(NetworkTableNames.Vision.kVisionHealthy);
+  private final NetworkTableEntry imuPhaseEntry = visionTable.getEntry(NetworkTableNames.Vision.kImuPhase);
 
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(SwerveSubsystem swerveSubsystem) {
@@ -148,38 +154,6 @@ public class VisionSubsystem extends SubsystemBase {
     // Create per-camera PoseEstimate objects (see class-level comment for why)
     frontPoseEstimate = new PoseEstimate(limelightFront, "botpose_orb_wpiblue", true);
     backPoseEstimate = new PoseEstimate(limelightBack, "botpose_orb_wpiblue", true);
-
-    // Cache all NetworkTable entries
-    NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
-    frontTable = ntInstance.getTable(NetworkTableNames.Vision.kFrontTable);
-    backTable = ntInstance.getTable(NetworkTableNames.Vision.kBackTable);
-    visionTable = ntInstance.getTable(NetworkTableNames.Vision.kTable);
-
-    frontPosePublisher = frontTable
-        .getStructTopic(NetworkTableNames.Vision.kVisionPose, Pose2d.struct).publish();
-    frontTagCountEntry = frontTable.getEntry(NetworkTableNames.Vision.kTagCount);
-    frontAvgDistEntry = frontTable.getEntry(NetworkTableNames.Vision.kAvgTagDistance);
-    frontStdDevEntry = frontTable.getEntry(NetworkTableNames.Vision.kXYStdDev);
-    frontAcceptedEntry = frontTable.getEntry(NetworkTableNames.Vision.kAccepted);
-    frontRejectEntry = frontTable.getEntry(NetworkTableNames.Vision.kRejectReason);
-    frontLatencyEntry = frontTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
-    frontPoseJumpEntry = frontTable.getEntry(NetworkTableNames.Vision.kPoseJumpMeters);
-    frontHeadingDevEntry = frontTable.getEntry(NetworkTableNames.Vision.kHeadingDeviationDeg);
-
-    backPosePublisher = backTable
-        .getStructTopic(NetworkTableNames.Vision.kVisionPose, Pose2d.struct).publish();
-    backTagCountEntry = backTable.getEntry(NetworkTableNames.Vision.kTagCount);
-    backAvgDistEntry = backTable.getEntry(NetworkTableNames.Vision.kAvgTagDistance);
-    backStdDevEntry = backTable.getEntry(NetworkTableNames.Vision.kXYStdDev);
-    backAcceptedEntry = backTable.getEntry(NetworkTableNames.Vision.kAccepted);
-    backRejectEntry = backTable.getEntry(NetworkTableNames.Vision.kRejectReason);
-    backLatencyEntry = backTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
-    backPoseJumpEntry = backTable.getEntry(NetworkTableNames.Vision.kPoseJumpMeters);
-    backHeadingDevEntry = backTable.getEntry(NetworkTableNames.Vision.kHeadingDeviationDeg);
-
-    totalTagCountEntry = visionTable.getEntry(NetworkTableNames.Vision.kTotalTagCount);
-    visionHealthyEntry = visionTable.getEntry(NetworkTableNames.Vision.kVisionHealthy);
-    imuPhaseEntry = visionTable.getEntry(NetworkTableNames.Vision.kImuPhase);
   }
 
   @Override
@@ -187,11 +161,11 @@ public class VisionSubsystem extends SubsystemBase {
     // --- IMU mode state machine ---
     boolean isEnabled = DriverStation.isEnabled();
 
+    // TODO add limelight modes to Robot
     if (!isEnabled && wasEnabled) {
       enterSeedMode();
       wasEnabled = false;
     }
-
     if (isEnabled && !wasEnabled) {
       enterActiveMode();
       wasEnabled = true;
@@ -200,8 +174,8 @@ public class VisionSubsystem extends SubsystemBase {
     // --- Feed heading to both cameras ---
     Rotation3d currentRotation = swerveSubsystem.getGyroRotation3d();
 
-    double pitchRateDegPerSec = swerveSubsystem.getPigeon2PitchRateDegPerSec();
     double rollRateDegPerSec = swerveSubsystem.getPigeon2RollRateDegPerSec();
+    double pitchRateDegPerSec = swerveSubsystem.getPigeon2PitchRateDegPerSec();
     double yawRateDegPerSec = swerveSubsystem.getPigeon2YawRateDegPerSec();
 
     Orientation3d orientation = new Orientation3d(
@@ -470,4 +444,12 @@ public class VisionSubsystem extends SubsystemBase {
 
   @Override
   public void simulationPeriodic() {}
+
+  public Command LLSeedCommand() {
+    return Commands.runOnce(() -> enterSeedMode(), (Subsystem[]) null);
+  }
+
+  public Command LLActiveCommand() {
+    return Commands.runOnce(() -> enterActiveMode(), (Subsystem[]) null);
+  }
 }

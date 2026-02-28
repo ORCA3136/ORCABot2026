@@ -92,7 +92,7 @@ public class Configs {
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
                 .voltageCompensation(12)
-                .smartCurrentLimit(CurrentConstants.AMP30, CurrentConstants.AMP20);
+                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
             intakeDeployMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kBrake)

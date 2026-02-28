@@ -23,9 +23,11 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldPositions;
 import frc.robot.Constants.NetworkTableNames;
+import swervelib.SwerveInputStream;
 
 
 /*
@@ -40,13 +42,10 @@ import frc.robot.Constants.NetworkTableNames;
 
 public class TeleopPathplanner extends SubsystemBase {
 
+  private final SwerveSubsystem swerveSubsystem;
+
   NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kTable);
-
-  StructSubscriber<Pose2d> robotPositionSubscriber = odometryTable
-      .getStructTopic(NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).subscribe(new Pose2d(), PubSubOption.periodic(0.02));
-  DoubleArraySubscriber robotVelocitySubscriber = odometryTable
-      .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotVelocity).subscribe(new double[] {0,0,0}, PubSubOption.periodic(0.02));
 
   public enum FieldSide {
     BlueSide,
@@ -67,21 +66,16 @@ public class TeleopPathplanner extends SubsystemBase {
 
   FieldSide startingSide, currentSide;
   Pose2d currentPose, targetHubPose; 
-  double[] robotVelocities;
+  ChassisSpeeds robotVelocities;
   double angleToHub, distanceToHub;
 
   
   /** Creates a new TeleopPathplanner. */
-  public TeleopPathplanner() 
+  public TeleopPathplanner(SwerveSubsystem swerve) 
   {
-    Optional<Alliance> startingAllinace = DriverStation.getAlliance();
-    if (startingAllinace.isPresent())
-      startingSide = currentSide = (startingAllinace.get() == Alliance.Blue ? FieldSide.BlueSide : FieldSide.RedSide);
+    swerveSubsystem = swerve;
 
-    if (startingSide == FieldSide.RedSide)
-      targetHubPose = new Pose2d(FieldPositions.kRedFieldElements.get(0), new Rotation2d());
-    else 
-      targetHubPose = new Pose2d(FieldPositions.kBlueFieldElements.get(0), new Rotation2d());
+    
   }
 
 
@@ -105,12 +99,19 @@ public class TeleopPathplanner extends SubsystemBase {
     Pose2d targetPose2d = targetHubPose;
     
     // Assuming angular velocity is negligable - it might not be negligable
-    if (robotVelocities[0] + robotVelocities[1] > 0.05) {
+    if (robotVelocities.vxMetersPerSecond + robotVelocities.vyMetersPerSecond > 0.05) {
       // Based on the robot speeds only
-      targetPose2d = new Pose2d(targetHubPose.getX() - robotVelocities[0], targetHubPose.getY() - robotVelocities[1], new Rotation2d());
+      targetPose2d = new Pose2d(targetHubPose.getX() - robotVelocities.vxMetersPerSecond, 
+                                targetHubPose.getY() - robotVelocities.vyMetersPerSecond, new Rotation2d());
     }
   
     return targetPose2d;
+  }
+
+  public Command getHubCommand(SwerveInputStream controllerInput) {
+    SwerveInputStream hubRotation = controllerInput.copy()
+                      .aim(hubRotation());
+    return swerveSubsystem.driveFieldOriented(hubRotation);
   }
 
   public void updateCurrentSide() {
@@ -131,15 +132,32 @@ public class TeleopPathplanner extends SubsystemBase {
     distanceToHub = Math.pow(Math.pow(currentPose.getY() - targetHubPose.getY(), 2) + Math.pow(currentPose.getX() - targetHubPose.getX(), 2), 0.5);
   }
 
+  public Command getStartingAlliance() {
+    return Commands.runOnce(() -> {
+      Optional<Alliance> startingAllinace = DriverStation.getAlliance();
+      if (startingAllinace.isPresent())
+        startingSide = currentSide = (startingAllinace.get() == Alliance.Blue ? FieldSide.BlueSide : FieldSide.RedSide);
+
+      if (startingSide == FieldSide.RedSide)
+        targetHubPose = new Pose2d(FieldPositions.kRedFieldElements.get(0), new Rotation2d());
+      else 
+        targetHubPose = new Pose2d(FieldPositions.kBlueFieldElements.get(0), new Rotation2d());
+      }, (Subsystem[]) null);
+  }
+
   /** This method will be called once per scheduler run */
   @Override
   public void periodic() {
-    currentPose = robotPositionSubscriber.get();
-    robotVelocities = robotVelocitySubscriber.get();
+    currentPose = swerveSubsystem.getPose();
+    robotVelocities = swerveSubsystem.getFieldVelocity();
 
     updateHubTargets();
     updateCurrentSide();
   }
+
+
+
+
 }
 
 
