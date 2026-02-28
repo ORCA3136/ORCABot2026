@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.littletonrobotics.urcl.URCL;
-import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
@@ -17,7 +16,6 @@ import frc.robot.subsystems.SwerveSubsystem;
 public final class RobotLogger {
 
   private static ShooterSubsystem shooterSubsystem;
-  private static HoodSubsystem hoodSubsystem;
   private static KickerSubsystem kickerSubsystem;
   private static SwerveSubsystem swerveSubsystem;
 
@@ -73,10 +71,8 @@ public final class RobotLogger {
   }
 
   /** Register subsystem references so logShot() can pull live data. */
-  public static void registerSubsystems(ShooterSubsystem shooter, HoodSubsystem hood,
-                                         KickerSubsystem kicker, SwerveSubsystem swerve) {
+  public static void registerSubsystems(ShooterSubsystem shooter, KickerSubsystem kicker, SwerveSubsystem swerve) {
     shooterSubsystem = shooter;
-    hoodSubsystem = hood;
     kickerSubsystem = kicker;
     swerveSubsystem = swerve;
   }
@@ -102,11 +98,9 @@ public final class RobotLogger {
       shotShooterActualRPM.append(shooterSubsystem.getShooterVelocity());
       shotShooterTargetRPM.append(shooterSubsystem.getShooterTarget());
       shotShooterRampedSetpoint.append(shooterSubsystem.getRampedSetpoint());
-    }
-
-    if (hoodSubsystem != null) {
-      shotHoodAngleDegrees.append(Math.toDegrees(hoodSubsystem.getHoodAngle()));
-      shotHoodRotations.append(hoodSubsystem.getHoodMotorRotations());
+      // These two had their own when the hood and shooter were seperate, so this might cause a problem (I don't think it will but I'm not sure) -Josiah
+      shotHoodAngleDegrees.append(Math.toDegrees(shooterSubsystem.getHoodAngle()));
+      shotHoodRotations.append(shooterSubsystem.getHoodMotorRotations());
     }
 
     if (kickerSubsystem != null) {

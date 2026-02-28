@@ -23,7 +23,6 @@ import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
-import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import swervelib.SwerveInputStream;
@@ -49,7 +48,6 @@ public class RobotContainer {
   @SuppressWarnings("unused") // periodic() runs vision fusion automatically — no commands needed
   private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveBase);
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
-  private final HoodSubsystem hoodSubsystem = new HoodSubsystem();
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   private final KickerSubsystem kickerSubsystem = new KickerSubsystem();
   private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
@@ -102,27 +100,20 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    boolean inverted = false;
     driveBase.setDefaultCommand(defaultDriveCommand);
 
     // Buttons
     m_primaryController.a           ().onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget("Safe")));
-    m_primaryController.b           ().onTrue(Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(0)));
+    m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(0)));
     m_primaryController.x           ().onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget("Up")));
     m_primaryController.y           ().onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget("Down")));
 
     m_primaryController.start       (); // Unbound for now
-    m_primaryController.back        ().onTrue (inverted = true)
-                                      .onFalse(inverted = false);
+    m_primaryController.back().and(m_primaryController.povUp()).whileTrue(new RunKickerCommand(kickerSubsystem, -2500));
 
     // D pad
-    if (!inverted) {
-      m_primaryController.povUp       ().whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
-    } else {
-      m_primaryController.povUp       ().whileTrue(new RunKickerCommand(kickerSubsystem, -5000));
-    }
-    // m_primaryController.povUp       ().whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
-		m_primaryController.povDown     ().whileTrue(new RunKickerCommand(kickerSubsystem, -5000));
+    m_primaryController.povUp       ().whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
+		// m_primaryController.povDown     ().whileTrue(new RunKickerCommand(kickerSubsystem, -2500));
     m_primaryController.povLeft     ().whileTrue(new RunConveyorCommand(conveyorSubsystem, 1000));
 		m_primaryController.povRight    ().whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000));
 
@@ -148,11 +139,11 @@ public class RobotContainer {
 
     m_primaryController.start       ().onTrue(Commands.runOnce(driveBase::zeroGyro));
 
-    m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> hoodSubsystem.increaseHoodAngle()));
-    m_primaryController.leftBumper  ().onTrue(Commands.runOnce(() -> hoodSubsystem.decreaseHoodAngle()));
+    m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseHoodAngle()));
+    m_primaryController.leftBumper  ().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseHoodAngle()));
 
-		m_primaryController.leftStick		().onTrue(Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(0)));
-		m_primaryController.rightStick	().onTrue(Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(30)));
+		m_primaryController.leftStick		().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(0)));
+		m_primaryController.rightStick	().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(30)));
     
     m_primaryController.povUp       ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 500, 6500));
 		m_primaryController.povDown     ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, -1000, -1000));
@@ -221,9 +212,9 @@ public class RobotContainer {
     NamedCommands.registerCommand("Run Shooter High",     Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityHigh)));
     
     // Move hood
-    NamedCommands.registerCommand("Hood Position Low",    Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(1)));
-    NamedCommands.registerCommand("Hood Position Medium", Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(10)));
-    NamedCommands.registerCommand("Hood Position High",   Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(20)));
+    NamedCommands.registerCommand("Hood Position Low",    Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(1)));
+    NamedCommands.registerCommand("Hood Position Medium", Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(10)));
+    NamedCommands.registerCommand("Hood Position High",   Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(20)));
 
     // Climb
 
@@ -244,7 +235,6 @@ public class RobotContainer {
   // Subsystem getters for simulation access
   public SwerveSubsystem getSwerveSubsystem() { return driveBase; }
   public ShooterSubsystem getShooterSubsystem() { return shooterSubsystem; }
-  public HoodSubsystem getHoodSubsystem() { return hoodSubsystem; }
   public ConveyorSubsystem getConveyorSubsystem() { return conveyorSubsystem; }
   public KickerSubsystem getKickerSubsystem() { return kickerSubsystem; }
   public IntakeSubsystem getIntakeSubsystem() { return intakeSubsystem; }

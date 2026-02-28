@@ -5,7 +5,7 @@
 package frc.robot.commands;
 
 import frc.robot.Constants.HoodConstants;
-import frc.robot.subsystems.HoodSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj.Timer;
 
@@ -16,7 +16,7 @@ import edu.wpi.first.wpilibj.Timer;
  * Used for testing and calibration via the D-pad.
  */
 public class SlowHoodMove extends Command {
-  private final HoodSubsystem m_hoodSubsystem;
+  private final ShooterSubsystem m_shooterSubsystem;
 
   // TODO: TUNE ON ROBOT — verify degrees per second feels right on the actual robot
   private static final double DEGREES_PER_SECOND = 4;
@@ -31,11 +31,11 @@ public class SlowHoodMove extends Command {
   double dTime; // Delta time
   double targetPosition; // Rotations
 
-  /** @param hoodSubsystem The hood subsystem to oscillate */
-  public SlowHoodMove(HoodSubsystem hoodSubsystem) {
-    m_hoodSubsystem = hoodSubsystem;
+  /** @param shooterSubsystem The hood subsystem to oscillate */
+  public SlowHoodMove(ShooterSubsystem shooterSubsystem) {
+    m_shooterSubsystem = shooterSubsystem;
     // Use addRequirements() here to declare subsystem dependencies.
-    addRequirements(hoodSubsystem);
+    addRequirements(shooterSubsystem);
   }
 
   // Called when the command is initially scheduled.
@@ -47,13 +47,13 @@ public class SlowHoodMove extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    targetPosition = m_hoodSubsystem.getHoodTarget();
-    if ((targetPosition >= UPPER_BOUND && m_hoodSubsystem.getHoodMovingForward()) || (targetPosition <= LOWER_BOUND && !m_hoodSubsystem.getHoodMovingForward())) {
-      m_hoodSubsystem.changeHoodDirection();
+    targetPosition = m_shooterSubsystem.getHoodTarget();
+    if ((targetPosition >= UPPER_BOUND && m_shooterSubsystem.getHoodMovingForward()) || (targetPosition <= LOWER_BOUND && !m_shooterSubsystem.getHoodMovingForward())) {
+      m_shooterSubsystem.changeHoodDirection();
     }
     dTime = Timer.getTimestamp() - currentTime;
-    targetPosition += DEGREES_PER_SECOND * ENCODER_UNITS_PER_DEGREE * dTime * (m_hoodSubsystem.getHoodMovingForward() ? 1 : -1);
-    m_hoodSubsystem.setHoodTarget(targetPosition);
+    targetPosition += DEGREES_PER_SECOND * ENCODER_UNITS_PER_DEGREE * dTime * (m_shooterSubsystem.getHoodMovingForward() ? 1 : -1);
+    m_shooterSubsystem.setHoodTarget(targetPosition);
     currentTime = Timer.getTimestamp();
   }
 

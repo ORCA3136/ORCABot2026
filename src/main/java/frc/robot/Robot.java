@@ -51,7 +51,7 @@ public class Robot extends TimedRobot {
     // Register subsystems for shot logging
     RobotLogger.registerSubsystems(
         m_robotContainer.getShooterSubsystem(),
-        m_robotContainer.getHoodSubsystem(),
+        // m_robotContainer.getHoodSubsystem(), // I think it should get everything from shooter now, but I left this here to make it easier to find potential problems
         m_robotContainer.getKickerSubsystem(),
         m_robotContainer.getSwerveSubsystem());
 

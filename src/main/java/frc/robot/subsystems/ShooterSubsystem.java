@@ -83,12 +83,23 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterPrimaryMotor.configure(ShooterConfigs.primaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     shooterSecondaryMotor.configure(ShooterConfigs.secondaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+    hoodPrimaryMotor.configure(HoodConfigs.primaryHoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    hoodSecondaryMotor.configure(HoodConfigs.secondaryHoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    // updateHoodTarget(0);
   }
 
-  public double calculateFeedForward() {
+  public double calculateShooterFeedForward() {
     // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
     double ff = ShooterConstants.kS + shooterVelocity * ShooterConstants.kVelocityModifier;
     return shooterVelocity == 0 ? 0 : ff;
+  }
+
+  /** Calculates the current hood feedforward
+   * {@summary Hood feedforward includes gravitational force, static loss, air resistance, and robot acceleration} */
+  public double calculateHodFeedForward() {
+    // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
+    return HoodConstants.kS + HoodConstants.kG * Math.cos(getHoodAngle());
   }
 
   /**
@@ -99,9 +110,14 @@ public class ShooterSubsystem extends SubsystemBase {
   private void setShooterPIDVelocity() {
     // Calculate FF once and reuse — it uses the ramped setpoint (not the final target)
     // so the FF matches what the PID is currently tracking.
-    double ff = calculateFeedForward();
+    double ff = calculateShooterFeedForward();
     shooterPrimaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ff);
     shooterSecondaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ff);
+  }
+
+  /** Sets the hood setpoint angle */
+  public void setHoodPIDAngle() {
+    hoodPIDController.setSetpoint(rotations, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateHodFeedForward());
   }
 
   public void setShooterVelocityTarget(double target) {
@@ -155,8 +171,39 @@ public class ShooterSubsystem extends SubsystemBase {
     if (shooterVelocityTarget < 0) shooterVelocityTarget = 0;
   }
 
+  /** Updates the rotations variable which is used in the setPIDAngle method
+   * @param angle is in Degrees
+   * TODO: TUNE ON ROBOT — verify this calculation matches the encoder conversion factor in Configs.java */
+  public void updateHoodTarget(double angle) {
+    rotations = HoodConstants.kEncoderOffset + (angle / 360) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+  }
+
+  public void increaseHoodAngle() {
+    rotations += (1. / 360.) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+  }
+
+  public void decreaseHoodAngle() {
+    rotations -= (1. / 360.) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+  }
+
+  public void setHoodTarget(double target) {
+    rotations = target;
+  }
+
+  public double getHoodTarget() {
+    return rotations;
+  }
+
+  public void changeHoodDirection() {
+    hoodMovingForward = !hoodMovingForward;
+  }
+
+  public boolean getHoodMovingForward() {
+    return hoodMovingForward;
+  }
+
   /** @return Primary motor for simulation access */
-  public SparkFlex getPrimaryMotor() {
+  public SparkFlex getShooterPrimaryMotor() {
     return shooterPrimaryMotor;
   }
 
@@ -182,6 +229,48 @@ public class ShooterSubsystem extends SubsystemBase {
     return shooterSecondaryMotor.getOutputCurrent();
   }
 
+  /**
+   * Sets hood motor output. Takes an RPM-scale value and normalizes it to [-1, 1]
+   * duty cycle by dividing by the NEO 550 free speed (11000 RPM).
+   * Only commands the primary motor — the secondary is a follower.
+   * Note: The hood also has PID position control via setHoodPIDAngle(). Use this
+   * method only for manual/testing control.
+   * @param speed RPM-scale value (e.g. 3000 for forward, -3000 for reverse)
+   */
+  public void setHoodDutyCycle(double speed) {
+    hoodPrimaryMotor.set(speed / RobotConstants.kNeo550FreeSpeedRPM);
+  }
+
+  /** @return Primary motor for simulation access */
+  public SparkMax getPrimaryHoodMotor() {
+    return hoodPrimaryMotor;
+  }
+
+  /** @return Motor Rotations */
+  public double getHoodMotorRotations() {
+    return hoodEncoder.getPosition();
+  }
+
+  /** @return Angle in Rad */
+  public double getHoodAngle() {
+    return 2 * Math.PI * ((hoodEncoder.getPosition() - HoodConstants.kEncoderOffset) / (HoodConstants.kMotorGearRatio * HoodConstants.kEncoderGearRatio));
+  }
+
+  /** @return Velocity in RPM */
+  public double getHoodVelocity() {
+    return hoodEncoder.getVelocity();
+  }
+
+  /** @return Current in Amps */
+  public double getHoodPrimaryCurrent() {
+    return hoodPrimaryMotor.getOutputCurrent();
+  }
+
+  // /** @return Current in Amps */
+  public double getHoodSecondaryCurrent() {
+    return hoodSecondaryMotor.getOutputCurrent();
+  }
+
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
     velocityEntryShooter.setDouble(getShooterVelocity());
@@ -190,6 +279,13 @@ public class ShooterSubsystem extends SubsystemBase {
     primaryCurrentEntryShooter.setDouble(getShooterPrimaryCurrent());
     secondaryCurrentEntryShooter.setDouble(getShooterSecondaryCurrent());
     readyEntryShooter.setBoolean(isShooterReady());
+
+    velocityEntryHood.setDouble(getHoodVelocity());
+    positionEntryHood.setDouble(getHoodMotorRotations());
+    targetEntryHood.setDouble(rotations);
+    angleEntryHood.setDouble(Math.toDegrees(getHoodAngle()));
+    primaryCurrentEntryHood.setDouble(getHoodPrimaryCurrent());
+    secondaryCurrentEntryHood.setDouble(getHoodSecondaryCurrent());
   }
 
   /** Ramp the setpoint toward the target each cycle. */
@@ -205,8 +301,11 @@ public class ShooterSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     rampSetpoint();
+
     updateNetworkTable();
+
     setShooterPIDVelocity();
+    setHoodPIDAngle();
   }
 
   /** This method will be called once per scheduler run during simulation */
