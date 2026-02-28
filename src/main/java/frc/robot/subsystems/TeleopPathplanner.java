@@ -75,7 +75,14 @@ public class TeleopPathplanner extends SubsystemBase {
   {
     swerveSubsystem = swerve;
 
-    
+    Optional<Alliance> startingAllinace = DriverStation.getAlliance();
+    if (startingAllinace.isPresent())
+      startingSide = currentSide = (startingAllinace.get() == Alliance.Blue ? FieldSide.BlueSide : FieldSide.RedSide);
+
+    if (startingSide == FieldSide.RedSide)
+      targetHubPose = new Pose2d(FieldPositions.kRedFieldElements.get(0), new Rotation2d());
+    else 
+      targetHubPose = new Pose2d(FieldPositions.kBlueFieldElements.get(0), new Rotation2d());
   }
 
 
@@ -142,7 +149,7 @@ public class TeleopPathplanner extends SubsystemBase {
         targetHubPose = new Pose2d(FieldPositions.kRedFieldElements.get(0), new Rotation2d());
       else 
         targetHubPose = new Pose2d(FieldPositions.kBlueFieldElements.get(0), new Rotation2d());
-      }, (Subsystem[]) null);
+      });
   }
 
   /** This method will be called once per scheduler run */

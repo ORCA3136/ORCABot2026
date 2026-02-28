@@ -83,6 +83,7 @@ public class IntakeSubsystem extends SubsystemBase {
   private final NetworkTableEntry deployCurrentEntry = intakeTable.getEntry(NetworkTableNames.Intake.kDeployCurrentAmps);
   private final NetworkTableEntry deployVelocityEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM);
   private final NetworkTableEntry deployPositionEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kPositionRotations);
+  private final NetworkTableEntry deployVoltageEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVoltageRotations);
 
   private boolean intakeDeployed = false;
   private boolean ocillateIntake = false;
@@ -109,7 +110,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * {@summary intake feedforward includes gravitational force, static loss, air resistance, and robot acceleration} */
   public double calculateFeedForward() {
     // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
-    return IntakeConstants.kS + IntakeConstants.kG * Math.sin(getIntakeAngle());
+    return IntakeConstants.kS + IntakeConstants.kG * Math.cos(getIntakeAngle() / IntakeConstants.kDeployGearRatio);
   }
 
   public double calculatePosition() {
@@ -163,7 +164,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** @return Angle in radians relative to horizontal (0 = horizontal, positive = above, negative = below) */
   public double getIntakeAngle() {
-    return 2 * Math.PI * (intakeDeployEncoder.getPosition() - IntakeConstants.kEncoderHorizontalOffset);
+    return 2 * Math.PI * (intakeDeployEncoder.getPosition() - IntakeConstants.intakeDeployOffset);
   }
 
   /** True makes the intake ocillate if it's down, false stops it */
@@ -219,12 +220,17 @@ public class IntakeSubsystem extends SubsystemBase {
            intakeMotor.getAppliedOutput() * intakeMotor.getBusVoltage();
   }
 
+  public double getDeployVoltage() {
+    return intakeDeployMotor.getAppliedOutput() * intakeDeployMotor.getBusVoltage();
+  }
+
   public void updateNetworkTable() {
     intakeVelocityEntry.setDouble(getIntakeVelocity());
     intakeCurrentEntry.setDouble(intakeMotor.getOutputCurrent());
     deployCurrentEntry.setDouble(intakeDeployMotor.getOutputCurrent());
     deployVelocityEntry.setDouble(getIntakeDeployVelocity());
     deployPositionEntry.setDouble(getIntakeDeployPosition());
+    deployVoltageEntry.setDouble(calculateFeedForward());
   }
 
   /** This method will be called once per scheduler run */
@@ -232,6 +238,8 @@ public class IntakeSubsystem extends SubsystemBase {
   public void periodic() {
 
     updateNetworkTable();
+
+
 
     // TODO: Uncomment setPIDAngle() when deploy PID is tuned on robot
     setPIDAngle();
