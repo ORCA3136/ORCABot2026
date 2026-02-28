@@ -22,8 +22,6 @@ import swervelib.simulation.ironmaple.simulation.seasonspecific.rebuilt2026.Aren
  */
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
-  private Command LLSeedModeCommand;
-  private Command LLInternalModeCommand;
 
   private final CommandScheduler commandScheduler;
 
@@ -53,7 +51,7 @@ public class Robot extends TimedRobot {
     // Register subsystems for shot logging
     RobotLogger.registerSubsystems(
         m_robotContainer.getShooterSubsystem(),
-        m_robotContainer.getHoodSubsystem(),
+        // m_robotContainer.getHoodSubsystem(), // I think it should get everything from shooter now, but I left this here to make it easier to find potential problems
         m_robotContainer.getKickerSubsystem(),
         m_robotContainer.getSwerveSubsystem());
 

@@ -5,7 +5,6 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
-import edu.wpi.first.units.measure.Current;
 import frc.robot.Constants.*;
 
 public class Configs {
@@ -24,10 +23,10 @@ public class Configs {
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             primaryShooterConfig.closedLoop
-                .feedbackSensor(FeedbackSensor.kDetachedRelativeEncoder)
+                .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
                 .pid(ShooterConstants.kP, ShooterConstants.kI, ShooterConstants.kD);
             secondaryShooterConfig.closedLoop
-                .feedbackSensor(FeedbackSensor.kDetachedRelativeEncoder)
+                .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
                 .pid(ShooterConstants.kP, ShooterConstants.kI, ShooterConstants.kD);
             
         }
@@ -40,15 +39,18 @@ public class Configs {
                 static {
             primaryHoodConfig
                 .inverted(false)
-                .idleMode(IdleMode.kCoast)
+                .idleMode(IdleMode.kBrake)
                 .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
             secondaryHoodConfig
-                .idleMode(IdleMode.kCoast)
+                .idleMode(IdleMode.kBrake)
                 .follow(CanIdConstants.kHoodPrimaryCanId, true)
                 .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
             primaryHoodConfig.absoluteEncoder
                 .positionConversionFactor(HoodConstants.kMotorGearRatio)
                 .velocityConversionFactor(HoodConstants.kMotorGearRatio);
+            // TODO: TUNE ON ROBOT — verify encoder conversion factor (12x) matches target calculation (26.67x) in HoodSubsystem
+            // Position wrapping must stay enabled — the SparkMax PID with absolute encoder
+            // requires it for correct error calculation. Disabling it breaks hood position control.
             primaryHoodConfig.closedLoop
                 .positionWrappingEnabled(true)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
@@ -65,6 +67,7 @@ public class Configs {
             conveyorMotorConfig
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
+                .voltageCompensation(12)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
         }
     }
@@ -75,31 +78,34 @@ public class Configs {
             kickerMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
+                .voltageCompensation(12)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
         }
     }
 
     public static final class IntakeConfigs {
         public static final SparkFlexConfig intakeMotorConfig = new SparkFlexConfig();
-        public static final SparkMaxConfig IntakeDeployMotorConfig = new SparkMaxConfig();        
+        public static final SparkMaxConfig intakeDeployMotorConfig = new SparkMaxConfig();        
         
         static {
             intakeMotorConfig
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
+                .voltageCompensation(12)
                 .smartCurrentLimit(CurrentConstants.AMP30, CurrentConstants.AMP20);
-            IntakeDeployMotorConfig
+            intakeDeployMotorConfig
                 .inverted(false)
                 .idleMode(IdleMode.kBrake)
+                .voltageCompensation(12)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
-            IntakeDeployMotorConfig.absoluteEncoder
+            intakeDeployMotorConfig.absoluteEncoder
                 .positionConversionFactor(IntakeConstants.kDeployGearRatio)
                 .velocityConversionFactor(IntakeConstants.kDeployGearRatio);
-            IntakeDeployMotorConfig.closedLoop
-                .positionWrappingEnabled(true)
+            intakeDeployMotorConfig.closedLoop
+                .positionWrappingEnabled(false)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
                 .pid(IntakeConstants.kP, IntakeConstants.kI, IntakeConstants.kD)
-                .outputRange(-0.5, 0.5); // Old was +-0.8
+                .outputRange(-0.8, 0.8); // Old was +-0.8
             // primaryHoodConfig.closedLoop.feedForward
             //     .kG(HoodConstants.kG);
         }
@@ -113,6 +119,7 @@ public class Configs {
             climberPrimaryMotor
                 .inverted(false)
                 .idleMode(IdleMode.kBrake)
+                .voltageCompensation(12)
                 .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
             climberSecondaryMotor
                 .idleMode(IdleMode.kBrake)

@@ -18,7 +18,7 @@ public class ShooterSim {
 
     public ShooterSim(ShooterSubsystem subsystem) {
         DCMotor motor = DCMotor.getNeoVortex(2);
-        sparkSim = new SparkSim(subsystem.getPrimaryMotor(), motor);
+        sparkSim = new SparkSim(subsystem.getPrimaryHoodMotor(), motor);
         flywheelSim = new FlywheelSim(
             LinearSystemId.createFlywheelSystem(motor, SimConstants.kShooterMOI, SimConstants.kShooterGearRatio),
             motor

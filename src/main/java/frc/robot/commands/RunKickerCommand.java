@@ -4,25 +4,23 @@
 
 package frc.robot.commands;
 
-import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.KickerSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 
-/** Runs the hood motor at a fixed duty cycle speed. Stops when the command ends. */
-public class RunHoodCommand extends Command {
-  private final ShooterSubsystem m_shooterSubsystem;
+/** Runs the kicker wheel at a fixed speed. Stops when the command ends. */
+public class RunKickerCommand extends Command {
+  private final KickerSubsystem m_KickerSubsystem;
   private final double velocity;
 
   /**
-   * @param shooterSubsystem The hood subsystem
-   * @param velocity RPM-scale speed for manual hood control
+   * @param kickerSubsystem The kicker subsystem
+   * @param kickerVelocity RPM-scale speed (positive = feed into shooter, negative = reverse)
    */
-  public RunHoodCommand(ShooterSubsystem shooterSubsystem, double velocity) {
-    m_shooterSubsystem = shooterSubsystem;
-
-    this.velocity = velocity;
-
+  public RunKickerCommand(KickerSubsystem kickerSubsystem, double kickerVelocity) {
+    m_KickerSubsystem = kickerSubsystem;
+    velocity = kickerVelocity;
     // Use addRequirements() here to declare subsystem dependencies.
-    addRequirements(shooterSubsystem);
+    addRequirements(kickerSubsystem);
   }
 
   // Called when the command is initially scheduled.
@@ -33,13 +31,13 @@ public class RunHoodCommand extends Command {
   // Motor is commanded every cycle so it recovers automatically from CAN bus glitches.
   @Override
   public void execute() {
-    m_shooterSubsystem.setHoodDutyCycle(velocity);
+    m_KickerSubsystem.setKickerDutyCycle(velocity);
   }
 
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    m_shooterSubsystem.setHoodDutyCycle(0);
+    m_KickerSubsystem.setKickerDutyCycle(0);
   }
 
   // Returns true when the command should end.

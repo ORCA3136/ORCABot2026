@@ -5,7 +5,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.Constants.HoodConstants;
-import frc.robot.subsystems.HoodSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
 
 /**
  * Simulates the dual-NEO-550 hood mechanism as a single-jointed arm.
@@ -17,9 +17,9 @@ public class HoodSim {
     private final SparkSim sparkSim;
     private final SingleJointedArmSim armSim;
 
-    public HoodSim(HoodSubsystem subsystem) {
+    public HoodSim(ShooterSubsystem subsystem) {
         DCMotor motor = DCMotor.getNeo550(2);
-        sparkSim = new SparkSim(subsystem.getPrimaryMotor(), motor);
+        sparkSim = new SparkSim(subsystem.getPrimaryHoodMotor(), motor);
         armSim = new SingleJointedArmSim(
             motor,
             SimConstants.kHoodGearRatio,

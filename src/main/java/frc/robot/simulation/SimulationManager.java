@@ -57,7 +57,7 @@ public class SimulationManager {
 
         // Create mechanism sims
         shooterSim = new ShooterSim(shooterSubsystem);
-        hoodSim = new HoodSim(robotContainer.getHoodSubsystem());
+        hoodSim = new HoodSim(robotContainer.getShooterSubsystem()); // This was using hoodSubsystem before I moved hood back to shooter, so this might cause a problem idk
         intakeDeploySim = new IntakeDeploySim(robotContainer.getIntakeSubsystem());
         intakeRollerSim = new IntakeRollerSim(robotContainer.getIntakeSubsystem());
         conveyorSim = new ConveyorSim(conveyorSubsystem);

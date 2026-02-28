@@ -5,49 +5,39 @@
 package frc.robot.commands;
 
 import frc.robot.subsystems.ConveyorSubsystem;
-import frc.robot.subsystems.KickerSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 
-/** An example command that uses an example subsystem. */
+/** Runs the conveyor belt at a fixed speed. Stops when the command ends. */
 public class RunConveyorCommand extends Command {
-  @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
   private final ConveyorSubsystem m_conveyorSubsystem;
-  private final KickerSubsystem m_KickerSubsystem;
   private final double velocity;
-  private final double velocity2;
 
   /**
-   * Creates a new ExampleCommand.
-   *
-   * @param subsystem The subsystem used by this command.
+   * @param conveyorSubsystem The conveyor subsystem
+   * @param conveyorVelocity RPM-scale speed (positive = toward shooter, negative = toward intake)
    */
-  public RunConveyorCommand(ConveyorSubsystem conveyorSubsystem, KickerSubsystem kickerSubsystem, double conveyorVelocity, double kickerVelocity) {
+  public RunConveyorCommand(ConveyorSubsystem conveyorSubsystem, double conveyorVelocity) {
     m_conveyorSubsystem = conveyorSubsystem;
-    m_KickerSubsystem = kickerSubsystem;
     velocity = conveyorVelocity;
-    velocity2 = kickerVelocity;
     // Use addRequirements() here to declare subsystem dependencies.
-    addRequirements(conveyorSubsystem, kickerSubsystem);
+    addRequirements(conveyorSubsystem);
   }
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {
-    
-    m_conveyorSubsystem.setConveyorVelocity(velocity);
-    m_KickerSubsystem.setKickerVelocity(velocity2);
-
-  }
+  public void initialize() {}
 
   // Called every time the scheduler runs while the command is scheduled.
+  // Motor is commanded every cycle so it recovers automatically from CAN bus glitches.
   @Override
-  public void execute() {}
+  public void execute() {
+    m_conveyorSubsystem.setConveyorDutyCycle(velocity);
+  }
 
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    m_conveyorSubsystem.setConveyorVelocity(0);
-    m_KickerSubsystem.setKickerVelocity(0);
+    m_conveyorSubsystem.setConveyorDutyCycle(0);
   }
 
   // Returns true when the command should end.

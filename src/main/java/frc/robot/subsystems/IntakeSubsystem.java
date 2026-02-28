@@ -4,11 +4,6 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.Rotations;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
-
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -19,35 +14,31 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkSim;
 
-import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.*;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.simulation.AddressableLEDSim;
-import edu.wpi.first.wpilibj.simulation.BatterySim;
-import edu.wpi.first.wpilibj.simulation.FlywheelSim;
-import edu.wpi.first.wpilibj.simulation.LinearSystemSim;
-// import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
-import edu.wpi.first.wpilibj.simulation.RoboRioSim;
-import edu.wpi.first.wpilibj.simulation.BuiltInAccelerometerSim;
-import edu.wpi.first.wpilibj.simulation.EncoderSim;
 
 /*
- * 
  * This subsystem is for fuel interactions
  * Including:
  *    Intaking/outaking fuel from the floor
  *    Transporting fuel to the shooter
- * 
+ *
+ * === INTAKE DEPLOY PID TUNING STEPS ===
+ * 1. Deploy with kG = 0 (current state) — verify both up and down move symmetrically
+ * 2. Hold arm perfectly horizontal, read "IntakeDeploy/Position" from NetworkTables
+ * 3. Put that value in Constants.java IntakeConstants.kEncoderHorizontalOffset
+ * 4. Set kG = 0.05, deploy, and slowly increase until the arm holds position with low current
+ *
+ * If the arm is too slow in both directions: increase kP (try 1.5, then 3.0)
+ * If the arm overshoots and bounces: increase kD (try 3.0) or reduce kP
+ * If the arm drifts slowly: add small kI (try 0.001) — use sparingly
  */
 
 
@@ -86,19 +77,25 @@ public class IntakeSubsystem extends SubsystemBase {
   final NetworkTable intakeTable = networkTable.getTable(NetworkTableNames.Intake.kTable);
   final NetworkTable intakeDeployTable = networkTable.getTable(NetworkTableNames.IntakeDeploy.kTable);
 
-  private boolean stateDriven = true;
-  
+  // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
+  private final NetworkTableEntry intakeVelocityEntry = intakeTable.getEntry(NetworkTableNames.Intake.kVelocityRPM);
+  private final NetworkTableEntry intakeCurrentEntry = intakeTable.getEntry(NetworkTableNames.Intake.kCurrentAmps);
+  private final NetworkTableEntry deployCurrentEntry = intakeTable.getEntry(NetworkTableNames.Intake.kDeployCurrentAmps);
+  private final NetworkTableEntry deployVelocityEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM);
+  private final NetworkTableEntry deployPositionEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kPositionRotations);
+
   private boolean intakeDeployed = false;
-  private boolean vibrateIntake = false;
-  private double vibrationMagnitude = 1;
-  private double vibrationFrequency = 1;
+  private boolean ocillateIntake = false;
+  private double ocillationMagnitude = 1;
+  private double ocillationFrequency = 1;
+  private String intakeDeployTarget = "Down";
 
 
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem() {
 
     intakeMotor.configure(IntakeConfigs.intakeMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    intakeDeployMotor.configure(IntakeConfigs.IntakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    intakeDeployMotor.configure(IntakeConfigs.intakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
 
@@ -113,13 +110,16 @@ public class IntakeSubsystem extends SubsystemBase {
 
     double tempTargetPosition;
 
-    if (intakeDeployed) 
+    if (intakeDeployTarget == "Down")
       tempTargetPosition = IntakeConstants.kMinDeployPosition;
+    else if (intakeDeployTarget == "Safe")
+      tempTargetPosition = IntakeConstants.kSafeDeployPosition;
     else
       tempTargetPosition = IntakeConstants.kMaxDeployPosition;
 
-    if (intakeDeployed && vibrateIntake) {
-      tempTargetPosition += vibrationMagnitude * (1 + Math.sin(Timer.getTimestamp() * vibrationFrequency));
+    // This was adding rotations which would be way too big a change, so I changed it to degrees for the time being
+    if (intakeDeployTarget == "Up" && ocillateIntake) {
+      tempTargetPosition += (ocillationMagnitude * (1 + Math.sin(Timer.getTimestamp() * ocillationFrequency)) / 360);
     }
 
     if (tempTargetPosition > IntakeConstants.kMaxDeployPosition)
@@ -135,10 +135,14 @@ public class IntakeSubsystem extends SubsystemBase {
     IntakePIDController.setSetpoint(calculatePosition(), ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
   }
 
-  /** Updates the rotations variable which is used in the setPIDAngle method
-   * @param angle is in Degrees */
+  /** Updates a boolean used in the calsulatePosition() method, true = deploy */
   public void deployIntake(boolean intakeDeployed) {
     this.intakeDeployed = intakeDeployed;
+  }
+
+  /** Sets the intakeDeployTarget variable */
+  public void setIntakeDeployTarget(String position) {
+    intakeDeployTarget = position;
   }
 
   /** @return Intake roller motor for simulation access */
@@ -151,21 +155,23 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeDeployMotor;
   }
 
-  /** @return Angle in Rad */
+  /** @return Angle in radians relative to horizontal (0 = horizontal, positive = above, negative = below) */
   public double getIntakeAngle() {
-    return 2 * Math.PI * (intakeDeployEncoder.getPosition() / IntakeConstants.kDeployGearRatio);
+    return 2 * Math.PI * (intakeDeployEncoder.getPosition() - IntakeConstants.kEncoderHorizontalOffset);
   }
 
-  /** True makes the intake vibrate if it is down, or stop if it is given false */
-  public void vibrateIntake(boolean vibrate) {
-    vibrateIntake = vibrate;
+  /** True makes the intake ocillate if it's down, false stops it */
+  public void ocillateIntake(boolean ocillate) {
+    ocillateIntake = ocillate;
   }
 
   /**
-   * @param Velocity is in RPM
+   * Sets intake roller motor output. Takes an RPM-scale value and normalizes it to [-1, 1]
+   * duty cycle by dividing by the NEO Vortex free speed (6500 RPM).
+   * @param speed RPM-scale value (e.g. 4000 for intaking, -3000 for outtaking)
    */
-  public void setIntakeVelocity(double velocity) {
-    intakeMotor.set(velocity / 6500);
+  public void setIntakeDutyCycle(double speed) {
+    intakeMotor.set(speed / RobotConstants.kNeoVortexFreeSpeedRPM);
   }
 
   /**
@@ -175,11 +181,13 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeEncoder.getVelocity();
   }
 
-   /**
-   * @param Velocity is in RPM
+  /**
+   * Sets intake deploy motor output. Takes an RPM-scale value and normalizes it to [-1, 1]
+   * duty cycle by dividing by the NEO 550 free speed (11000 RPM).
+   * @param speed RPM-scale value (e.g. 3000 to deploy, -3000 to retract)
    */
-  public void setIntakeDeployVelocity(double velocity) {
-    intakeDeployMotor.set(velocity / 11000);
+  public void setIntakeDeployDutyCycle(double speed) {
+    intakeDeployMotor.set(speed / RobotConstants.kNeo550FreeSpeedRPM);
   }
 
   /**
@@ -206,16 +214,11 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void updateNetworkTable() {
-    intakeTable.getEntry(NetworkTableNames.Intake.kVelocityRPM)
-      .setNumber(getIntakeVelocity());
-    intakeTable.getEntry(NetworkTableNames.Intake.kCurrentAmps)
-      .setNumber(intakeMotor.getOutputCurrent());
-    intakeTable.getEntry(NetworkTableNames.Intake.kDeployCurrentAmps)
-      .setNumber(intakeDeployMotor.getOutputCurrent());
-    intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM)
-      .setNumber(getIntakeDeployVelocity());
-    intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kPositionRotations)
-      .setNumber(getIntakeDeployPosition());
+    intakeVelocityEntry.setDouble(getIntakeVelocity());
+    intakeCurrentEntry.setDouble(intakeMotor.getOutputCurrent());
+    deployCurrentEntry.setDouble(intakeDeployMotor.getOutputCurrent());
+    deployVelocityEntry.setDouble(getIntakeDeployVelocity());
+    deployPositionEntry.setDouble(getIntakeDeployPosition());
   }
 
   /** This method will be called once per scheduler run */
@@ -224,7 +227,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
     updateNetworkTable();
 
-    // setPIDAngle();
+    // TODO: Uncomment setPIDAngle() when deploy PID is tuned on robot
+    setPIDAngle();
   }
 
   /** This method will be called once per scheduler run during simulation */

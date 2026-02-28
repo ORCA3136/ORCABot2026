@@ -19,27 +19,28 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 import swervelib.SwerveDrive;
 import swervelib.math.SwerveMath;
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
-import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.*;
@@ -67,11 +68,17 @@ public class SwerveSubsystem extends SubsystemBase {
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kTable);
-  final NetworkTable visionTable = networkTable.getTable(NetworkTableNames.Vision.kTable);
+  final NetworkTable robotTable = networkTable.getTable(NetworkTableNames.Robot.kTable);
 
+  // Cached Robot table entries — avoids hash lookups every cycle (50Hz)
+  private final NetworkTableEntry enabledEntry = robotTable.getEntry(NetworkTableNames.Robot.kEnabled);
+  private final NetworkTableEntry batteryVoltageEntry = robotTable.getEntry(NetworkTableNames.Robot.kBatteryVoltage);
+  private final NetworkTableEntry batteryBrownoutEntry = robotTable.getEntry(NetworkTableNames.Robot.kBatteryBrownout);
+
+  // Pigeon2 angular velocity suppliers — X=pitch, Y=roll, Z=yaw in device frame
   Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityZDevice().asSupplier();
-  Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
-  Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityYDevice().asSupplier();
+  Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
+  Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityYDevice().asSupplier();
 
   StructPublisher<Pose2d> robotPose2dPublisher = odometryTable
       .getStructTopic(NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();
@@ -81,10 +88,6 @@ public class SwerveSubsystem extends SubsystemBase {
       .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotVelocity).publish();
   DoubleArrayPublisher robotAngularVelocity3dPublisher = odometryTable
       .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotAngularVelocity3d).publish();
-
-  double lastVisionUpdateTime = 0;
-  StructSubscriber<Pose2d> visionEstimateSubscriber = visionTable
-      .getStructTopic(NetworkTableNames.Vision.kVisionEstimatePose2d, Pose2d.struct).subscribe(new Pose2d());
 
 
   
@@ -299,11 +302,9 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Checks the current zone the robot is in 
    *  @return Blue, Middle, Red */
 
-  /** @return The current alliance */
+  /** @return The current alliance, defaulting to Blue if not yet set */
   public Alliance getAlliance() {
-    if (DriverStation.getAlliance().isPresent())
-      return DriverStation.getAlliance().get();
-    return null;
+    return DriverStation.getAlliance().orElse(Alliance.Blue);
   }
 
  
@@ -521,9 +522,9 @@ public class SwerveSubsystem extends SubsystemBase {
    *  @return The translation2d to the specified game element */
   public Translation2d getTranslationToFieldElement(FieldTargets element, boolean opponentSide) {
     if (DriverStation.getAlliance().isEmpty())
-      return null;
+      return new Translation2d();
 
-    List<Translation2d> positions = (opponentSide ^ getAlliance() == Alliance.Blue ? FieldPositions.kBlueFieldElements : FieldPositions.kRedFieldElements);
+    List<Translation2d> positions = ((opponentSide ^ (getAlliance() == Alliance.Blue)) ? FieldPositions.kBlueFieldElements : FieldPositions.kRedFieldElements);
 
     switch (element) {
       case kHub:
@@ -535,7 +536,7 @@ public class SwerveSubsystem extends SubsystemBase {
       case kDepot:
         return swerveDrive.getPose().getTranslation().minus(positions.get(3));
       default:
-        return null;
+        return new Translation2d();
     }
   }
 
@@ -545,36 +546,43 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public double getDistanceToNearestBump() {
+    if (FieldPositions.bumpPoses.isEmpty()) return Double.MAX_VALUE;
     Translation2d robotTranslation = swerveDrive.getPose().getTranslation();
     return robotTranslation.nearest(FieldPositions.bumpPoses).getDistance(robotTranslation);
   }
 
-  /** Update swervedrive when a new pose estimate is available */
-  public void getVisionUpdate() {
-    double visionTimestamp = visionTable.getEntry(NetworkTableNames.Vision.kVisionEstimateTimestamp).getDouble(0);
-    if (visionTimestamp == 0)
-      return;
+  // --- Vision integration methods ---
 
-    if (lastVisionUpdateTime == visionTimestamp)
-      return;
+  /** Fuses a vision measurement with custom standard deviations into the Kalman filter. */
+  public void addVisionMeasurement(Pose2d pose, double timestamp, Matrix<N3, N1> stdDevs) {
+    swerveDrive.addVisionMeasurement(pose, timestamp, stdDevs);
+  }
 
-    Pose2d visionEstimate = visionEstimateSubscriber.get();
+  /** @return Full 3D gyro rotation from the Pigeon2 via YAGSL. */
+  public Rotation3d getGyroRotation3d() {
+    return swerveDrive.getGyroRotation3d();
+  }
 
-    // Guard against NaN/invalid pose data (can occur in sim when MapleSim state is corrupted)
-    if (Double.isNaN(visionEstimate.getX()) || Double.isNaN(visionEstimate.getY())
-        || Double.isNaN(visionEstimate.getRotation().getCos())) {
-      return;
-    }
+  /** @return Pigeon2 pitch rate in degrees per second (X-axis in device frame). */
+  public double getPigeon2PitchRateDegPerSec() {
+    return pitchSupplier.get().baseUnitMagnitude();
+  }
 
-    lastVisionUpdateTime = visionTimestamp;
-    swerveDrive.addVisionMeasurement(visionEstimate, visionTimestamp);
+  /** @return Pigeon2 roll rate in degrees per second (Y-axis in device frame). */
+  public double getPigeon2RollRateDegPerSec() {
+    return rollSupplier.get().baseUnitMagnitude();
+  }
+
+  /** @return Pigeon2 yaw rate in degrees per second (Z-axis in device frame). */
+  public double getPigeon2YawRateDegPerSec() {
+    return yawSupplier.get().baseUnitMagnitude();
   }
 
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
-    networkTable.getTable(NetworkTableNames.Robot.kTable).getEntry(NetworkTableNames.Robot.kEnabled).setBoolean(DriverStation.isEnabled());
-    networkTable.getTable(NetworkTableNames.Robot.kTable).getEntry(NetworkTableNames.Robot.kBatteryVoltage).setDouble(RobotController.getBatteryVoltage());
-    networkTable.getTable(NetworkTableNames.Robot.kTable).getEntry(NetworkTableNames.Robot.kBatteryBrownout).setDouble(RobotController.getBrownoutVoltage());
+    enabledEntry.setBoolean(DriverStation.isEnabled());
+    batteryVoltageEntry.setDouble(RobotController.getBatteryVoltage());
+    batteryBrownoutEntry.setDouble(RobotController.getBrownoutVoltage());
 
     try {
       robotPose2dPublisher.set(swerveDrive.getPose());
@@ -597,11 +605,8 @@ public class SwerveSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     updateNetworkTable();
-
     // Note: updateOdometry() runs automatically on YAGSL's internal Notifier thread.
-    // Do NOT call it here to avoid conflicts with the threaded odometry updates.
-    getVisionUpdate();
-    
+    // Vision fusion is handled by VisionSubsystem.periodic() calling addVisionMeasurement().
   }
 
   /** This method will be called once per scheduler run during simulation */
