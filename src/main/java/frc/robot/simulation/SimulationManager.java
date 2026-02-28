@@ -4,6 +4,8 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
+import edu.wpi.first.wpilibj.simulation.BatterySim;
+import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
@@ -143,7 +145,18 @@ public class SimulationManager {
                 || gamePieceTracker.getState() == GamePieceTracker.FuelState.IN_INTAKE
         );
 
-        // 9. Publish telemetry
+        // 9. Simulate battery voltage sag under load
+        double totalCurrentDraw = shooterSim.getCurrentDrawAmps()
+            + hoodSim.getCurrentDrawAmps()
+            + intakeDeploySim.getCurrentDrawAmps()
+            + intakeRollerSim.getCurrentDrawAmps()
+            + conveyorSim.getCurrentDrawAmps()
+            + kickerSim.getCurrentDrawAmps()
+            + climberSim.getCurrentDrawAmps();
+        double batteryVoltage = BatterySim.calculateDefaultBatteryLoadedVoltage(totalCurrentDraw);
+        RoboRioSim.setVInVoltage(batteryVoltage);
+
+        // 10. Publish telemetry
         publishTelemetry();
     }
 
@@ -154,6 +167,7 @@ public class SimulationManager {
             simTable.getEntry("Shooter/FlywheelRPM").setDouble(shooterSim.getAngularVelocityRPM());
             simTable.getEntry("Shooter/HoodAngleDeg").setDouble(hoodSim.getAngleDeg());
             simTable.getEntry("Climber/PositionMeters").setDouble(climberSim.getPositionMeters());
+            simTable.getEntry("BatteryVoltage").setDouble(RoboRioSim.getVInVoltage());
 
             // Publish field fuel positions for AdvantageScope 3D visualization
             fieldFuelPublisher.set(arenaSimulation.getFieldFuelPoses());

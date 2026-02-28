@@ -23,13 +23,18 @@ public final class SimConstants {
     public static final double kHoodStartingAngleRad = 0.0;
 
     // Intake deploy (SingleJointedArm)
-    public static final double kIntakeDeployMOI = 0.02; // kg*m^2 TODO: measure from CAD
-    public static final double kIntakeDeployLengthMeters = 0.2; // m TODO: measure
-    public static final double kIntakeDeployMassKg = 1.0; // kg TODO: measure
-    public static final double kIntakeDeployGearRatio = 87.5; // total reduction
-    public static final double kIntakeDeployMinAngleRad = 0.0;
-    public static final double kIntakeDeployMaxAngleRad = Units.degreesToRadians(180); // 0.5 rot
-    public static final double kIntakeDeployStartingAngleRad = 0.0;
+    // 7 lbs full assembly, 17.5" pivot-to-roller, MOI = (1/3)*m*L^2 (uniform bar approx)
+    public static final double kIntakeDeployMassKg = Units.lbsToKilograms(7.0); // ~3.18 kg
+    public static final double kIntakeDeployLengthMeters = Units.inchesToMeters(17.5); // ~0.445 m
+    public static final double kIntakeDeployMOI = (1.0 / 3.0) * kIntakeDeployMassKg
+        * kIntakeDeployLengthMeters * kIntakeDeployLengthMeters; // ~0.209 kg*m^2
+    public static final double kIntakeDeployGearRatio = 35.0 * 22.0 / 18.0; // 35:1 planetary + 18T->22T sprocket = 42.78:1
+    // Sim angle convention: 0 = horizontal, positive = above horizontal (CCW)
+    // Deployed ≈ horizontal, stowed ≈ 63° above horizontal (from encoder travel of 0.175 rot)
+    // Generous hard-stop limits to avoid clamping during normal operation
+    public static final double kIntakeDeployMinAngleRad = Units.degreesToRadians(-30); // below horizontal
+    public static final double kIntakeDeployMaxAngleRad = Units.degreesToRadians(100); // above stowed
+    public static final double kIntakeDeployStartingAngleRad = Units.degreesToRadians(63); // starts stowed
 
     // Intake roller
     public static final double kIntakeRollerMOI = 0.003; // kg*m^2 TODO: measure from CAD

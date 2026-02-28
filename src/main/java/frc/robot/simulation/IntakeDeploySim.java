@@ -46,10 +46,10 @@ public class IntakeDeploySim {
         sparkSim.iterate(motorVelocityRPM, vbus, SimConstants.kSimTimestepSeconds);
 
         // Override absolute encoder position
-        // Subsystem formula: angle_rad = 2*PI * (encoderPos / kDeployGearRatio)
-        // So: encoderPos = (angle_rad / (2*PI)) * kDeployGearRatio
+        // Subsystem formula: angle_rad = 2*PI * (encoderPos - kEncoderHorizontalOffset)
+        // So: encoderPos = (angle_rad / (2*PI)) + kEncoderHorizontalOffset
         double armAngleRad = armSim.getAngleRads();
-        double encoderPosition = (armAngleRad / (2.0 * Math.PI)) * IntakeConstants.kDeployGearRatio;
+        double encoderPosition = (armAngleRad / (2.0 * Math.PI)) + IntakeConstants.kEncoderHorizontalOffset;
         sparkSim.getAbsoluteEncoderSim().setPosition(encoderPosition);
     }
 
