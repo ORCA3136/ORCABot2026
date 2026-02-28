@@ -80,11 +80,10 @@ public class IntakeSubsystem extends SubsystemBase {
   // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
   private final NetworkTableEntry intakeVelocityEntry = intakeTable.getEntry(NetworkTableNames.Intake.kVelocityRPM);
   private final NetworkTableEntry intakeCurrentEntry = intakeTable.getEntry(NetworkTableNames.Intake.kCurrentAmps);
-  private final NetworkTableEntry deployCurrentEntry = intakeTable.getEntry(NetworkTableNames.Intake.kDeployCurrentAmps);
+  private final NetworkTableEntry deployCurrentEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kDeployCurrentAmps);
   private final NetworkTableEntry deployVelocityEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM);
   private final NetworkTableEntry deployPositionEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kPositionRotations);
 
-  private boolean intakeDeployed = false;
   private boolean ocillateIntake = false;
   private double ocillationMagnitude = 1;
   private double ocillationFrequency = 1;
@@ -139,11 +138,6 @@ public class IntakeSubsystem extends SubsystemBase {
   /** Sets the intake setpoint angle */
   public void setPIDAngle() {
     IntakePIDController.setSetpoint(calculatePosition(), ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
-  }
-
-  /** Updates a boolean used in the calsulatePosition() method, true = deploy */
-  public void deployIntake(boolean intakeDeployed) {
-    this.intakeDeployed = intakeDeployed;
   }
 
   /** Sets the intakeDeployTarget variable */
