@@ -25,6 +25,7 @@ import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
+import frc.robot.subsystems.TeleopPathplanner;
 import frc.robot.subsystems.VisionSubsystem;
 import swervelib.SwerveInputStream;
 import edu.wpi.first.wpilibj.Filesystem;
@@ -48,9 +49,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
-  // private final TeleopPathplanner teleopPathplanner = new TeleopPathplanner();
+  private final TeleopPathplanner teleopPathplanner;
   @SuppressWarnings("unused") // periodic() runs vision fusion automatically — no commands needed
-  private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveBase);
+  // private final VisionSubsystem visionSubsystem;
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   private final KickerSubsystem kickerSubsystem = new KickerSubsystem();
@@ -65,6 +66,10 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    // Instantiate all subsystems that require other subsystems here
+    // visionSubsystem = new VisionSubsystem(driveBase);
+    teleopPathplanner = new TeleopPathplanner(driveBase);
+
     DriverStation.silenceJoystickConnectionWarning(true);
 
     // Configure the trigger bindings (set to false for test bindings)
@@ -84,21 +89,17 @@ public class RobotContainer {
   SwerveInputStream controllerInput = SwerveInputStream.of(driveBase.getSwerveDrive(),
                     () -> m_primaryController.getLeftY(),
                     () -> m_primaryController.getLeftX())
-                    .withControllerRotationAxis(() -> m_primaryController.getRightX())
                     .deadband(OperatorConstants.kStickDeadband)
                     .allianceRelativeControl(true);
 
-  SwerveInputStream controllerAndHubInput = SwerveInputStream.of(driveBase.getSwerveDrive(),
-                    () -> m_primaryController.getLeftY(),
-                    () -> m_primaryController.getLeftX())
-                    .aim(new Pose2d(FieldPositions.kBlueFieldElements.get(0), new Rotation2d()))
-                    .deadband(OperatorConstants.kStickDeadband)
-                    .allianceRelativeControl(true);
+  // Rotations for controller input for different driving commands
+  SwerveInputStream regularTurning = controllerInput.copy()
+                    .withControllerRotationAxis(() -> m_primaryController.getRightX());
 
-  // Transformations for controller input for different driving commands
+  // Transformations for different driving commands
+  // Slow drive input for Carter
 
-  Command defaultDriveCommand = driveBase.driveFieldOriented(controllerInput);
-  Command hubCenteringDriveCommand = driveBase.driveFieldOriented(controllerAndHubInput);
+  Command defaultDriveCommand = driveBase.driveFieldOriented(regularTurning);
   // Make more driving commands
   
   /**
@@ -114,10 +115,10 @@ public class RobotContainer {
     driveBase.setDefaultCommand(defaultDriveCommand);
 
     // Buttons
-    m_primaryController.a           ().onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
-    m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(0)));
-    m_primaryController.x           ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
-    m_primaryController.y           ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
+    m_primaryController.a().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
+    m_primaryController.b().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(0)));
+    m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
+    m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
 
     m_primaryController.start       (); // Unbound for now
     
@@ -128,26 +129,35 @@ public class RobotContainer {
 		m_primaryController.povRight    ().and(m_primaryController.back().negate()).whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000));
 
     // Axis/Triggers/Sticks
-    m_primaryController.rightBumper (); // Unbound for now
-    m_primaryController.rightTrigger(); // Probably will be auto aim
+    m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1500)))
+                                     .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
+    // m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubCommand(controllerInput))))
+    //                                  .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)));
 
     m_primaryController.leftBumper  ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 1000, 5000));
-    m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 4000));
+    m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
 
     m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
+    // m_primaryController.rightStick   () Slow speed
 
     // Toggled button options (active while holding back button)
-    m_primaryController.back().and(m_primaryController.a()); // add a .negate() to normal buttons if you use these
+    m_primaryController.back().and(m_primaryController.a()); 
     m_primaryController.back().and(m_primaryController.b());
-    m_primaryController.back().and(m_primaryController.x()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
-    m_primaryController.back().and(m_primaryController.y()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
+    m_primaryController.back().and(m_primaryController.x()); // Shooter - by 50
+    m_primaryController.back().and(m_primaryController.y()); // Shooter + by 50
 
-    m_primaryController.back().and(m_primaryController.povUp()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
-    m_primaryController.back().and(m_primaryController.povDown()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
-    m_primaryController.back().and(m_primaryController.povLeft()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
-    m_primaryController.back().and(m_primaryController.povRight()).whileTrue(new RunIntakeCommand(intakeSubsystem, 5000));
-    
-      }
+    m_primaryController.back().and(m_primaryController.povUp())       .whileTrue(new RunIntakeCommand(intakeSubsystem, 5000)); // Intake up
+    m_primaryController.back().and(m_primaryController.povDown())     .whileTrue(new RunIntakeCommand(intakeSubsystem, 5000)); // Intake down
+    m_primaryController.back().and(m_primaryController.povLeft())     .whileTrue(new RunIntakeCommand(intakeSubsystem, 5000)); // Hood up
+    m_primaryController.back().and(m_primaryController.povRight())    .whileTrue(new RunIntakeCommand(intakeSubsystem, 5000)); // Hood down
+
+    // m_primaryController.back().and(m_primaryController.leftBumper()); - intake out
+    // m_primaryController.back().and(m_primaryController.rightBumper()); - slow shooter vomit
+
+    m_primaryController.back().and(m_primaryController.leftTrigger()) .whileTrue(new RunIntakeCommand(intakeSubsystem, -6500));
+    // m_primaryController.back().and(m_primaryController.rightTrigger());
+
+    }
 
   // Testing buttons
   private void configureTestBindings() {
@@ -158,7 +168,9 @@ public class RobotContainer {
     m_primaryController.x           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(3)));
     m_primaryController.y           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
 
-    m_primaryController.start       ().onTrue(Commands.runOnce(driveBase::zeroGyro));
+    m_primaryController.back        ().onTrue(Commands.runOnce(driveBase::zeroGyro));
+    m_primaryController.start       ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubCommand(controllerInput))))
+                                     .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)));
 
     m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseHoodAngle()));
     m_primaryController.leftBumper  ().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseHoodAngle()));
@@ -175,6 +187,8 @@ public class RobotContainer {
 
     m_primaryController.rightTrigger(0.3).onTrue (Commands.runOnce(() -> shooterSubsystem.setToggleDirection(true )))
                                                    .onFalse(Commands.runOnce(() -> shooterSubsystem.setToggleDirection(false)));
+
+    
     
     // m_primaryController.a           ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     // m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
