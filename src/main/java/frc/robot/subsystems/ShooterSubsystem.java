@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -12,6 +13,7 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
@@ -36,25 +38,44 @@ public class ShooterSubsystem extends SubsystemBase {
   double shooterVelocityTarget = 0;  // Where we want to be (set by commands)
   double shooterVelocity = 0;        // Current ramped setpoint (fed to PID each cycle)
   boolean toggleDirection = false;
+  double rotations; // Position of the Hood in Rotations
+  boolean hoodMovingForward = true; // true is positive
   
   final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
   final SparkFlex shooterSecondaryMotor = new SparkFlex(CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
 
+  final SparkMax hoodPrimaryMotor = new SparkMax(CanIdConstants.kHoodPrimaryCanId, MotorType.kBrushless);
+  final SparkMax hoodSecondaryMotor = new SparkMax(CanIdConstants.kHoodSecondaryCanId, MotorType.kBrushless);
+
   final RelativeEncoder shooterEncoder = shooterPrimaryMotor.getEncoder();
+
+  final AbsoluteEncoder hoodEncoder = hoodPrimaryMotor.getAbsoluteEncoder();
 
   final SparkClosedLoopController shooterPrimaryPIDController = shooterPrimaryMotor.getClosedLoopController();
   final SparkClosedLoopController shooterSecondaryPIDController = shooterSecondaryMotor.getClosedLoopController();
 
+  final SparkClosedLoopController hoodPIDController = hoodPrimaryMotor.getClosedLoopController();
+
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable shooterTable = networkTable.getTable(NetworkTableNames.Shooter.kTable);
+  final NetworkTable hoodTable = networkTable.getTable(NetworkTableNames.Hood.kTable);
 
   // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
-  private final NetworkTableEntry velocityEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kVelocityRPM);
-  private final NetworkTableEntry targetEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kTargetRPM);
-  private final NetworkTableEntry rampedSetpointEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kRampedSetpoint);
-  private final NetworkTableEntry primaryCurrentEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kPrimaryCurrent);
-  private final NetworkTableEntry secondaryCurrentEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kSecondaryCurrent);
-  private final NetworkTableEntry readyEntry = shooterTable.getEntry("Ready");
+  private final NetworkTableEntry velocityEntryShooter = shooterTable.getEntry(NetworkTableNames.Shooter.kVelocityRPM);
+  private final NetworkTableEntry targetEntryShooter = shooterTable.getEntry(NetworkTableNames.Shooter.kTargetRPM);
+  private final NetworkTableEntry rampedSetpointEntryShooter = shooterTable.getEntry(NetworkTableNames.Shooter.kRampedSetpoint);
+  private final NetworkTableEntry primaryCurrentEntryShooter = shooterTable.getEntry(NetworkTableNames.Shooter.kPrimaryCurrent);
+  private final NetworkTableEntry secondaryCurrentEntryShooter = shooterTable.getEntry(NetworkTableNames.Shooter.kSecondaryCurrent);
+  private final NetworkTableEntry readyEntryShooter = shooterTable.getEntry("Ready");
+  
+  // Same thing but for the hood
+  private final NetworkTableEntry velocityEntryHood = hoodTable.getEntry(NetworkTableNames.Hood.kVelocityRPM);
+  private final NetworkTableEntry positionEntryHood = hoodTable.getEntry(NetworkTableNames.Hood.kPositionRotations);
+  private final NetworkTableEntry targetEntryHood = hoodTable.getEntry(NetworkTableNames.Hood.kTargetRotations);
+  private final NetworkTableEntry angleEntryHood = hoodTable.getEntry(NetworkTableNames.Hood.kAngleDegrees);
+  private final NetworkTableEntry primaryCurrentEntryHood = hoodTable.getEntry(NetworkTableNames.Hood.kPrimaryCurrent);
+  private final NetworkTableEntry secondaryCurrentEntryHood = hoodTable.getEntry(NetworkTableNames.Hood.kSecondaryCurrent);
+
 
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem() {
@@ -163,12 +184,12 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
-    velocityEntry.setDouble(getShooterVelocity());
-    targetEntry.setDouble(getShooterTarget());
-    rampedSetpointEntry.setDouble(getRampedSetpoint());
-    primaryCurrentEntry.setDouble(getShooterPrimaryCurrent());
-    secondaryCurrentEntry.setDouble(getShooterSecondaryCurrent());
-    readyEntry.setBoolean(isShooterReady());
+    velocityEntryShooter.setDouble(getShooterVelocity());
+    targetEntryShooter.setDouble(getShooterTarget());
+    rampedSetpointEntryShooter.setDouble(getRampedSetpoint());
+    primaryCurrentEntryShooter.setDouble(getShooterPrimaryCurrent());
+    secondaryCurrentEntryShooter.setDouble(getShooterSecondaryCurrent());
+    readyEntryShooter.setBoolean(isShooterReady());
   }
 
   /** Ramp the setpoint toward the target each cycle. */

@@ -14,7 +14,9 @@ import frc.robot.Constants.ShooterConstants;
 import frc.robot.commands.FuelPathCommands;
 import frc.robot.commands.RunClimberCommand;
 import frc.robot.commands.RunConveyorAndKickerCommand;
+import frc.robot.commands.RunConveyorCommand;
 import frc.robot.commands.RunIntakeCommand;
+import frc.robot.commands.RunKickerCommand;
 import frc.robot.commands.SlowHoodMove;
 import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.ConveyorSubsystem;
@@ -100,46 +102,40 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
+    boolean inverted = false;
     driveBase.setDefaultCommand(defaultDriveCommand);
 
     // Buttons
-    m_primaryController.a           ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
-    m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
-    m_primaryController.x           ().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseShooterVelocity()));
-    m_primaryController.y           ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(500)));
+    m_primaryController.a           ().onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget("Safe")));
+    m_primaryController.b           ().onTrue(Commands.runOnce(() -> hoodSubsystem.updateHoodTarget(0)));
+    m_primaryController.x           ().onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget("Up")));
+    m_primaryController.y           ().onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget("Down")));
 
-    // m_primaryController.start       ().onTrue(Commands.runOnce(driveBase::zeroGyro));
+    m_primaryController.start       (); // Unbound for now
+    m_primaryController.back        ().onTrue (inverted = true)
+                                      .onFalse(inverted = false);
 
-    m_primaryController.leftStick   ().whileTrue(new RunClimberCommand(climberSubsystem, 1000));
-    m_primaryController.rightStick  ().whileTrue(new RunClimberCommand(climberSubsystem, -1000));
-
-    m_primaryController.start       ().whileTrue(Commands.runOnce(() -> intakeSubsystem.deployIntake(true )));
-    m_primaryController.back        ().whileTrue(Commands.runOnce(() -> intakeSubsystem.deployIntake(false)));
-
-    // m_primaryController.start       ().whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(750 )));
-    // m_primaryController.back        ().whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-2000)));
-    m_primaryController.rightBumper ().whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0)));
-    
     // D pad
-    m_primaryController.povUp       ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 500, 1500));
-    m_primaryController.povDown     ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, -1000, -1000));
-    m_primaryController.povLeft     ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6000));
-    m_primaryController.povRight    ().whileTrue(new SlowHoodMove(hoodSubsystem));
+    if (!inverted) {
+      m_primaryController.povUp       ().whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
+    } else {
+      m_primaryController.povUp       ().whileTrue(new RunKickerCommand(kickerSubsystem, -5000));
+    }
+    // m_primaryController.povUp       ().whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
+		m_primaryController.povDown     ().whileTrue(new RunKickerCommand(kickerSubsystem, -5000));
+    m_primaryController.povLeft     ().whileTrue(new RunConveyorCommand(conveyorSubsystem, 1000));
+		m_primaryController.povRight    ().whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000));
 
-    // Axis/Triggers/Bumpers
-    // m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> hoodSubsystem.increaseHoodAngle()));
-    m_primaryController.leftBumper  ().onTrue(Commands.runOnce(() -> hoodSubsystem.decreaseHoodAngle()));
+    // Axis/Triggers/Sticks
+    m_primaryController.rightBumper (); // Unbound for now
+    m_primaryController.rightTrigger(); // Probably will be auto aim
 
-    // m_primaryController.leftTrigger (0.3).onTrue   (Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)))
-    //                                                .onFalse  (Commands.runOnce(() -> driveBase.setDefaultCommand(hubCenteringDriveCommand)))
-    //                                                .whileTrue(null); // Shooting routine
-    // m_primaryController.rightTrigger(0.3).whileTrue(teleopPathplanner.createTrenchPathCommand(driveBase));
+    m_primaryController.leftBumper  ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 1000, 5000));
+    m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 4000));
 
-    m_primaryController.leftTrigger (0.3).onTrue (Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(3000), intakeSubsystem))
-                                                   .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0), intakeSubsystem));
-    m_primaryController.rightTrigger(0.3).onTrue (Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-3000), intakeSubsystem))
-                                                   .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0), intakeSubsystem));
-  }
+    m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
+
+      }
 
   // Testing buttons
   private void configureTestBindings() {
@@ -167,6 +163,44 @@ public class RobotContainer {
 
     m_primaryController.rightTrigger(0.3).onTrue (Commands.runOnce(() -> shooterSubsystem.setToggleDirection(true )))
                                                    .onFalse(Commands.runOnce(() -> shooterSubsystem.setToggleDirection(false)));
+    
+    // m_primaryController.a           ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
+    // m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
+    // m_primaryController.x           ().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseShooterVelocity()));
+    // m_primaryController.y           ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(500)));
+
+    // // m_primaryController.start       ().onTrue(Commands.runOnce(driveBase::zeroGyro));
+
+    // m_primaryController.leftStick   ().whileTrue(new RunClimberCommand(climberSubsystem, 1000));
+    // m_primaryController.rightStick  ().whileTrue(new RunClimberCommand(climberSubsystem, -1000));
+
+    // m_primaryController.start       ().whileTrue(Commands.runOnce(() -> intakeSubsystem.deployIntake(true )));
+    // m_primaryController.back        ().whileTrue(Commands.runOnce(() -> intakeSubsystem.deployIntake(false)));
+
+    // // m_primaryController.start       ().whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(750 )));
+    // // m_primaryController.back        ().whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-2000)));
+    // m_primaryController.rightBumper ().whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0)));
+    
+    
+    // m_primaryController.povUp       ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 500, 1500));
+    // m_primaryController.povDown     ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, -1000, -1000));
+    // m_primaryController.povLeft     ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6000));
+    // m_primaryController.povRight    ().whileTrue(new SlowHoodMove(hoodSubsystem));
+
+    
+    // // m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> hoodSubsystem.increaseHoodAngle()));
+    // m_primaryController.leftBumper  ().onTrue(Commands.runOnce(() -> hoodSubsystem.decreaseHoodAngle()));
+
+    // // m_primaryController.leftTrigger (0.3).onTrue   (Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)))
+    // //                                                .onFalse  (Commands.runOnce(() -> driveBase.setDefaultCommand(hubCenteringDriveCommand)))
+    // //                                                .whileTrue(null); // Shooting routine
+    // // m_primaryController.rightTrigger(0.3).whileTrue(teleopPathplanner.createTrenchPathCommand(driveBase));
+
+    // m_primaryController.leftTrigger (0.3).onTrue (Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(3000), intakeSubsystem))
+    //                                                .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0), intakeSubsystem));
+    // m_primaryController.rightTrigger(0.3).onTrue (Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-3000), intakeSubsystem))
+    //                                                .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0), intakeSubsystem));
+
   }
 
   private void configureNamedCommands() {

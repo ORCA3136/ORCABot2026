@@ -88,6 +88,7 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean ocillateIntake = false;
   private double ocillationMagnitude = 1;
   private double ocillationFrequency = 1;
+  private String intakeDeployTarget = "Down";
 
 
   /** Creates a new IntakeSubsystem. */
@@ -109,13 +110,16 @@ public class IntakeSubsystem extends SubsystemBase {
 
     double tempTargetPosition;
 
-    if (intakeDeployed)
+    if (intakeDeployTarget == "Down")
       tempTargetPosition = IntakeConstants.kMinDeployPosition;
+    else if (intakeDeployTarget == "Safe")
+      tempTargetPosition = IntakeConstants.kSafeDeployPosition;
     else
       tempTargetPosition = IntakeConstants.kMaxDeployPosition;
 
-    if (intakeDeployed && ocillateIntake) {
-      tempTargetPosition += ocillationMagnitude * (1 + Math.sin(Timer.getTimestamp() * ocillationFrequency));
+    // This was adding rotations which would be way too big a change, so I changed it to degrees for the time being
+    if (intakeDeployTarget == "Up" && ocillateIntake) {
+      tempTargetPosition += (ocillationMagnitude * (1 + Math.sin(Timer.getTimestamp() * ocillationFrequency)) / 360);
     }
 
     if (tempTargetPosition > IntakeConstants.kMaxDeployPosition)
@@ -131,10 +135,14 @@ public class IntakeSubsystem extends SubsystemBase {
     IntakePIDController.setSetpoint(calculatePosition(), ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
   }
 
-  /** Updates a boolean used in the calsulatePosition() method, true = deploy
-   * @param angle is in Degrees */
+  /** Updates a boolean used in the calsulatePosition() method, true = deploy */
   public void deployIntake(boolean intakeDeployed) {
     this.intakeDeployed = intakeDeployed;
+  }
+
+  /** Sets the intakeDeployTarget variable */
+  public void setIntakeDeployTarget(String position) {
+    intakeDeployTarget = position;
   }
 
   /** @return Intake roller motor for simulation access */

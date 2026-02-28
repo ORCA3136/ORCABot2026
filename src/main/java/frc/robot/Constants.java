@@ -80,6 +80,7 @@ public final class Constants {
     // public static final double kA = 0;
 
     public static final double kMaxDeployPosition = 0.8;
+    public static final double kSafeDeployPosition = 0.7;
     public static final double kMinDeployPosition = 0.625;
 
     // TODO: MEASURE ON ROBOT — hold arm perfectly horizontal, read IntakeDeploy/Position from NT
