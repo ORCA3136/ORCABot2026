@@ -9,6 +9,7 @@ import java.io.File;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
+import frc.robot.Constants.FieldPositions;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.commands.RunClimberCommand;
@@ -37,6 +38,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 
 /**
@@ -82,10 +84,17 @@ public class RobotContainer {
                     .deadband(OperatorConstants.kStickDeadband)
                     .allianceRelativeControl(true);
 
+  SwerveInputStream controllerAndHubInput = SwerveInputStream.of(driveBase.getSwerveDrive(),
+                    () -> m_primaryController.getLeftY(),
+                    () -> m_primaryController.getLeftX())
+                    .aim(new Pose2d(FieldPositions.kBlueFieldElements.get(0), new Rotation2d()))
+                    .deadband(OperatorConstants.kStickDeadband)
+                    .allianceRelativeControl(true);
+
   // Transformations for controller input for different driving commands
 
   Command defaultDriveCommand = driveBase.driveFieldOriented(controllerInput);
-  Command hubCenteringDriveCommand = driveBase.driveFieldOriented(controllerInput);
+  Command hubCenteringDriveCommand = driveBase.driveFieldOriented(controllerAndHubInput);
   // Make more driving commands
   
   /**

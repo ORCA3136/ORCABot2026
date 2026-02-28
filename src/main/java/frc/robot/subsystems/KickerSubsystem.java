@@ -74,6 +74,14 @@ public class KickerSubsystem extends SubsystemBase {
     return kickerMotor.getOutputCurrent();
   }
 
+  /** @return if the kicker is stalling */
+  public boolean isMotorStalling() {
+    double currentDraw = getKickerCurrent();
+    double motorVelocity = getKickerVelocity();
+    // double motorAcceleration = kickerMotor.get
+    return false;
+  }
+
   public void updateNetworkTable() {
     kickerTable.getEntry(NetworkTableNames.Kicker.kVelocityRPM)
       .setNumber(getKickerVelocity());
