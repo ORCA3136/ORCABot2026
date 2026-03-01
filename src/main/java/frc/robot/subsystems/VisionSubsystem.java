@@ -265,12 +265,18 @@ public class VisionSubsystem extends SubsystemBase {
       if (firstFix) {
         // First-ever vision fix: reset odometry so the robot immediately knows where it is
         // instead of slowly converging through the Kalman filter from (0, 0)
-        swerveSubsystem.resetOdometry(new Pose2d(
-            visionPose.getTranslation(), swerveSubsystem.getHeading()));
-        DataLogManager.log("Vision: first fix — reset odometry to " + visionPose.getTranslation());
+        swerveSubsystem.resetOdometry(visionPose);
+        DataLogManager.log("Vision: first fix — reset odometry to " + visionPose);
       } else {
         // Normal operation: fuse via Kalman filter with dynamic std devs
-        double rotStdDev = 9999.0; // trust gyro entirely for heading
+        // Heading correction: only nudge yaw when we have high confidence (2+ tags, close range)
+        double rotStdDev;
+        if (estimate.tagCount >= 2 && estimate.avgTagDist < VisionConstants.kMaxHeadingCorrectionDistM) {
+          // Multi-tag at close range — gently correct gyro drift
+          rotStdDev = Math.toRadians(VisionConstants.kHeadingStdDevBaseDeg) * distanceFactor;
+        } else {
+          rotStdDev = 9999.0; // single tag or far away — trust gyro entirely
+        }
         swerveSubsystem.addVisionMeasurement(
             visionPose,
             estimate.timestampSeconds,
