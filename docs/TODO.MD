@@ -26,7 +26,9 @@
 - [ ] Shooter / hood distance and speed map         Testing
 - [ ] Shooter / hood routine                        Half finished   - Need to make map
 - [ ] Climber routine
-- [ ] Intake deploy routine                         Half finished   - Mac speed limiter
+- [x ] Intake deploy routine                         Half finished   - Mac speed limiter
 - [ ] Rotate to hub                                 Testing
 - [ ] Jam routine                                   Half finished   - Can detect no routine
 - [ ] Limelight updating odometry                   Testing
+- [ ] waypoint on buttons                           button on external driverstations, left trench, right trench, left, climb, right climb, other good shooting position
+- [ ] make sure intake in at safe or down when in trench area and moving                 
