@@ -542,13 +542,13 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public double getDistanceToNearestTrench() {
     Translation2d robotTranslation = swerveDrive.getPose().getTranslation();
-    return robotTranslation.nearest(FieldPositions.trenchPoses).getDistance(robotTranslation);
+    return robotTranslation.nearest(FieldPositions.kTrenchPoses).getDistance(robotTranslation);
   }
 
   public double getDistanceToNearestBump() {
-    if (FieldPositions.bumpPoses.isEmpty()) return Double.MAX_VALUE;
+    if (FieldPositions.kBumpPoses.isEmpty()) return Double.MAX_VALUE;
     Translation2d robotTranslation = swerveDrive.getPose().getTranslation();
-    return robotTranslation.nearest(FieldPositions.bumpPoses).getDistance(robotTranslation);
+    return robotTranslation.nearest(FieldPositions.kBumpPoses).getDistance(robotTranslation);
   }
 
   public double getDistanceToHub() {

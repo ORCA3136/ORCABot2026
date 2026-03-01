@@ -5,8 +5,12 @@
 package frc.robot.subsystems;
 
 import java.text.FieldPosition;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.Waypoint;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -19,6 +23,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.networktables.StructSubscriber;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -80,19 +85,79 @@ public class TeleopPathplanner extends SubsystemBase {
 
 
 
+  public List<Waypoint> moveToShootingPose(int listPosition) {
 
+    // List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
+    //     new Pose2d(currentPose.getTranslation(), getPathVelocityHeading(swerveSubsystem.getFieldVelocity(), waypoint))
+    // );
+
+    // Find end goal pose
+    Translation2d endGoal = FieldPositions.kBlueShootingPoses.get(listPosition);
+    Translation2d hubTranslation2d = startingSide == FieldSide.BlueSide ? 
+                FieldPositions.kBlueFieldElements.get(0) : FieldPositions.kRedFieldElements.get(0);
+
+    // Find angle to hub at end
+    double targetAngleToHub = Math.atan2(hubTranslation2d.getY() - endGoal.getY(), hubTranslation2d.getX() - endGoal.getX());
+
+    // Check if in different section
+    FieldSide endState = startingSide;
+
+    if (endState == FieldSide.BlueSide) {
+      if (startingSide == FieldSide.RedSide) ;
+        // Add Red trench
+      if (startingSide != FieldSide.BlueSide) ;
+        // Add Blue trench
+    }
+
+    else if (endState == FieldSide.RedSide) {
+      if (startingSide == FieldSide.BlueSide) ;
+        // Add Red trench
+      if (startingSide != FieldSide.RedSide) ;
+        // Add Blue trench
+    }
+
+
+
+    if (true) {
+      
+      // Add waypoints
+      // Subtract/Add 1 to
+      return null;
+    }
+      
+      
+
+    
+    
+    /*
+     * Make list of waypoints
+        List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
+            new Pose2d(m_drive.getPose().getTranslation(), getPathVelocityHeading(m_drive.getFieldVelocity(), waypoint)),
+            waypoint
+        );
+     */
+
+    // Create path command
+
+
+
+    return null;
+  }
 
   public double hubRotation() {
     Pose2d targetPose2d = targetHubPose;
+    Pose2d currentPose2d = swerveSubsystem.getPose();
     
     // Assuming angular velocity is negligable - it might not be negligable
-    if (robotVelocities.vxMetersPerSecond + robotVelocities.vyMetersPerSecond > 0.05) {
-      // Based on the robot speeds only
-      targetPose2d = new Pose2d(targetHubPose.getX() - robotVelocities.vxMetersPerSecond, 
-                                targetHubPose.getY() - robotVelocities.vyMetersPerSecond, new Rotation2d());
-    }
+    // if (robotVelocities.vxMetersPerSecond + robotVelocities.vyMetersPerSecond > 0.05) {
+    //   // Based on the robot speeds only
+    //   targetPose2d = new Pose2d(targetHubPose.getX() - robotVelocities.vxMetersPerSecond, 
+    //                             targetHubPose.getY() - robotVelocities.vyMetersPerSecond, new Rotation2d());
+    // }
 
-    double targetAngle = Math.atan2(currentPose.getY() - targetPose2d.getY(), currentPose.getX() - targetPose2d.getX());
+    double targetAngle = Math.atan2(currentPose2d.getY() - targetPose2d.getY(), currentPose2d.getX() - targetPose2d.getX());
+
+    DataLogManager.log("Hub Rotation: current rotation radians " + targetAngle);
   
     return targetAngle;
   }

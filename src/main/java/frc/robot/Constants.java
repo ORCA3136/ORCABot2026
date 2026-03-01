@@ -170,6 +170,7 @@ public final class Constants {
 
     public static final double kVisionHealthyTimeoutSec = 0.5;
     public static final double kTagDistanceStaleSec = 0.08;
+    public static double kHeadingSafetyNetDeg = 10.0;
   }
   
   public static final class OperatorConstants {
@@ -347,7 +348,7 @@ public final class Constants {
       new Translation2d(16.13,  2.103)          // Red Depot
     );
 
-    public static final List<Translation2d> trenchPoses = List.of(
+    public static final List<Translation2d> kTrenchPoses = List.of(
       new Translation2d(4.620, 7.430),
       new Translation2d(4.620, 0.630),
       new Translation2d(11.93, 7.430),
@@ -355,7 +356,17 @@ public final class Constants {
     );
 
     // TODO: Populate with actual bump field coordinates
-    public static final List<Translation2d> bumpPoses = List.of();
+    public static final List<Translation2d> kBumpPoses = List.of();
+
+    public static final List<Translation2d> kBlueShootingPoses = List.of(
+      new Translation2d(4.120, 7.430),    // Top trench shot
+      new Translation2d(4.120, 0.630)     // Bottom trench shot
+    );
+
+    public static final List<Translation2d> kRedShootingPoses = List.of(
+      new Translation2d(12.53, 7.430),    // Top trench shot
+      new Translation2d(12.43, 0.630)     // Bottom trench shot
+    );
 
     // --- Drive-to-position targets (blue-origin; alliance flipping handles red side) ---
     // Offsets and headings are initial estimates — tune on the field.

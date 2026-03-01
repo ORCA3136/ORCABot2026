@@ -29,7 +29,7 @@
 - [x ] Intake deploy routine
 - [ ] Rotate to hub                                 Testing
 - [ ] Jam routine                                   Half finished   - Can detect no routine
-- [x ] Limelight updating odometry                  Testing
+- [x ] Limelight updating odometry                  
 
 - [ ] waypoint on buttons                           button on external driverstations, left trench, right trench, left climb, right climb, other good shooting position
 - [ ] make sure intake in at safe or down when in trench area and moving                 
