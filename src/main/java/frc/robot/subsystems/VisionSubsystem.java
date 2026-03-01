@@ -235,20 +235,29 @@ public class VisionSubsystem extends SubsystemBase {
     double poseJump = getLastPoseJump(visionPose, isFront);
 
     if (rejectReason.isEmpty()) {
-      // Calculate std devs: scales quadratically with distance, inversely with tag count
+      boolean firstFix = (lastFrontPose == null && lastBackPose == null);
+
+      // Calculate std devs (used for both fusion and telemetry)
       double distanceFactor = estimate.avgTagDist * estimate.avgTagDist;
       double tagFactor = 1.0 / Math.max(1, estimate.tagCount);
       double singleTagPenalty = (estimate.tagCount == 1) ? VisionConstants.kSingleTagPenalty : 1.0;
       double xyStdDev = Math.max(VisionConstants.kMinXYStdDev,
           VisionConstants.kXYStdDevBase * distanceFactor * tagFactor * singleTagPenalty);
 
-      // Effectively infinite — ignore vision heading, trust gyro entirely
-      double rotStdDev = 9999.0;
-
-      swerveSubsystem.addVisionMeasurement(
-          visionPose,
-          estimate.timestampSeconds,
-          VecBuilder.fill(xyStdDev, xyStdDev, rotStdDev));
+      if (firstFix) {
+        // First-ever vision fix: reset odometry so the robot immediately knows where it is
+        // instead of slowly converging through the Kalman filter from (0, 0)
+        swerveSubsystem.resetOdometry(new Pose2d(
+            visionPose.getTranslation(), swerveSubsystem.getHeading()));
+        DataLogManager.log("Vision: first fix — reset odometry to " + visionPose.getTranslation());
+      } else {
+        // Normal operation: fuse via Kalman filter with dynamic std devs
+        double rotStdDev = 9999.0; // trust gyro entirely for heading
+        swerveSubsystem.addVisionMeasurement(
+            visionPose,
+            estimate.timestampSeconds,
+            VecBuilder.fill(xyStdDev, xyStdDev, rotStdDev));
+      }
 
       if (isFront) {
         lastFrontPose = visionPose;
@@ -318,14 +327,18 @@ public class VisionSubsystem extends SubsystemBase {
       }
     }
 
-    // 6. Odometry cross-check
-    double odometryJump = visionPose.getTranslation()
-        .getDistance(swerveSubsystem.getPose().getTranslation());
-    double odometryLimit = (postSettleGraceCount < VisionConstants.kPostSettleGraceCycles)
-        ? VisionConstants.kMaxOdometryJumpSettlingM
-        : VisionConstants.kMaxOdometryJumpM;
-    if (odometryJump > odometryLimit) {
-      return "odometry_jump";
+    // 6. Odometry cross-check — skip if we've never had a vision fix yet
+    //    (on startup odometry is at 0,0 so the first fix would always be rejected)
+    boolean hasEverHadFix = (lastFrontPose != null || lastBackPose != null);
+    if (hasEverHadFix) {
+      double odometryJump = visionPose.getTranslation()
+          .getDistance(swerveSubsystem.getPose().getTranslation());
+      double odometryLimit = (postSettleGraceCount < VisionConstants.kPostSettleGraceCycles)
+          ? VisionConstants.kMaxOdometryJumpSettlingM
+          : VisionConstants.kMaxOdometryJumpM;
+      if (odometryJump > odometryLimit) {
+        return "odometry_jump";
+      }
     }
 
     return "";

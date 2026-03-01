@@ -90,8 +90,8 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean ocillateIntake = false;
   private double ocillationMagnitude = 1;
   private double ocillationFrequency = 1;
-  private Setpoint intakeDeployTarget = Setpoint.kUp;
-  private double rampedPosition = IntakeConstants.kMaxDeployPosition;
+  private Setpoint intakeDeployTarget = Setpoint.kDown;
+  private double rampedPosition = IntakeConstants.kMinDeployPosition;
 
   public enum Setpoint{
     kDown,

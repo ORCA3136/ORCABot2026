@@ -127,32 +127,21 @@ public class RobotContainer {
     m_primaryController.start       ().onTrue(Commands.runOnce(() -> {
       var nt = edu.wpi.first.networktables.NetworkTableInstance.getDefault();
       var llFront = nt.getTable("limelight-front");
-      var llBack = nt.getTable("limelight-back");
       var pose = driveBase.getPose();
       System.out.println("=== DIAGNOSTICS ===");
-      System.out.printf("  Pose: X=%.2f  Y=%.2f  Heading=%.1f deg%n",
+      System.out.printf("  Odometry Pose: X=%.2f  Y=%.2f  Heading=%.1f deg%n",
           pose.getX(), pose.getY(), pose.getRotation().getDegrees());
-      System.out.println("--- Vision Subsystem ---");
-      System.out.println("  IMU phase: " + nt.getTable("Vision").getEntry("ImuPhase").getString("N/A"));
+      System.out.println("  IMU phase: " + nt.getTable("Vision").getEntry("ImuPhase").getString("NOT SET"));
       System.out.println("  Vision healthy: " + visionSubsystem.isVisionHealthy());
-      System.out.println("  Front TagCount: " + nt.getTable("Vision/Front").getEntry("TagCount").getDouble(-1));
-      System.out.println("  Front Reject: " + nt.getTable("Vision/Front").getEntry("RejectReason").getString("N/A"));
-      System.out.println("  Back Reject: " + nt.getTable("Vision/Back").getEntry("RejectReason").getString("N/A"));
-      System.out.println("--- Raw Limelight-Front NT ---");
-      System.out.println("  tv (target valid): " + llFront.getEntry("tv").getDouble(-1));
-      System.out.println("  tid (tag ID): " + llFront.getEntry("tid").getDouble(-1));
-      System.out.println("  pipeline: " + llFront.getEntry("getpipe").getDouble(-1));
-      double[] botpose = llFront.getEntry("botpose_orb_wpiblue").getDoubleArray(new double[]{});
-      System.out.println("  botpose_orb_wpiblue length: " + botpose.length);
-      if (botpose.length >= 6) {
-        System.out.printf("  botpose_orb_wpiblue: X=%.2f Y=%.2f Z=%.2f%n", botpose[0], botpose[1], botpose[2]);
+      System.out.println("  Front Reject: [" + nt.getTable("Vision/Front").getEntry("RejectReason").getString("NOT SET") + "]");
+      // Print full botpose array to see exactly what the LL is publishing
+      double[] bp = llFront.getEntry("botpose_orb_wpiblue").getDoubleArray(new double[]{});
+      System.out.println("  botpose_orb_wpiblue (" + bp.length + " elements):");
+      for (int i = 0; i < bp.length; i++) {
+        System.out.printf("    [%d] = %.4f%n", i, bp[i]);
       }
-      double[] botposeOld = llFront.getEntry("botpose_wpiblue").getDoubleArray(new double[]{});
-      System.out.println("  botpose_wpiblue length: " + botposeOld.length);
-      System.out.println("--- Raw Limelight-Back NT ---");
-      System.out.println("  tv (target valid): " + llBack.getEntry("tv").getDouble(-1));
-      System.out.println("  tid (tag ID): " + llBack.getEntry("tid").getDouble(-1));
-      System.out.println("  Beam break: " + kickerSubsystem.hasFuel());
+      System.out.println("  tv: " + llFront.getEntry("tv").getDouble(-1));
+      System.out.println("  tid: " + llFront.getEntry("tid").getDouble(-1));
       System.out.println("===================");
     }));
     
