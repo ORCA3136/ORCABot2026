@@ -263,6 +263,7 @@ public final class Constants {
       public static final String kLatencyMs = "LatencyMs";
       public static final String kPoseJumpMeters = "PoseJumpMeters";
       public static final String kHeadingDeviationDeg = "HeadingDeviationDeg";
+      public static final String kSeedingFailure = "SeedingFailure";
 
       // System-level keys
       public static final String kTotalTagCount = "TotalTagCount";

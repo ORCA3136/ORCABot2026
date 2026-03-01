@@ -104,9 +104,9 @@ public class RobotContainer {
   SwerveInputStream mediumSpeedDrive = controllerInput.copy().scaleTranslation(0.8);
 
   // Rotations for controller input for different driving commands
-  SwerveInputStream slowRegularTurning   = slowSpeedDrive  .copy().withControllerRotationAxis(() -> m_primaryController.getRightX());
-  SwerveInputStream mediumRegularTurning = mediumSpeedDrive.copy().withControllerRotationAxis(() -> m_primaryController.getRightX());
-  SwerveInputStream fastRegularTurning   = controllerInput .copy().withControllerRotationAxis(() -> m_primaryController.getRightX());
+  SwerveInputStream slowRegularTurning   = slowSpeedDrive  .copy().withControllerRotationAxis(() -> -m_primaryController.getRightX());
+  SwerveInputStream mediumRegularTurning = mediumSpeedDrive.copy().withControllerRotationAxis(() -> -m_primaryController.getRightX());
+  SwerveInputStream fastRegularTurning   = controllerInput .copy().withControllerRotationAxis(() -> -m_primaryController.getRightX());
 
   Command slowDriveCommand   = driveBase.driveFieldOriented(slowRegularTurning);
   Command mediumDriveCommand = driveBase.driveFieldOriented(mediumRegularTurning);
@@ -154,8 +154,8 @@ public class RobotContainer {
     // D pad
     m_primaryController.povUp       ().and(m_primaryController.back().negate()).whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
 		m_primaryController.povDown     ().and(m_primaryController.back().negate()).whileTrue(new RunKickerCommand(kickerSubsystem, -2500));
-    m_primaryController.povLeft     ().and(m_primaryController.back().negate()).whileTrue(new RunConveyorCommand(conveyorSubsystem, 1000));
-		m_primaryController.povRight    ().and(m_primaryController.back().negate()).whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000));
+    m_primaryController.povLeft     ().and(m_primaryController.back().negate()).whileTrue(new RunIntakeCommand(intakeSubsystem, 4000));
+		m_primaryController.povRight    ().and(m_primaryController.back().negate()).whileTrue(new RunIntakeCommand(intakeSubsystem, -4000));
 
     // Axis/Triggers/Sticks
     m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(2500)))

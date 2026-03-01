@@ -113,6 +113,7 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry frontLatencyEntry = frontTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
   private final NetworkTableEntry frontPoseJumpEntry = frontTable.getEntry(NetworkTableNames.Vision.kPoseJumpMeters);
   private final NetworkTableEntry frontHeadingDevEntry = frontTable.getEntry(NetworkTableNames.Vision.kHeadingDeviationDeg);
+  private final NetworkTableEntry frontSeedingFailureEntry = frontTable.getEntry(NetworkTableNames.Vision.kSeedingFailure);
 
   // Back camera NT entries
   private final StructPublisher<Pose2d> backPosePublisher = backTable
@@ -125,6 +126,7 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry backLatencyEntry = backTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
   private final NetworkTableEntry backPoseJumpEntry = backTable.getEntry(NetworkTableNames.Vision.kPoseJumpMeters);
   private final NetworkTableEntry backHeadingDevEntry = backTable.getEntry(NetworkTableNames.Vision.kHeadingDeviationDeg);
+  private final NetworkTableEntry backSeedingFailureEntry = frontTable.getEntry(NetworkTableNames.Vision.kSeedingFailure);
 
   // System-level NT entries
   private final NetworkTableEntry totalTagCountEntry = visionTable.getEntry(NetworkTableNames.Vision.kTotalTagCount);
@@ -243,7 +245,7 @@ public class VisionSubsystem extends SubsystemBase {
     Pose2d visionPose = estimate.pose.toPose2d();
     double now = Timer.getFPGATimestamp();
     
-    checkLimelightSeeding(estimate, isFront);
+    checkLimelightSeeding(visionPose, isFront);
 
     double headingDeviation = Math.abs(
         visionPose.getRotation().getDegrees() - swerveSubsystem.getHeading().getDegrees());
@@ -378,12 +380,26 @@ public class VisionSubsystem extends SubsystemBase {
     return visionPose.getTranslation().getDistance(lastPose.getTranslation());
   }
 
-  private void checkLimelightSeeding(PoseEstimate poseEstimateObj, boolean isFront) {
-    // double limelightYaw = limelightFront.//(isFront ? limelightFront : limelightBack).
-    // yawSeedingFailed = m_debouncer.calculate(Math.abs(limelight yaw - mt1 yaw) > degreeError);
-    // if (!yawSeedingFailed)
-    //   return;
+  private void checkLimelightSeeding(Pose2d visionPoseMT2, boolean isFront) {
+    PoseEstimate poseEstimateObj = isFront ? frontPoseMT1Estimate : backPoseMT1Estimate;
+    Optional<PoseEstimate> estimateOpt = poseEstimateObj.getPoseEstimate();
+    if (estimateOpt.isEmpty() || !estimateOpt.get().hasData)
+      return;
+    PoseEstimate estimate = estimateOpt.get();
+    Pose2d visionPoseMT1 = estimate.pose.toPose2d();
+
+    double angleDifference = visionPoseMT2.getRotation().getDegrees() - visionPoseMT1.getRotation().getDegrees();
+
+    yawSeedingFailed = m_debouncer.calculate(Math.abs(angleDifference) > degreeError);
+    if (!yawSeedingFailed)
+      return;
     
+    // YAW SEEDING FAILED
+
+    NetworkTableEntry seedingFailureEntry = isFront ? frontSeedingFailureEntry : backSeedingFailureEntry;
+    seedingFailureEntry.setBoolean(yawSeedingFailed);
+
+    // Update yaw
     
   }
 
