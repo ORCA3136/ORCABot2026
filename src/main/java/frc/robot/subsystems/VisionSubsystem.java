@@ -13,6 +13,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -156,8 +157,8 @@ public class VisionSubsystem extends SubsystemBase {
     frontPoseEstimate = new PoseEstimate(limelightFront, "botpose_orb_wpiblue", true);
     backPoseEstimate = new PoseEstimate(limelightBack, "botpose_orb_wpiblue", true);
 
-    frontPoseMT1Estimate = new PoseEstimate(limelightFront, "botpose_orb_wpiblue", true);
-    backPoseMT1Estimate = new PoseEstimate(limelightBack, "botpose_orb_wpiblue", true);
+    frontPoseMT1Estimate = new PoseEstimate(limelightFront, "botpose_wpiblue", true);
+    backPoseMT1Estimate = new PoseEstimate(limelightBack, "botpose_wpiblue", true);
   }
 
   @Override
@@ -245,7 +246,7 @@ public class VisionSubsystem extends SubsystemBase {
     Pose2d visionPose = estimate.pose.toPose2d();
     double now = Timer.getFPGATimestamp();
     
-    checkLimelightSeeding(visionPose, isFront);
+    // checkLimelightSeeding(visionPose, isFront);
 
     double headingDeviation = Math.abs(
         visionPose.getRotation().getDegrees() - swerveSubsystem.getHeading().getDegrees());
@@ -268,12 +269,33 @@ public class VisionSubsystem extends SubsystemBase {
           && estimate.avgTagDist < VisionConstants.kMaxHeadingCorrectionDistM;
 
       if (firstFix) {
+        // Seed with MT1 yaw first
+        updateCameraPositions(isFront);
+
+        // Update Position from camera
+        estimateOpt = poseEstimateObj.getPoseEstimate();
+        if (estimateOpt.isEmpty() || !estimateOpt.get().hasData)
+          return;
+        estimate = estimateOpt.get();
+        visionPose = estimate.pose.toPose2d();
+
         // First-ever vision fix: reset odometry so the robot immediately knows where it is
         swerveSubsystem.resetOdometry(visionPose);
         DataLogManager.log("Vision: first fix — reset odometry to " + visionPose);
       } else if (!DriverStation.isEnabled() && highConfidence) {
-        // While disabled with high-confidence multi-tag: hard-reset heading to stay synced
+        // Seed with MT1 yaw first
+        updateCameraPositions(isFront);
+
+        // Update Position from camera
+        estimateOpt = poseEstimateObj.getPoseEstimate();
+        if (estimateOpt.isEmpty() || !estimateOpt.get().hasData)
+          return;
+        estimate = estimateOpt.get();
+        visionPose = estimate.pose.toPose2d();
+
+        // While disabled with high-confidence multi-tag: hard-reset heading to stay synced - with MT1 yaw
         swerveSubsystem.resetOdometry(visionPose);
+        DataLogManager.log("Vision: high confidence fix — reset odometry to " + visionPose);
       } else {
         // Normal enabled operation: fuse via Kalman filter with dynamic std devs
         double rotStdDev;
@@ -380,29 +402,6 @@ public class VisionSubsystem extends SubsystemBase {
     return visionPose.getTranslation().getDistance(lastPose.getTranslation());
   }
 
-  private void checkLimelightSeeding(Pose2d visionPoseMT2, boolean isFront) {
-    PoseEstimate poseEstimateObj = isFront ? frontPoseMT1Estimate : backPoseMT1Estimate;
-    Optional<PoseEstimate> estimateOpt = poseEstimateObj.getPoseEstimate();
-    if (estimateOpt.isEmpty() || !estimateOpt.get().hasData)
-      return;
-    PoseEstimate estimate = estimateOpt.get();
-    Pose2d visionPoseMT1 = estimate.pose.toPose2d();
-
-    double angleDifference = visionPoseMT2.getRotation().getDegrees() - visionPoseMT1.getRotation().getDegrees();
-
-    yawSeedingFailed = m_debouncer.calculate(Math.abs(angleDifference) > degreeError);
-    if (!yawSeedingFailed)
-      return;
-    
-    // YAW SEEDING FAILED
-
-    NetworkTableEntry seedingFailureEntry = isFront ? frontSeedingFailureEntry : backSeedingFailureEntry;
-    seedingFailureEntry.setBoolean(yawSeedingFailed);
-
-    // Update yaw
-    
-  }
-
   // --- IMU mode transitions ---
 
   private void enterSeedMode() {
@@ -465,6 +464,41 @@ public class VisionSubsystem extends SubsystemBase {
       }
     }
     return -1;
+  }
+
+  private void updateCameraPositions(boolean isFront) {
+
+    PoseEstimate poseEstimateObj = isFront ? frontPoseMT1Estimate : backPoseMT1Estimate;
+    Optional<PoseEstimate> estimateOpt = poseEstimateObj.getPoseEstimate();
+
+    if (estimateOpt.isEmpty() || !estimateOpt.get().hasData)
+      return;
+
+    PoseEstimate estimate = estimateOpt.get();
+    Pose2d visionPose = estimate.pose.toPose2d();
+
+    // --- Feed heading to both cameras ---
+    Rotation3d currentRotation = swerveSubsystem.getGyroRotation3d();
+    Rotation3d updatedRotation = new Rotation3d(currentRotation.getMeasureX(), currentRotation.getMeasureY(), 
+                                                visionPose.getRotation().getMeasure());
+
+    DataLogManager.log("Vision: MT1 yaw measure " + visionPose.getRotation().getMeasure());
+    DataLogManager.log("Vision: MT1 yaw degrees " + visionPose.getRotation().getDegrees());
+    DataLogManager.log("Vision: updated rotation " + updatedRotation);
+
+    double rollRateDegPerSec = swerveSubsystem.getPigeon2RollRateDegPerSec();
+    double pitchRateDegPerSec = swerveSubsystem.getPigeon2PitchRateDegPerSec();
+    double yawRateDegPerSec = swerveSubsystem.getPigeon2YawRateDegPerSec();
+
+    Orientation3d orientation = new Orientation3d(
+        updatedRotation,
+        new AngularVelocity3d(
+            DegreesPerSecond.of(rollRateDegPerSec),
+            DegreesPerSecond.of(pitchRateDegPerSec),
+            DegreesPerSecond.of(yawRateDegPerSec)));
+
+    limelightFront.getSettings().withRobotOrientation(orientation).save();
+    limelightBack.getSettings().withRobotOrientation(orientation).save();
   }
 
   // --- Telemetry ---
