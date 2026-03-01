@@ -83,6 +83,8 @@ public class IntakeSubsystem extends SubsystemBase {
   private final NetworkTableEntry deployVelocityEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM);
   private final NetworkTableEntry deployPositionEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kPositionRotations);
   private final NetworkTableEntry deployVoltageEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVoltageRotations);
+  private final NetworkTableEntry intakeDeployCurrentEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kCurrentAmps);
+  private final NetworkTableEntry _intakeDeployTarget = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kTarget);
 
   private boolean ocillateIntake = false;
   private double ocillationMagnitude = 1;
@@ -220,9 +222,11 @@ public class IntakeSubsystem extends SubsystemBase {
   public void updateNetworkTable() {
     intakeVelocityEntry.setDouble(getIntakeVelocity());
     intakeCurrentEntry.setDouble(intakeMotor.getOutputCurrent());
+    intakeDeployCurrentEntry.setDouble(intakeDeployMotor.getOutputCurrent());
     deployVelocityEntry.setDouble(getIntakeDeployVelocity());
     deployPositionEntry.setDouble(getIntakeDeployPosition());
     deployVoltageEntry.setDouble(calculateFeedForward());
+    _intakeDeployTarget.setDouble(calculatePosition());
   }
 
   /** This method will be called once per scheduler run */
@@ -233,7 +237,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
 
 
-    // TODO: Uncomment setPIDAngle() when deploy PID is tuned on robot
     setPIDAngle();
   }
 

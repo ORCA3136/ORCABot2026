@@ -13,6 +13,7 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -60,6 +61,8 @@ public class VisionSubsystem extends SubsystemBase {
 
   private final Limelight limelightFront;
   private final Limelight limelightBack;
+
+  private static DigitalInput beamBreak;
 
   // We construct PoseEstimate objects directly per camera instead of using
   // limelight.createPoseEstimator(MEGATAG2).getPoseEstimate().
@@ -122,6 +125,8 @@ public class VisionSubsystem extends SubsystemBase {
 
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(SwerveSubsystem swerveSubsystem) {
+    beamBreak = new DigitalInput(0);
+    
     this.swerveSubsystem = swerveSubsystem;
 
     limelightFront = new Limelight(VisionConstants.kLimelightFrontName);

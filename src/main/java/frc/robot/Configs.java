@@ -97,7 +97,7 @@ public class Configs {
                 .inverted(true)
                 .idleMode(IdleMode.kBrake)
                 .voltageCompensation(12)
-                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
             intakeDeployMotorConfig.absoluteEncoder
                 .positionConversionFactor(IntakeConstants.kDeployGearRatio)
                 .velocityConversionFactor(IntakeConstants.kDeployGearRatio);

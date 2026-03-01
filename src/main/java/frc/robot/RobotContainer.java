@@ -73,7 +73,7 @@ public class RobotContainer {
     DriverStation.silenceJoystickConnectionWarning(true);
 
     // Configure the trigger bindings (set to false for test bindings)
-    boolean useProductionBindings = false;
+    boolean useProductionBindings = true;
     if (useProductionBindings) {
       configureBindings();
     } else {
@@ -115,10 +115,10 @@ public class RobotContainer {
     driveBase.setDefaultCommand(defaultDriveCommand);
 
     // Buttons
-    m_primaryController.a().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
+    m_primaryController.a().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
     m_primaryController.b().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(0)));
-    m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
-    m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
+    m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
+    m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
 
     m_primaryController.start       (); // Unbound for now
     
@@ -143,8 +143,10 @@ public class RobotContainer {
     // Toggled button options (active while holding back button)
     m_primaryController.back().and(m_primaryController.a()); 
     m_primaryController.back().and(m_primaryController.b());
-    m_primaryController.back().and(m_primaryController.x()); // Shooter - by 50
-    m_primaryController.back().and(m_primaryController.y()); // Shooter + by 50
+    m_primaryController.back().and(m_primaryController.x())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(2000)))
+                                                                      .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0))); // Shooter - by 50
+    m_primaryController.back().and(m_primaryController.y())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-1000)))
+                                                                      .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0))); // Shooter + by 50
 
     m_primaryController.back().and(m_primaryController.povUp())       .whileTrue(new RunIntakeCommand(intakeSubsystem, 5000)); // Intake up
     m_primaryController.back().and(m_primaryController.povDown())     .whileTrue(new RunIntakeCommand(intakeSubsystem, 5000)); // Intake down
