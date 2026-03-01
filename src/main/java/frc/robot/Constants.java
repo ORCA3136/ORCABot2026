@@ -93,6 +93,11 @@ public final class Constants {
 
     public static final double kDeployGearRatio = 18. / 22;
     public static final double kIntakeGearRatio = 1;
+
+    // Deploy position ramp rates (rotations per 20ms cycle)
+    // Full travel ~0.175 rot → at 0.003/cycle ≈ 1.2s to deploy fully
+    public static final double kDeployRampRate = 0.003;
+    public static final double kRetractRampRate = 0.002;
   }
 
   public static final class ClimberConstants {
@@ -294,6 +299,7 @@ public final class Constants {
       public static final String kVoltageRotations = "Voltage";
       public static final String kCurrentAmps = "Current Amps";
       public static final String kTarget = "Intake Deploy Target";
+      public static final String kRampedPosition = "Ramped Position";
     }
 
     public static final class Climber {

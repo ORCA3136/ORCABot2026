@@ -85,11 +85,13 @@ public class IntakeSubsystem extends SubsystemBase {
   private final NetworkTableEntry deployVoltageEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVoltageRotations);
   private final NetworkTableEntry intakeDeployCurrentEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kCurrentAmps);
   private final NetworkTableEntry _intakeDeployTarget = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kTarget);
+  private final NetworkTableEntry rampedPositionEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kRampedPosition);
 
   private boolean ocillateIntake = false;
   private double ocillationMagnitude = 1;
   private double ocillationFrequency = 1;
   private Setpoint intakeDeployTarget = Setpoint.kUp;
+  private double rampedPosition = IntakeConstants.kMaxDeployPosition;
 
   public enum Setpoint{
     kDown,
@@ -110,7 +112,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * {@summary intake feedforward includes gravitational force, static loss, air resistance, and robot acceleration} */
   public double calculateFeedForward() {
     // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
-    return IntakeConstants.kS + IntakeConstants.kG * Math.cos(getIntakeAngle() / IntakeConstants.kDeployGearRatio);
+    return IntakeConstants.kS + IntakeConstants.kG * Math.cos(getIntakeAngle());
   }
 
   public double calculatePosition() {
@@ -137,9 +139,19 @@ public class IntakeSubsystem extends SubsystemBase {
     return tempTargetPosition;
   }
 
+  /** Ramps the position setpoint toward the target for smoother motion */
+  private void rampPosition() {
+    double target = calculatePosition();
+    if (rampedPosition < target) {
+      rampedPosition = Math.min(rampedPosition + IntakeConstants.kRetractRampRate, target);
+    } else if (rampedPosition > target) {
+      rampedPosition = Math.max(rampedPosition - IntakeConstants.kDeployRampRate, target);
+    }
+  }
+
   /** Sets the intake setpoint angle */
   public void setPIDAngle() {
-    IntakePIDController.setSetpoint(calculatePosition(), ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
+    IntakePIDController.setSetpoint(rampedPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
   }
 
   /** Sets the intakeDeployTarget variable */
@@ -227,17 +239,15 @@ public class IntakeSubsystem extends SubsystemBase {
     deployPositionEntry.setDouble(getIntakeDeployPosition());
     deployVoltageEntry.setDouble(calculateFeedForward());
     _intakeDeployTarget.setDouble(calculatePosition());
+    rampedPositionEntry.setDouble(rampedPosition);
   }
 
   /** This method will be called once per scheduler run */
   @Override
   public void periodic() {
-
-    updateNetworkTable();
-
-
-
+    rampPosition();
     setPIDAngle();
+    updateNetworkTable();
   }
 
   /** This method will be called once per scheduler run during simulation */
