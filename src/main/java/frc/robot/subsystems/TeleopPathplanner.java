@@ -75,14 +75,7 @@ public class TeleopPathplanner extends SubsystemBase {
   {
     swerveSubsystem = swerve;
 
-    Optional<Alliance> startingAllinace = DriverStation.getAlliance();
-    if (startingAllinace.isPresent())
-      startingSide = currentSide = (startingAllinace.get() == Alliance.Blue ? FieldSide.BlueSide : FieldSide.RedSide);
-
-    if (startingSide == FieldSide.RedSide)
-      targetHubPose = new Pose2d(FieldPositions.kRedFieldElements.get(0), new Rotation2d());
-    else 
-      targetHubPose = new Pose2d(FieldPositions.kBlueFieldElements.get(0), new Rotation2d());
+    setStartingAlliance();
   }
 
 
@@ -93,11 +86,11 @@ public class TeleopPathplanner extends SubsystemBase {
     Pose2d targetPose2d = targetHubPose;
     
     // Assuming angular velocity is negligable - it might not be negligable
-    if (robotVelocities.vxMetersPerSecond + robotVelocities.vyMetersPerSecond > 0.05) {
-      // Based on the robot speeds only
-      targetPose2d = new Pose2d(targetHubPose.getX() - robotVelocities.vxMetersPerSecond, 
-                                targetHubPose.getY() - robotVelocities.vyMetersPerSecond, new Rotation2d());
-    }
+    // if (robotVelocities.vxMetersPerSecond + robotVelocities.vyMetersPerSecond > 0.05) {
+    //   // Based on the robot speeds only
+    //   targetPose2d = new Pose2d(targetHubPose.getX() - robotVelocities.vxMetersPerSecond, 
+    //                             targetHubPose.getY() - robotVelocities.vyMetersPerSecond, new Rotation2d());
+    // }
   
     return targetPose2d;
   }
@@ -119,6 +112,17 @@ public class TeleopPathplanner extends SubsystemBase {
       currentSide = FieldSide.RedSide;
     else 
       currentSide = FieldSide.Middle;
+  }
+
+  public void setStartingAlliance() {
+    Optional<Alliance> startingAllinace = DriverStation.getAlliance();
+    if (startingAllinace.isPresent())
+      startingSide = currentSide = (startingAllinace.get() == Alliance.Blue ? FieldSide.BlueSide : FieldSide.RedSide);
+
+    if (startingSide == FieldSide.RedSide)
+      targetHubPose = new Pose2d(FieldPositions.kRedFieldElements.get(0), new Rotation2d());
+    else 
+      targetHubPose = new Pose2d(FieldPositions.kBlueFieldElements.get(0), new Rotation2d());
   }
 
   public void updateHubTargets() {

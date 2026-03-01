@@ -16,6 +16,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -35,6 +36,8 @@ import frc.robot.Constants.*;
 
 
 public class ShooterSubsystem extends SubsystemBase {
+
+  SwerveSubsystem m_swerveSubsystem;
 
   double shooterVelocityTarget = 0;  // Where we want to be (set by commands)
   double shooterVelocity = 0;        // Current ramped setpoint (fed to PID each cycle)
@@ -83,7 +86,9 @@ public class ShooterSubsystem extends SubsystemBase {
 
 
   /** Creates a new ShooterSubsystem. */
-  public ShooterSubsystem() {
+  public ShooterSubsystem(SwerveSubsystem swerveSubsystem) {
+
+    m_swerveSubsystem = swerveSubsystem;
 
     shooterPrimaryMotor.configure(ShooterConfigs.primaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     shooterSecondaryMotor.configure(ShooterConfigs.secondaryShooterConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -92,6 +97,42 @@ public class ShooterSubsystem extends SubsystemBase {
     hoodSecondaryMotor.configure(HoodConfigs.secondaryHoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     setHoodTarget(HoodConstants.kEncoderOffset);
+
+    addMapValues();
+  }
+
+  private void addMapValues() {
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(  8)), Double.valueOf(1615));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 20)), Double.valueOf(1685));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 32)), Double.valueOf(1755));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 44)), Double.valueOf(1825));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 56)), Double.valueOf(1895));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 68)), Double.valueOf(1965));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 80)), Double.valueOf(2035));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 92)), Double.valueOf(2105));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(104)), Double.valueOf(2175));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2250));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(128)), Double.valueOf(2300));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(2400));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(152)), Double.valueOf(2450));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(164)), Double.valueOf(2525));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(176)), Double.valueOf(2595));
+
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(  8)), Double.valueOf(0.74));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 20)), Double.valueOf(0.82));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 32)), Double.valueOf(0.90));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 44)), Double.valueOf(0.97));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 56)), Double.valueOf(1.04));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 68)), Double.valueOf(1.12));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 80)), Double.valueOf(1.19));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 92)), Double.valueOf(1.26));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(104)), Double.valueOf(1.34));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(1.41));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(128)), Double.valueOf(1.48));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(1.55));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(152)), Double.valueOf(1.63));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(164)), Double.valueOf(1.70));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(176)), Double.valueOf(1.78));
   }
 
   public double calculateShooterFeedForward() {
@@ -225,11 +266,12 @@ public class ShooterSubsystem extends SubsystemBase {
         && Math.abs(getShooterVelocity() - shooterVelocityTarget) < ShooterConstants.kReadyToleranceRPM;
   }
 
-  public void setShooterMap(double distanceToHub) {
+  public void setShooterMap() {
+    double distanceToHub = m_swerveSubsystem.getDistanceToHub();
     // set hood based on distance
-
+    rotations = hoodAngleMap.get(distanceToHub);
     // set shooter based on distance
-
+    shooterVelocityTarget = shooterSpeedMap.get(distanceToHub);
   }
 
   /** @return Velocity in RPM */

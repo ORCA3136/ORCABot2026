@@ -15,6 +15,8 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
@@ -43,6 +45,8 @@ import frc.robot.Constants.*;
 
 
 public class IntakeSubsystem extends SubsystemBase {
+
+  private final SwerveSubsystem m_swerveSubsystem;
 
   final DCMotor intakeDCMotor = DCMotor.getNeoVortex(1);
   final DCMotor deployDCMotor = DCMotor.getNeo550(1);
@@ -101,7 +105,9 @@ public class IntakeSubsystem extends SubsystemBase {
 
 
   /** Creates a new IntakeSubsystem. */
-  public IntakeSubsystem() {
+  public IntakeSubsystem(SwerveSubsystem swerveSubsystem) {
+
+    m_swerveSubsystem = swerveSubsystem;
 
     intakeMotor.configure(IntakeConfigs.intakeMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     intakeDeployMotor.configure(IntakeConfigs.intakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -125,6 +131,13 @@ public class IntakeSubsystem extends SubsystemBase {
       tempTargetPosition = IntakeConstants.kSafeDeployPosition;
     else
       tempTargetPosition = IntakeConstants.kMaxDeployPosition;
+
+    // If robotPose is close to any hub then put intake up
+    Translation2d robotPose2d = m_swerveSubsystem.getPose().getTranslation();
+    Translation2d nearestTrench = robotPose2d.nearest(FieldPositions.trenchPoses);
+    if (robotPose2d.getDistance(nearestTrench) < 1) {
+      tempTargetPosition = IntakeConstants.kSafeDeployPosition;
+    }
 
     // This was adding rotations which would be way too big a change, so I changed it to degrees for the time being
     if (intakeDeployTarget == Setpoint.kUp && ocillateIntake) {

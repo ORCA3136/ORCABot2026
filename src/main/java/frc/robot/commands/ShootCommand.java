@@ -35,10 +35,8 @@ public class ShootCommand extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    // get distance to hub
-    distanceToHub = m_swerveSubsystem.getDistanceToHub();
     // set shooter and hood map
-    m_shooterSubsystem.setShooterMap(distanceToHub);
+    m_shooterSubsystem.setShooterMap();
   }
 
   // Called once the command ends or is interrupted.

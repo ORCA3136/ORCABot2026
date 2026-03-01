@@ -56,10 +56,10 @@ public class RobotContainer {
   private final TeleopPathplanner teleopPathplanner;
   @SuppressWarnings("unused") // periodic() runs vision fusion automatically — no commands needed
   private final VisionSubsystem visionSubsystem;
-  private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+  private final ShooterSubsystem shooterSubsystem;
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   private final KickerSubsystem kickerSubsystem = new KickerSubsystem();
-  private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
+  private final IntakeSubsystem intakeSubsystem;
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
   
   private final SendableChooser<Command> autoChooser;
@@ -73,6 +73,8 @@ public class RobotContainer {
     // Instantiate all subsystems that require other subsystems here
     visionSubsystem = new VisionSubsystem(driveBase);
     teleopPathplanner = new TeleopPathplanner(driveBase);
+    intakeSubsystem = new IntakeSubsystem(driveBase);
+    shooterSubsystem = new ShooterSubsystem(driveBase);
 
     DriverStation.silenceJoystickConnectionWarning(true);
 
@@ -97,15 +99,18 @@ public class RobotContainer {
                     .deadband(OperatorConstants.kStickDeadband)
                     .allianceRelativeControl(true);
 
-  // Rotations for controller input for different driving commands
-  SwerveInputStream regularTurning = controllerInput.copy()
-                    .withControllerRotationAxis(() -> m_primaryController.getRightX());
-
   // Transformations for different driving commands
-  // Slow drive input for Carter
+  SwerveInputStream slowSpeedDrive   = controllerInput.copy().scaleTranslation(0.4);
+  SwerveInputStream mediumSpeedDrive = controllerInput.copy().scaleTranslation(0.8);
 
-  Command defaultDriveCommand = driveBase.driveFieldOriented(regularTurning);
-  // Make more driving commands
+  // Rotations for controller input for different driving commands
+  SwerveInputStream slowRegularTurning   = slowSpeedDrive  .copy().withControllerRotationAxis(() -> m_primaryController.getRightX());
+  SwerveInputStream mediumRegularTurning = mediumSpeedDrive.copy().withControllerRotationAxis(() -> m_primaryController.getRightX());
+  SwerveInputStream fastRegularTurning   = controllerInput .copy().withControllerRotationAxis(() -> m_primaryController.getRightX());
+
+  Command slowDriveCommand   = driveBase.driveFieldOriented(slowRegularTurning);
+  Command mediumDriveCommand = driveBase.driveFieldOriented(mediumRegularTurning);
+  Command fastDriveCommand   = driveBase.driveFieldOriented(fastRegularTurning);
   
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
@@ -117,7 +122,7 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    driveBase.setDefaultCommand(defaultDriveCommand);
+    driveBase.setDefaultCommand(fastDriveCommand);
 
     // Buttons
     m_primaryController.a().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
@@ -156,7 +161,7 @@ public class RobotContainer {
     m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1500)))
                                      .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput))))
-                                     .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)))
+                                     .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)))
             .whileTrue(new ShootCommand(shooterSubsystem, driveBase))
             .whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem).onlyWhile(shooterSubsystem::isShooterReady));
 
@@ -164,7 +169,8 @@ public class RobotContainer {
     m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
 
     m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
-    // m_primaryController.rightStick   () Slow speed
+    m_primaryController.rightStick  ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(slowDriveCommand)))
+                                     .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
 
     // Toggled button options (active while holding back button)
     m_primaryController.back().and(m_primaryController.a()); 
@@ -189,7 +195,7 @@ public class RobotContainer {
 
   // Testing buttons
   private void configureTestBindings() {
-  	driveBase.setDefaultCommand(defaultDriveCommand);
+  	driveBase.setDefaultCommand(fastDriveCommand);
     
     m_primaryController.a           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
     m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
@@ -198,7 +204,7 @@ public class RobotContainer {
 
     m_primaryController.back        ().onTrue(Commands.runOnce(driveBase::zeroGyro));
     m_primaryController.start       ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput))))
-                                     .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)));
+                                     .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
 
     m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseHoodAngle()));
     m_primaryController.leftBumper  ().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseHoodAngle()));
@@ -277,7 +283,10 @@ public class RobotContainer {
               .aim(new Pose2d(hubPos, new Rotation2d()));
           driveBase.setDefaultCommand(driveBase.driveFieldOriented(aimAtHub));
         }))
-        .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)));
+        .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
+        
+    m_secondaryController.button(8).onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput))))
+                                         .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
   }
 
   private void configureNamedCommands() {
