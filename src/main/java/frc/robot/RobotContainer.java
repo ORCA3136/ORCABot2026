@@ -125,13 +125,23 @@ public class RobotContainer {
     m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
 
     m_primaryController.start       ().onTrue(Commands.runOnce(() -> {
+      var nt = edu.wpi.first.networktables.NetworkTableInstance.getDefault();
       var pose = driveBase.getPose();
-      System.out.println("=== POSE CHECK ===");
-      System.out.printf("  X: %.2f  Y: %.2f  Heading: %.1f deg%n",
+      System.out.println("=== DIAGNOSTICS ===");
+      System.out.printf("  Pose: X=%.2f  Y=%.2f  Heading=%.1f deg%n",
           pose.getX(), pose.getY(), pose.getRotation().getDegrees());
       System.out.println("  Vision healthy: " + visionSubsystem.isVisionHealthy());
+      System.out.println("  IMU phase: " + nt.getTable("Vision").getEntry("ImuPhase").getString("N/A"));
+      System.out.println("  Front TagCount: " + nt.getTable("Vision/Front").getEntry("TagCount").getDouble(-1));
+      System.out.println("  Front Accepted: " + nt.getTable("Vision/Front").getEntry("Accepted").getBoolean(false));
+      System.out.println("  Front Reject: " + nt.getTable("Vision/Front").getEntry("RejectReason").getString("N/A"));
+      System.out.println("  Back TagCount: " + nt.getTable("Vision/Back").getEntry("TagCount").getDouble(-1));
+      System.out.println("  Back Reject: " + nt.getTable("Vision/Back").getEntry("RejectReason").getString("N/A"));
+      // Check if Limelight NT tables exist at all
+      System.out.println("  LL-front botpose exists: " + (nt.getTable("limelight-front").getEntry("botpose_orb_wpiblue").getDoubleArray(new double[]{}).length > 0));
+      System.out.println("  LL-back botpose exists: " + (nt.getTable("limelight-back").getEntry("botpose_orb_wpiblue").getDoubleArray(new double[]{}).length > 0));
       System.out.println("  Beam break: " + kickerSubsystem.hasFuel());
-      System.out.println("==================");
+      System.out.println("===================");
     }));
     
     // D pad
