@@ -4,9 +4,12 @@
 
 package frc.robot.subsystems;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.ClosedLoopSlot;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -14,12 +17,15 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.ClimberConfigs;
 import frc.robot.Constants.CanIdConstants;
 import frc.robot.Constants.ClimberConstants;
+import frc.robot.Constants.IntakeConstants;
 import frc.robot.Constants.NetworkTableNames;
 import frc.robot.Constants.RobotConstants;
+import frc.robot.subsystems.IntakeSubsystem.Setpoint;
 
 
 /*
@@ -35,11 +41,11 @@ import frc.robot.Constants.RobotConstants;
 public class ClimberSubsystem extends SubsystemBase {
 
   private final SparkFlex climberPrimaryMotor = new SparkFlex(CanIdConstants.kClimberPrimaryCanId, MotorType.kBrushless);
-  final SparkFlex climberSecondaryMotor = new SparkFlex(CanIdConstants.kClimberSecondaryCanId, MotorType.kBrushless);
+  private final SparkFlex climberSecondaryMotor = new SparkFlex(CanIdConstants.kClimberSecondaryCanId, MotorType.kBrushless);
 
-  private final RelativeEncoder climberEncoder = climberPrimaryMotor.getEncoder();
+  private final AbsoluteEncoder climberEncoder = climberSecondaryMotor.getAbsoluteEncoder();
 
-  // private final SparkClosedLoopController = ClimberPIDController Climber
+  private final SparkClosedLoopController ClimberPIDController = climberSecondaryMotor.getClosedLoopController();
 
   private final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   private final NetworkTable climberTable = networkTable.getTable(NetworkTableNames.Climber.kTable);
@@ -50,12 +56,30 @@ public class ClimberSubsystem extends SubsystemBase {
   private final NetworkTableEntry primaryCurrentEntry = climberTable.getEntry(NetworkTableNames.Climber.kPrimaryCurrent);
   private final NetworkTableEntry secondaryCurrentEntry = climberTable.getEntry(NetworkTableNames.Climber.kSecondaryCurrent);
 
+  private setpoint climberDeployTarget = setpoint.kRetracted;
+  private double climberTarget = 0; //Temporary
+  private enum setpoint {
+    kRetracted,
+    kL1;
+  }
+
   /** Creates a new ClimberSubsystem. */
   public ClimberSubsystem() {
 
     climberPrimaryMotor.configure(ClimberConfigs.climberPrimaryMotor, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     climberSecondaryMotor.configure(ClimberConfigs.climberSecondaryMotor, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+  }
+
+  public double calculateFeedForward() {
+    // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
+    return IntakeConstants.kS + IntakeConstants.kG * Math.cos(getClimberAngle());
+  }
+
+  
+
+  public void setPIDAngle() {
+    ClimberPIDController.setSetpoint(climberTarget, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
   }
 
   /** @return Primary motor for simulation access */
@@ -71,6 +95,12 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   public void setClimberDutyCycle(double speed) {
     climberPrimaryMotor.set(speed / RobotConstants.kNeoVortexFreeSpeedRPM);
+  }
+
+  /** @return Angle in radians relative to horizontal (0 = horizontal, positive = above, negative = below) 
+   * offset commented out, may need to measure later*/
+  public double getClimberAngle() {
+    return 2 * Math.PI * (climberEncoder.getPosition() /*- ClimberConstants.kClimberOffset */ );
   }
 
   public double getMotorVelocity() {

@@ -108,7 +108,16 @@ public final class Constants {
     public static final double kClimberMaxPosition = 100.0;
     public static final double kClimberMinPosition = -1.0;
 
+    public static final double kP = 0.3; // Coppied from hood
+    public static final double kI = 0.0;
+    public static final double kD = 5.0;
+    public static final double kG = 0.6;
+    public static final double kS = 0.2;
+    // public static final double kV = 0.0;
+    // public static final double kA = 0.0;
+
     public static final double kClimberGearRatio = (28. / 11.) * 125.;
+    // public static final double 
   }
 
   public static final class VisionConstants {
