@@ -6,14 +6,12 @@ import java.util.Optional;
 
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DataLogManager;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -61,8 +59,6 @@ public class VisionSubsystem extends SubsystemBase {
 
   private final Limelight limelightFront;
   private final Limelight limelightBack;
-
-  private static DigitalInput beamBreak;
 
   // We construct PoseEstimate objects directly per camera instead of using
   // limelight.createPoseEstimator(MEGATAG2).getPoseEstimate().
@@ -125,34 +121,20 @@ public class VisionSubsystem extends SubsystemBase {
 
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(SwerveSubsystem swerveSubsystem) {
-    beamBreak = new DigitalInput(0);
-    
     this.swerveSubsystem = swerveSubsystem;
 
     limelightFront = new Limelight(VisionConstants.kLimelightFrontName);
     limelightBack = new Limelight(VisionConstants.kLimelightBackName);
 
-    // Configure front camera
-    // TODO: Measure camera offset on real robot to nearest 5mm
+    // Configure front camera (camera offsets are set via Limelight web UI — not overridden here)
     limelightFront.getSettings()
         .withLimelightLEDMode(LEDMode.ForceOff)
-        .withCameraOffset(new Pose3d(
-            VisionConstants.kFrontCamForwardM,
-            VisionConstants.kFrontCamLeftM,
-            VisionConstants.kFrontCamUpM,
-            new Rotation3d(0, Math.toRadians(-VisionConstants.kFrontCamPitchDeg), 0)))
         .withImuMode(ImuMode.SyncInternalImu)
         .save();
 
-    // Configure back camera — 180deg yaw because it faces rearward
-    // TODO: Measure camera offset on real robot to nearest 5mm
+    // Configure back camera (camera offsets are set via Limelight web UI — not overridden here)
     limelightBack.getSettings()
         .withLimelightLEDMode(LEDMode.ForceOff)
-        .withCameraOffset(new Pose3d(
-            VisionConstants.kBackCamForwardM,
-            VisionConstants.kBackCamLeftM,
-            VisionConstants.kBackCamUpM,
-            new Rotation3d(0, Math.toRadians(VisionConstants.kBackCamPitchDeg), Math.toRadians(180))))
         .withImuMode(ImuMode.SyncInternalImu)
         .save();
 

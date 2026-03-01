@@ -2,6 +2,7 @@ package frc.robot;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.util.datalog.BooleanLogEntry;
 import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -12,12 +13,14 @@ import org.littletonrobotics.urcl.URCL;
 import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
+import frc.robot.subsystems.VisionSubsystem;
 
 public final class RobotLogger {
 
   private static ShooterSubsystem shooterSubsystem;
   private static KickerSubsystem kickerSubsystem;
   private static SwerveSubsystem swerveSubsystem;
+  private static VisionSubsystem visionSubsystem;
 
   // Shot log entries (written directly to WPILOG, bypasses NT)
   private static DoubleLogEntry shotTimestamp;
@@ -31,6 +34,7 @@ public final class RobotLogger {
   private static DoubleLogEntry shotRobotY;
   private static DoubleLogEntry shotRobotHeadingDeg;
   private static DoubleLogEntry shotDistanceToHub;
+  private static BooleanLogEntry shotVisionHealthy;
 
   private RobotLogger() {}
 
@@ -68,13 +72,16 @@ public final class RobotLogger {
     shotRobotY = new DoubleLogEntry(log, "Shots/RobotY");
     shotRobotHeadingDeg = new DoubleLogEntry(log, "Shots/RobotHeadingDeg");
     shotDistanceToHub = new DoubleLogEntry(log, "Shots/DistanceToHub");
+    shotVisionHealthy = new BooleanLogEntry(log, "Shots/VisionHealthy");
   }
 
   /** Register subsystem references so logShot() can pull live data. */
-  public static void registerSubsystems(ShooterSubsystem shooter, KickerSubsystem kicker, SwerveSubsystem swerve) {
+  public static void registerSubsystems(ShooterSubsystem shooter, KickerSubsystem kicker,
+      SwerveSubsystem swerve, VisionSubsystem vision) {
     shooterSubsystem = shooter;
     kickerSubsystem = kicker;
     swerveSubsystem = swerve;
+    visionSubsystem = vision;
   }
 
   /** Register command start/stop logging with the CommandScheduler. */
@@ -116,6 +123,10 @@ public final class RobotLogger {
       Translation2d toHub = swerveSubsystem.getTranslationToFieldElement(
           SwerveSubsystem.FieldTargets.kHub, false);
       shotDistanceToHub.append(toHub != null ? toHub.getNorm() : -1);
+    }
+
+    if (visionSubsystem != null) {
+      shotVisionHealthy.append(visionSubsystem.isVisionHealthy());
     }
 
     DataLogManager.log("SHOT fired");

@@ -12,6 +12,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 import frc.robot.Constants.FieldPositions;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.commands.FuelPathCommands;
 import frc.robot.commands.RunClimberCommand;
 import frc.robot.commands.RunConveyorAndKickerCommand;
@@ -34,6 +35,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.math.MathUtil;
@@ -52,7 +54,7 @@ public class RobotContainer {
   private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
   private final TeleopPathplanner teleopPathplanner;
   @SuppressWarnings("unused") // periodic() runs vision fusion automatically — no commands needed
-  // private final VisionSubsystem visionSubsystem;
+  private final VisionSubsystem visionSubsystem;
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   private final KickerSubsystem kickerSubsystem = new KickerSubsystem();
@@ -63,12 +65,12 @@ public class RobotContainer {
 
   private final CommandXboxController m_primaryController = new CommandXboxController(Constants.OperatorConstants.kDriverControler);
 
-  // private final CommandJoystick m_secondaryController = new CommandJoystick(Constants.kSecondaryDriverControler);
+  private final CommandJoystick m_secondaryController = new CommandJoystick(OperatorConstants.kSecondaryDriverControler);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Instantiate all subsystems that require other subsystems here
-    // visionSubsystem = new VisionSubsystem(driveBase);
+    visionSubsystem = new VisionSubsystem(driveBase);
     teleopPathplanner = new TeleopPathplanner(driveBase);
 
     DriverStation.silenceJoystickConnectionWarning(true);
@@ -80,6 +82,7 @@ public class RobotContainer {
     } else {
       configureTestBindings();
     }
+    configureOperatorBindings();
     configureNamedCommands();
 
     autoChooser = AutoBuilder.buildAutoChooser(); //pick a default
@@ -234,6 +237,17 @@ public class RobotContainer {
 
   }
 
+  /** Operator button board bindings for drive-to-position commands. */
+  private void configureOperatorBindings() {
+    // Button numbers are initial assignments — verify against physical board wiring
+    m_secondaryController.button(1).whileTrue(DriveToPositionCommand.driveToHub(driveBase));
+    m_secondaryController.button(2).whileTrue(DriveToPositionCommand.driveToTower(driveBase));
+    m_secondaryController.button(3).whileTrue(DriveToPositionCommand.driveToLeftTrench(driveBase));
+    m_secondaryController.button(4).whileTrue(DriveToPositionCommand.driveToRightTrench(driveBase));
+    m_secondaryController.button(5).whileTrue(DriveToPositionCommand.driveToOutpost(driveBase));
+    m_secondaryController.button(6).whileTrue(DriveToPositionCommand.driveToDepot(driveBase));
+  }
+
   private void configureNamedCommands() {
     // Pathplanner commands
 
@@ -271,6 +285,13 @@ public class RobotContainer {
     NamedCommands.registerCommand("Kicker Pulse",         FuelPathCommands.kickerPulse(kickerSubsystem));
     NamedCommands.registerCommand("Emergency Reverse",    FuelPathCommands.emergencyReverseAll(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
 
+    // Drive-to-position
+    NamedCommands.registerCommand("Drive To Hub",          DriveToPositionCommand.driveToHub(driveBase));
+    NamedCommands.registerCommand("Drive To Tower",        DriveToPositionCommand.driveToTower(driveBase));
+    NamedCommands.registerCommand("Drive To Left Trench",  DriveToPositionCommand.driveToLeftTrench(driveBase));
+    NamedCommands.registerCommand("Drive To Right Trench", DriveToPositionCommand.driveToRightTrench(driveBase));
+    NamedCommands.registerCommand("Drive To Outpost",      DriveToPositionCommand.driveToOutpost(driveBase));
+    NamedCommands.registerCommand("Drive To Depot",        DriveToPositionCommand.driveToDepot(driveBase));
   }
 
   // Subsystem getters for simulation access
@@ -280,6 +301,7 @@ public class RobotContainer {
   public KickerSubsystem getKickerSubsystem() { return kickerSubsystem; }
   public IntakeSubsystem getIntakeSubsystem() { return intakeSubsystem; }
   public ClimberSubsystem getClimberSubsystem() { return climberSubsystem; }
+  public VisionSubsystem getVisionSubsystem() { return visionSubsystem; }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.

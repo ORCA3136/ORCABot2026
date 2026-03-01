@@ -51,9 +51,9 @@ public class Robot extends TimedRobot {
     // Register subsystems for shot logging
     RobotLogger.registerSubsystems(
         m_robotContainer.getShooterSubsystem(),
-        // m_robotContainer.getHoodSubsystem(), // I think it should get everything from shooter now, but I left this here to make it easier to find potential problems
         m_robotContainer.getKickerSubsystem(),
-        m_robotContainer.getSwerveSubsystem());
+        m_robotContainer.getSwerveSubsystem(),
+        m_robotContainer.getVisionSubsystem());
 
     // Log every command start/stop for AdvantageScope review
     RobotLogger.registerCommandLogging();

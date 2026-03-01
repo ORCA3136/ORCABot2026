@@ -2,6 +2,8 @@ package frc.robot;
 
 import java.util.List;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 public final class Constants {
@@ -283,6 +285,7 @@ public final class Constants {
       public static final String kVelocityRPM = "Velocity RPM";
       public static final String kCurrentAmps = "Current Amps";
       public static final String kStallStatus = "Stall Status";
+      public static final String kFuelStaged = "Fuel Staged";
     }
 
     public static final class Intake {
@@ -337,6 +340,27 @@ public final class Constants {
 
     // TODO: Populate with actual bump field coordinates
     public static final List<Translation2d> bumpPoses = List.of();
+
+    // --- Drive-to-position targets (blue-origin; alliance flipping handles red side) ---
+    // Offsets and headings are initial estimates — tune on the field.
+
+    /** Shooting position ~1.5m from hub, facing toward hub */
+    public static final Pose2d kHubPose = new Pose2d(3.1, 4.035, Rotation2d.fromDegrees(0));
+
+    /** Climbing approach ~0.5m from tower base, facing tower */
+    public static final Pose2d kTowerPose = new Pose2d(1.6, 3.745, Rotation2d.fromDegrees(0));
+
+    /** Human player pickup near outpost, facing outpost */
+    public static final Pose2d kOutpostPose = new Pose2d(0.7, 0.666, Rotation2d.fromDegrees(-45));
+
+    /** Floor fuel pickup near depot, facing depot */
+    public static final Pose2d kDepotPose = new Pose2d(0.9, 5.965, Rotation2d.fromDegrees(45));
+
+    /** Left trench entrance, heading along trench */
+    public static final Pose2d kLeftTrenchPose = new Pose2d(4.620, 7.430, Rotation2d.fromDegrees(90));
+
+    /** Right trench entrance, heading along trench */
+    public static final Pose2d kRightTrenchPose = new Pose2d(4.620, 0.630, Rotation2d.fromDegrees(-90));
   }
 
    public final static class CurrentConstants
