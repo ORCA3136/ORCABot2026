@@ -9,6 +9,7 @@ import java.io.File;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
+import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.FieldPositions;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.ShooterConstants;
@@ -158,6 +159,12 @@ public class RobotContainer {
 		m_primaryController.povRight    ().and(m_primaryController.back().negate()).whileTrue(new RunIntakeCommand(intakeSubsystem, -4000));
 
     // Axis/Triggers/Sticks
+
+    // m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> climberSubsystem.setClimberDutyCycle(3000)))
+    //                                   .onFalse(Commands.runOnce(() -> climberSubsystem.setClimberDutyCycle(0)));
+    // m_primaryController.leftBumper  ().onTrue(Commands.runOnce(() -> climberSubsystem.setClimberDutyCycle(-1000)))
+    //                                   .onFalse(Commands.runOnce(() -> climberSubsystem.setClimberDutyCycle(0)));
+
     m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(2500)))
                                      .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(blueHubRotationCommand)))
@@ -177,7 +184,7 @@ public class RobotContainer {
     m_primaryController.back().and(m_primaryController.b());
     m_primaryController.back().and(m_primaryController.x())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(2000)))
                                                                       .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0))); // Shooter - by 50
-    m_primaryController.back().and(m_primaryController.y())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-1000)))
+    m_primaryController.back().and(m_primaryController.y())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-000)))
                                                                       .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0))); // Shooter + by 50
 
     m_primaryController.back().and(m_primaryController.povUp())       .whileTrue(new RunIntakeCommand(intakeSubsystem, 5000)); // Intake up
@@ -206,8 +213,10 @@ public class RobotContainer {
     m_primaryController.start       ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(blueHubRotationCommand)))
                                      .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
 
-    m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseHoodAngle()));
-    m_primaryController.leftBumper  ().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseHoodAngle()));
+    // m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseHoodAngle()));
+    // m_primaryController.leftBumper  ().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseHoodAngle()));
+
+    
 
 		m_primaryController.leftStick		().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(0)));
 		m_primaryController.rightStick	().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(30)));
@@ -266,9 +275,11 @@ public class RobotContainer {
   /** Operator button board bindings for drive-to-position commands. */
   private void configureOperatorBindings() {
     // Drive-to-position buttons — disabled until field-tested
-    // m_secondaryController.button(1).whileTrue(DriveToPositionCommand.driveToHub(driveBase));
-    // m_secondaryController.button(2).whileTrue(DriveToPositionCommand.driveToTower(driveBase));
-    // m_secondaryController.button(3).whileTrue(DriveToPositionCommand.driveToLeftTrench(driveBase));
+    m_secondaryController.button(1).onTrue (Commands.runOnce(() -> climberSubsystem.setClimberTarget(ClimberConstants.kClimberMinPosition)))
+                                          .onFalse(Commands.runOnce(() -> climberSubsystem.stopClimber()));
+    m_secondaryController.button(2).onTrue (Commands.runOnce(() -> climberSubsystem.setClimberTarget(ClimberConstants.kClimberMaxPosition)))
+                                          .onFalse(Commands.runOnce(() -> climberSubsystem.stopClimber()));
+    m_secondaryController.button(3).whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
     // m_secondaryController.button(4).whileTrue(DriveToPositionCommand.driveToRightTrench(driveBase));
     // m_secondaryController.button(5).whileTrue(DriveToPositionCommand.driveToOutpost(driveBase));
     // m_secondaryController.button(6).whileTrue(DriveToPositionCommand.driveToDepot(driveBase));
@@ -308,9 +319,9 @@ public class RobotContainer {
     NamedCommands.registerCommand("Stop Intake",          Commands.runOnce(() -> intakeSubsystem.setIntakeDutyCycle(0), intakeSubsystem));
 
     // Deploy Intake
-    NamedCommands.registerCommand("Deploy Intake" ,         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
+    NamedCommands.registerCommand("Deploy Intake" ,       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
     NamedCommands.registerCommand("Intake Safe" ,         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
-    NamedCommands.registerCommand("Retract Intake",         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
+    NamedCommands.registerCommand("Retract Intake",       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
 
     // Shoot
     NamedCommands.registerCommand("Stop Shooter",         Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));

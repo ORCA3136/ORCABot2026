@@ -53,14 +53,15 @@ public class ClimberSubsystem extends SubsystemBase {
   // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
   private final NetworkTableEntry velocityEntry = climberTable.getEntry(NetworkTableNames.Climber.kVelocityRPM);
   private final NetworkTableEntry positionEntry = climberTable.getEntry(NetworkTableNames.Climber.kPositionRotations);
+  private final NetworkTableEntry targetEntry = climberTable.getEntry(NetworkTableNames.Climber.kTargetRotations);
   private final NetworkTableEntry primaryCurrentEntry = climberTable.getEntry(NetworkTableNames.Climber.kPrimaryCurrent);
   private final NetworkTableEntry secondaryCurrentEntry = climberTable.getEntry(NetworkTableNames.Climber.kSecondaryCurrent);
 
-  private setpoint climberDeployTarget = setpoint.kRetracted;
-  private double climberTarget = 0; //Temporary
-  private enum setpoint {
+  private double climberTarget = 200; // Temporary
+  
+  private enum Setpoint {
     kRetracted,
-    kL1;
+    kL1Climb;
   }
 
   /** Creates a new ClimberSubsystem. */
@@ -76,10 +77,34 @@ public class ClimberSubsystem extends SubsystemBase {
     return IntakeConstants.kS + IntakeConstants.kG * Math.cos(getClimberAngle());
   }
 
-  
-
   public void setPIDAngle() {
     ClimberPIDController.setSetpoint(climberTarget, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
+  }
+
+  public void setClimberTarget(Setpoint setpoint) {
+    if (setpoint == Setpoint.kRetracted) {
+      climberTarget = ClimberConstants.kClimberMinPosition;
+    } else if (setpoint == Setpoint.kL1Climb){
+      climberTarget = ClimberConstants.kClimberMaxPosition;
+    }
+  }
+
+  /* sets the climber's target to it's current position */
+  public void stopClimber() {
+    climberTarget = getClimberPosition();
+  }
+
+  /** @param target is in rotations */
+  public void setClimberTarget(double target) {
+    climberTarget = target;
+  }
+
+  public void increaseClimberTarget() {
+    climberTarget += ClimberConstants.kClimberIncrement;
+  }
+
+  public void decreaseClimberTarget() {
+    climberTarget -= ClimberConstants.kClimberIncrement;
   }
 
   /** @return Primary motor for simulation access */
@@ -107,6 +132,10 @@ public class ClimberSubsystem extends SubsystemBase {
     return climberEncoder.getVelocity();
   }
 
+  public double getClimberTarget() {
+    return climberTarget;
+  }
+
   public double getClimberVelocity() {
     return climberEncoder.getVelocity() / ClimberConstants.kClimberGearRatio;
   }
@@ -130,6 +159,7 @@ public class ClimberSubsystem extends SubsystemBase {
   public void updateNetworkTable() {
     velocityEntry.setDouble(getClimberVelocity());
     positionEntry.setDouble(getClimberPosition());
+    targetEntry.setDouble(climberTarget);
     primaryCurrentEntry.setDouble(getClimberPrimaryCurrent());
     secondaryCurrentEntry.setDouble(getClimberSecondaryCurrent());
   }
@@ -137,6 +167,9 @@ public class ClimberSubsystem extends SubsystemBase {
   /** This method will be called once per scheduler run */
   @Override
   public void periodic() {
+
+    setPIDAngle();
+
     updateNetworkTable();
   }
 

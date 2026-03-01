@@ -120,11 +120,11 @@ public class Configs {
                 .inverted(false)
                 .idleMode(IdleMode.kBrake)
                 .voltageCompensation(12)
-                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             climberSecondaryMotor
                 .idleMode(IdleMode.kBrake)
                 .follow(CanIdConstants.kClimberPrimaryCanId, false)
-                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             climberSecondaryMotor.absoluteEncoder
                 .positionConversionFactor(ClimberConstants.kClimberGearRatio);
             climberSecondaryMotor.closedLoop
