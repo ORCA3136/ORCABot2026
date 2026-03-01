@@ -11,6 +11,12 @@
           }
         },
         {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.2
+          }
+        },
+        {
           "type": "parallel",
           "data": {
             "commands": [
@@ -18,12 +24,6 @@
                 "type": "path",
                 "data": {
                   "pathName": "Right mid fuel 1"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "Run Intake"
                 }
               },
               {
@@ -39,7 +39,7 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "Deploy Intake"
+                        "name": "Run Intake"
                       }
                     },
                     {
@@ -67,53 +67,15 @@
           }
         },
         {
-          "type": "parallel",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "Run Shooter Medium"
-                }
-              },
-              {
-                "type": "sequential",
-                "data": {
-                  "commands": [
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 0.5
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "Hood Position Medium"
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
+            "name": "Run Shooter Medium"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "Run Conveyor"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 5.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": null
+            "name": "Hood Position Medium"
           }
         }
       ]

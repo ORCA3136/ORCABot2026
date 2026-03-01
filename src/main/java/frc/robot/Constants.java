@@ -105,10 +105,11 @@ public final class Constants {
   public static final class ClimberConstants {
     // Climber position in motor rotations
     // TODO: TUNE ON ROBOT — measure actual travel limits
-    public static final double kClimberMaxPosition = 100.0;
-    public static final double kClimberMinPosition = -1.0;
+    public static final double kClimberMaxPosition = 150.0;
+    public static final double kClimberMinPosition = 250.0;
+    public static final double kClimberIncrement = -1.0;
 
-    public static final double kP = 0.3; // Coppied from hood
+    public static final double kP = 1.0; // Coppied from hood
     public static final double kI = 0.0;
     public static final double kD = 5.0;
     public static final double kG = 0.6;
@@ -318,6 +319,7 @@ public final class Constants {
       public static final String kTable = "Climber";
       public static final String kVelocityRPM = "Velocity RPM";
       public static final String kPositionRotations = "Position Rotations";
+      public static final String kTargetRotations = "Target Rotations";
       public static final String kPrimaryCurrent = "Primary Current Amps";
       public static final String kSecondaryCurrent = "Secondary Current Amps";
 
