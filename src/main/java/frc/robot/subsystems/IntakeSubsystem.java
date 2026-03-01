@@ -139,6 +139,9 @@ public class IntakeSubsystem extends SubsystemBase {
       tempTargetPosition = IntakeConstants.kSafeDeployPosition;
     }
 
+    if (tempTargetPosition == IntakeConstants.kSafeDeployPosition && getIntakeDeployPosition() < 0.1)
+      tempTargetPosition += 0.2;
+
     // This was adding rotations which would be way too big a change, so I changed it to degrees for the time being
     if (intakeDeployTarget == Setpoint.kUp && ocillateIntake) {
       tempTargetPosition += (ocillationMagnitude * (1 + Math.sin(Timer.getTimestamp() * ocillationFrequency)) / 360);

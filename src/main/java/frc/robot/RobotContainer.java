@@ -53,13 +53,13 @@ import edu.wpi.first.wpilibj.DriverStation;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
-  private final TeleopPathplanner teleopPathplanner;
+  private final TeleopPathplanner teleopPathplanner = new TeleopPathplanner(driveBase);
   @SuppressWarnings("unused") // periodic() runs vision fusion automatically — no commands needed
-  private final VisionSubsystem visionSubsystem;
-  private final ShooterSubsystem shooterSubsystem;
+  private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveBase);
+  private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem(driveBase);
+  private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem(driveBase);
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   private final KickerSubsystem kickerSubsystem = new KickerSubsystem();
-  private final IntakeSubsystem intakeSubsystem;
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
   
   private final SendableChooser<Command> autoChooser;
@@ -70,11 +70,6 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    // Instantiate all subsystems that require other subsystems here
-    visionSubsystem = new VisionSubsystem(driveBase);
-    teleopPathplanner = new TeleopPathplanner(driveBase);
-    intakeSubsystem = new IntakeSubsystem(driveBase);
-    shooterSubsystem = new ShooterSubsystem(driveBase);
 
     DriverStation.silenceJoystickConnectionWarning(true);
 
@@ -99,6 +94,9 @@ public class RobotContainer {
                     .deadband(OperatorConstants.kStickDeadband)
                     .allianceRelativeControl(true);
 
+  SwerveInputStream blueHubRotation = controllerInput.copy()
+                    .withControllerRotationAxis(() -> teleopPathplanner.hubRotation());
+
   // Transformations for different driving commands
   SwerveInputStream slowSpeedDrive   = controllerInput.copy().scaleTranslation(0.4);
   SwerveInputStream mediumSpeedDrive = controllerInput.copy().scaleTranslation(0.8);
@@ -111,6 +109,8 @@ public class RobotContainer {
   Command slowDriveCommand   = driveBase.driveFieldOriented(slowRegularTurning);
   Command mediumDriveCommand = driveBase.driveFieldOriented(mediumRegularTurning);
   Command fastDriveCommand   = driveBase.driveFieldOriented(fastRegularTurning);
+
+  Command blueHubRotationCommand = driveBase.driveFieldOriented(blueHubRotation);
   
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
@@ -160,7 +160,7 @@ public class RobotContainer {
     // Axis/Triggers/Sticks
     m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(2500)))
                                      .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
-    m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput))))
+    m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(blueHubRotationCommand)))
                                      .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)))
             .whileTrue(new ShootCommand(shooterSubsystem, driveBase))
             .whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem).onlyWhile(shooterSubsystem::isShooterReady));
@@ -169,7 +169,7 @@ public class RobotContainer {
     m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
 
     m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
-    m_primaryController.rightStick  ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(slowDriveCommand)))
+    m_primaryController.rightStick  ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(blueHubRotationCommand)))
                                      .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
 
     // Toggled button options (active while holding back button)
@@ -203,7 +203,7 @@ public class RobotContainer {
     m_primaryController.y           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
 
     m_primaryController.back        ().onTrue(Commands.runOnce(driveBase::zeroGyro));
-    m_primaryController.start       ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput))))
+    m_primaryController.start       ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(blueHubRotationCommand)))
                                      .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
 
     m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseHoodAngle()));
@@ -292,7 +292,7 @@ public class RobotContainer {
     m_secondaryController.button(8)
         .onTrue(Commands.runOnce(() -> {
           System.out.println("BTN8: hub drive pressed");
-          driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput));
+          driveBase.setDefaultCommand(blueHubRotationCommand);
         }))
         .onFalse(Commands.runOnce(() -> {
           System.out.println("BTN8: released, restoring normal drive");

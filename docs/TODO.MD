@@ -24,9 +24,9 @@
 # ALEXANDRIA TODO LIST
 
 - [ ] Shooter / hood distance and speed map         Testing
-- [x ] Shooter / hood routine                       Half finished   - Need to make map
+- [x ] Shooter / hood routine
 - [ ] Climber routine
-- [x ] Intake deploy routine                        Half finished   - Mac speed limiter
+- [x ] Intake deploy routine
 - [ ] Rotate to hub                                 Testing
 - [ ] Jam routine                                   Half finished   - Can detect no routine
 - [x ] Limelight updating odometry                  Testing
