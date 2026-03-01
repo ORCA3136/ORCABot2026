@@ -262,17 +262,21 @@ public class VisionSubsystem extends SubsystemBase {
       double xyStdDev = Math.max(VisionConstants.kMinXYStdDev,
           VisionConstants.kXYStdDevBase * distanceFactor * tagFactor * singleTagPenalty);
 
+      boolean highConfidence = estimate.tagCount >= 2
+          && estimate.avgTagDist < VisionConstants.kMaxHeadingCorrectionDistM;
+
       if (firstFix) {
         // First-ever vision fix: reset odometry so the robot immediately knows where it is
-        // instead of slowly converging through the Kalman filter from (0, 0)
         swerveSubsystem.resetOdometry(visionPose);
         DataLogManager.log("Vision: first fix — reset odometry to " + visionPose);
+      } else if (!DriverStation.isEnabled() && highConfidence) {
+        // While disabled with high-confidence multi-tag: hard-reset heading to stay synced
+        swerveSubsystem.resetOdometry(visionPose);
       } else {
-        // Normal operation: fuse via Kalman filter with dynamic std devs
-        // Heading correction: only nudge yaw when we have high confidence (2+ tags, close range)
+        // Normal enabled operation: fuse via Kalman filter with dynamic std devs
         double rotStdDev;
-        if (estimate.tagCount >= 2 && estimate.avgTagDist < VisionConstants.kMaxHeadingCorrectionDistM) {
-          // Multi-tag at close range — gently correct gyro drift
+        if (highConfidence) {
+          // Multi-tag at close range — gently nudge gyro drift
           rotStdDev = Math.toRadians(VisionConstants.kHeadingStdDevBaseDeg) * distanceFactor;
         } else {
           rotStdDev = 9999.0; // single tag or far away — trust gyro entirely
