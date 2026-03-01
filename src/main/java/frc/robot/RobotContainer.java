@@ -41,6 +41,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 
 /**
@@ -258,13 +259,25 @@ public class RobotContainer {
 
   /** Operator button board bindings for drive-to-position commands. */
   private void configureOperatorBindings() {
-    // Button numbers are initial assignments — verify against physical board wiring
-    m_secondaryController.button(1).whileTrue(DriveToPositionCommand.driveToHub(driveBase));
-    m_secondaryController.button(2).whileTrue(DriveToPositionCommand.driveToTower(driveBase));
-    m_secondaryController.button(3).whileTrue(DriveToPositionCommand.driveToLeftTrench(driveBase));
-    m_secondaryController.button(4).whileTrue(DriveToPositionCommand.driveToRightTrench(driveBase));
-    m_secondaryController.button(5).whileTrue(DriveToPositionCommand.driveToOutpost(driveBase));
-    m_secondaryController.button(6).whileTrue(DriveToPositionCommand.driveToDepot(driveBase));
+    // Drive-to-position buttons — disabled until field-tested
+    // m_secondaryController.button(1).whileTrue(DriveToPositionCommand.driveToHub(driveBase));
+    // m_secondaryController.button(2).whileTrue(DriveToPositionCommand.driveToTower(driveBase));
+    // m_secondaryController.button(3).whileTrue(DriveToPositionCommand.driveToLeftTrench(driveBase));
+    // m_secondaryController.button(4).whileTrue(DriveToPositionCommand.driveToRightTrench(driveBase));
+    // m_secondaryController.button(5).whileTrue(DriveToPositionCommand.driveToOutpost(driveBase));
+    // m_secondaryController.button(6).whileTrue(DriveToPositionCommand.driveToDepot(driveBase));
+
+    // Aim at hub — driver keeps full translation control, heading auto-locks to face hub
+    m_secondaryController.button(7)
+        .onTrue(Commands.runOnce(() -> {
+          Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+              ? FieldPositions.kRedFieldElements.get(0)
+              : FieldPositions.kBlueFieldElements.get(0);
+          SwerveInputStream aimAtHub = controllerInput.copy()
+              .aim(new Pose2d(hubPos, new Rotation2d()));
+          driveBase.setDefaultCommand(driveBase.driveFieldOriented(aimAtHub));
+        }))
+        .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)));
   }
 
   private void configureNamedCommands() {
