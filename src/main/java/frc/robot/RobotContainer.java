@@ -173,7 +173,7 @@ public class RobotContainer {
                                      .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
 
     // Toggled button options (active while holding back button)
-    m_primaryController.back().and(m_primaryController.a()); 
+    m_primaryController.back().and(m_primaryController.a())   .whileTrue(new ShootCommand(shooterSubsystem, driveBase)); 
     m_primaryController.back().and(m_primaryController.b());
     m_primaryController.back().and(m_primaryController.x())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(2000)))
                                                                       .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0))); // Shooter - by 50
@@ -284,7 +284,7 @@ public class RobotContainer {
           driveBase.setDefaultCommand(driveBase.driveFieldOriented(aimAtHub));
         }))
         .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
-        
+
     m_secondaryController.button(8).onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput))))
                                          .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
   }

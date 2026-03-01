@@ -269,7 +269,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public void setShooterMap() {
     double distanceToHub = m_swerveSubsystem.getDistanceToHub();
     // set hood based on distance
-    rotations = hoodAngleMap.get(distanceToHub);
+    hoodTarget = hoodAngleMap.get(distanceToHub);
     // set shooter based on distance
     shooterVelocityTarget = shooterSpeedMap.get(distanceToHub);
   }

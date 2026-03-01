@@ -5,6 +5,8 @@ import static edu.wpi.first.units.Units.DegreesPerSecond;
 import java.util.Optional;
 
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.NetworkTable;
@@ -69,6 +71,9 @@ public class VisionSubsystem extends SubsystemBase {
   private final PoseEstimate frontPoseEstimate;
   private final PoseEstimate backPoseEstimate;
 
+  private final PoseEstimate frontPoseMT1Estimate;
+  private final PoseEstimate backPoseMT1Estimate;
+
   // --- IMU mode state machine ---
   private boolean wasEnabled = false;
   private int imuSettleCycleCount = 0;
@@ -83,6 +88,13 @@ public class VisionSubsystem extends SubsystemBase {
   private double lastBackAcceptTime = 0;
 
   private int totalTagCount = 0;
+
+  // --- Limelight Yaw Manual Seeding ---
+  boolean yawSeedingFailed;
+  double degreeError = 5; // Degrees
+  double errorTime = 1.0; // Seconds
+  DebounceType debounceType = DebounceType.kRising;
+  Debouncer m_debouncer = new Debouncer(errorTime, debounceType);
 
   // --- Cached NetworkTable entries ---
   NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
@@ -141,6 +153,9 @@ public class VisionSubsystem extends SubsystemBase {
     // Create per-camera PoseEstimate objects (see class-level comment for why)
     frontPoseEstimate = new PoseEstimate(limelightFront, "botpose_orb_wpiblue", true);
     backPoseEstimate = new PoseEstimate(limelightBack, "botpose_orb_wpiblue", true);
+
+    frontPoseMT1Estimate = new PoseEstimate(limelightFront, "botpose_orb_wpiblue", true);
+    backPoseMT1Estimate = new PoseEstimate(limelightBack, "botpose_orb_wpiblue", true);
   }
 
   @Override
@@ -204,6 +219,7 @@ public class VisionSubsystem extends SubsystemBase {
    * Core vision pipeline for a single camera.
    */
   private void processCamera(PoseEstimate poseEstimateObj, boolean isFront) {
+
     StructPublisher<Pose2d> posePublisher = isFront ? frontPosePublisher : backPosePublisher;
     NetworkTableEntry tagCountEntry = isFront ? frontTagCountEntry : backTagCountEntry;
     NetworkTableEntry avgDistEntry = isFront ? frontAvgDistEntry : backAvgDistEntry;
@@ -226,6 +242,8 @@ public class VisionSubsystem extends SubsystemBase {
     PoseEstimate estimate = estimateOpt.get();
     Pose2d visionPose = estimate.pose.toPose2d();
     double now = Timer.getFPGATimestamp();
+    
+    checkLimelightSeeding(estimate, isFront);
 
     double headingDeviation = Math.abs(
         visionPose.getRotation().getDegrees() - swerveSubsystem.getHeading().getDegrees());
@@ -348,6 +366,15 @@ public class VisionSubsystem extends SubsystemBase {
     Pose2d lastPose = isFront ? lastFrontPose : lastBackPose;
     if (lastPose == null) return 0;
     return visionPose.getTranslation().getDistance(lastPose.getTranslation());
+  }
+
+  private void checkLimelightSeeding(PoseEstimate poseEstimateObj, boolean isFront) {
+    // double limelightYaw = limelightFront.//(isFront ? limelightFront : limelightBack).
+    // yawSeedingFailed = m_debouncer.calculate(Math.abs(limelight yaw - mt1 yaw) > degreeError);
+    // if (!yawSeedingFailed)
+    //   return;
+    
+    
   }
 
   // --- IMU mode transitions ---
