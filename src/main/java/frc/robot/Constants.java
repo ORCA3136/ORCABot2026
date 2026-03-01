@@ -159,6 +159,12 @@ public final class Constants {
     public static final double kSingleTagPenalty = 2.0;
     public static final double kMinXYStdDev = 0.1;
 
+    // --- Heading correction (multi-tag only) ---
+    // Only correct heading when seeing 2+ tags within this distance
+    public static final double kMaxHeadingCorrectionDistM = 4.0;
+    // Base std dev in degrees — higher = gentler nudge (scaled by distance²)
+    public static final double kHeadingStdDevBaseDeg = 25.0;
+
     // --- IMU settling ---
     public static final int kImuSettleCycles = 25;
     public static final int kPostSettleGraceCycles = 5;
@@ -258,6 +264,7 @@ public final class Constants {
       public static final String kLatencyMs = "LatencyMs";
       public static final String kPoseJumpMeters = "PoseJumpMeters";
       public static final String kHeadingDeviationDeg = "HeadingDeviationDeg";
+      public static final String kSeedingFailure = "SeedingFailure";
 
       // System-level keys
       public static final String kTotalTagCount = "TotalTagCount";

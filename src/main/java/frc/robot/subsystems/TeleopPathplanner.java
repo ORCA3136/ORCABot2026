@@ -82,23 +82,19 @@ public class TeleopPathplanner extends SubsystemBase {
 
 
 
-  public Pose2d hubRotation() {
+  public double hubRotation() {
     Pose2d targetPose2d = targetHubPose;
     
     // Assuming angular velocity is negligable - it might not be negligable
-    // if (robotVelocities.vxMetersPerSecond + robotVelocities.vyMetersPerSecond > 0.05) {
-    //   // Based on the robot speeds only
-    //   targetPose2d = new Pose2d(targetHubPose.getX() - robotVelocities.vxMetersPerSecond, 
-    //                             targetHubPose.getY() - robotVelocities.vyMetersPerSecond, new Rotation2d());
-    // }
-  
-    return targetPose2d;
-  }
+    if (robotVelocities.vxMetersPerSecond + robotVelocities.vyMetersPerSecond > 0.05) {
+      // Based on the robot speeds only
+      targetPose2d = new Pose2d(targetHubPose.getX() - robotVelocities.vxMetersPerSecond, 
+                                targetHubPose.getY() - robotVelocities.vyMetersPerSecond, new Rotation2d());
+    }
 
-  public Command getHubDriveCommand(SwerveInputStream controllerInput) {
-    SwerveInputStream hubRotation = controllerInput.copy()
-                      .aim(hubRotation());
-    return swerveSubsystem.driveFieldOriented(hubRotation);
+    double targetAngle = Math.atan2(currentPose.getY() - targetPose2d.getY(), currentPose.getX() - targetPose2d.getX());
+  
+    return targetAngle;
   }
 
   public void updateCurrentSide() {
