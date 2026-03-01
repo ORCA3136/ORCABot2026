@@ -279,14 +279,25 @@ public class RobotContainer {
           Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
               ? FieldPositions.kRedFieldElements.get(0)
               : FieldPositions.kBlueFieldElements.get(0);
+          System.out.println("BTN7: aim at hub pressed, alliance=" + driveBase.getAlliance() + " hubPos=" + hubPos);
           SwerveInputStream aimAtHub = controllerInput.copy()
               .aim(new Pose2d(hubPos, new Rotation2d()));
           driveBase.setDefaultCommand(driveBase.driveFieldOriented(aimAtHub));
         }))
-        .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
+        .onFalse(Commands.runOnce(() -> {
+          System.out.println("BTN7: released, restoring normal drive");
+          driveBase.setDefaultCommand(fastDriveCommand);
+        }));
 
-    m_secondaryController.button(8).onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput))))
-                                         .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
+    m_secondaryController.button(8)
+        .onTrue(Commands.runOnce(() -> {
+          System.out.println("BTN8: hub drive pressed");
+          driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput));
+        }))
+        .onFalse(Commands.runOnce(() -> {
+          System.out.println("BTN8: released, restoring normal drive");
+          driveBase.setDefaultCommand(fastDriveCommand);
+        }));
   }
 
   private void configureNamedCommands() {
