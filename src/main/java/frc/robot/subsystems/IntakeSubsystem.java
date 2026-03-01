@@ -80,7 +80,6 @@ public class IntakeSubsystem extends SubsystemBase {
   // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
   private final NetworkTableEntry intakeVelocityEntry = intakeTable.getEntry(NetworkTableNames.Intake.kVelocityRPM);
   private final NetworkTableEntry intakeCurrentEntry = intakeTable.getEntry(NetworkTableNames.Intake.kCurrentAmps);
-  private final NetworkTableEntry deployCurrentEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kDeployCurrentAmps);
   private final NetworkTableEntry deployVelocityEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM);
   private final NetworkTableEntry deployPositionEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kPositionRotations);
   private final NetworkTableEntry deployVoltageEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVoltageRotations);
@@ -221,7 +220,6 @@ public class IntakeSubsystem extends SubsystemBase {
   public void updateNetworkTable() {
     intakeVelocityEntry.setDouble(getIntakeVelocity());
     intakeCurrentEntry.setDouble(intakeMotor.getOutputCurrent());
-    deployCurrentEntry.setDouble(intakeDeployMotor.getOutputCurrent());
     deployVelocityEntry.setDouble(getIntakeDeployVelocity());
     deployPositionEntry.setDouble(getIntakeDeployPosition());
     deployVoltageEntry.setDouble(calculateFeedForward());

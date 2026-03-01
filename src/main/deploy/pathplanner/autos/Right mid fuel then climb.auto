@@ -5,13 +5,19 @@
     "data": {
       "commands": [
         {
+          "type": "named",
+          "data": {
+            "name": "Deploy Intake"
+          }
+        },
+        {
           "type": "parallel",
           "data": {
             "commands": [
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Right mid fuel climb 1"
+                  "pathName": "Right mid fuel 1"
                 }
               },
               {
@@ -57,19 +63,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Right mid fuel climb 2"
+            "pathName": "Right mid fuel 2"
           }
         },
         {
           "type": "parallel",
           "data": {
             "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "Right mid fuel climb 3"
-                }
-              },
               {
                 "type": "named",
                 "data": {
@@ -108,12 +108,6 @@
           "type": "wait",
           "data": {
             "waitTime": 5.0
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Right mid fuel climb 4"
           }
         },
         {

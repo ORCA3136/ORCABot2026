@@ -5,8 +5,9 @@
   "pathFolders": [
     "Center Climb",
     "Left Depot and Climb",
-    "Right mid fuel then climb",
-    "Right Human Player Pickup"
+    "Left mid fuel",
+    "Right Human Player Pickup",
+    "Right mid fuel"
   ],
   "autoFolders": [
     "Center Autos",

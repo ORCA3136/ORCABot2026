@@ -8,6 +8,7 @@ import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.IntakeSubsystem.Setpoint;
 
 /**
  * Static factory methods for all fuel-path commands.
@@ -95,12 +96,12 @@ public final class FuelPathCommands {
         new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed)
     )
     .beforeStarting(() -> {
-      intake.deployIntake(true);
+      intake.setIntakeDeployTarget(Setpoint.kDown);
       intake.ocillateIntake(true);
     })
     .finallyDo(interrupted -> {
       intake.ocillateIntake(false);
-      intake.deployIntake(false);
+      intake.setIntakeDeployTarget(Setpoint.kUp);
     })
     .withName("FullFuelPath");
   }
@@ -117,12 +118,12 @@ public final class FuelPathCommands {
         new KickerJamProtectionCommand(kicker, FuelPathConstants.kKickerFeed)
     )
     .beforeStarting(() -> {
-      intake.deployIntake(true);
+      intake.setIntakeDeployTarget(Setpoint.kDown);
       intake.ocillateIntake(true);
     })
     .finallyDo(interrupted -> {
       intake.ocillateIntake(false);
-      intake.deployIntake(false);
+      intake.setIntakeDeployTarget(Setpoint.kUp);
     })
     .withName("FullFuelPathJamProtected");
   }
@@ -192,7 +193,7 @@ public final class FuelPathCommands {
         Commands.runOnce(() -> {
             intake.setIntakeDutyCycle(0);
             intake.ocillateIntake(false);
-            intake.deployIntake(false);
+            intake.setIntakeDeployTarget(Setpoint.kUp);
         }, intake),
         Commands.runOnce(() -> conveyor.setConveyorDutyCycle(0), conveyor),
         Commands.runOnce(() -> kicker.setKickerDutyCycle(0), kicker)
