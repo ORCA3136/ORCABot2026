@@ -12,9 +12,21 @@
 - [ ] Further PID tuning
 - [ ] Beam break kicker routine
 - [ ] Jam detection / resolution
-- [ ] intake out (if we need to dump into the human station)
-- [ ] Add ramp rate to the shooter flywheels (might help)
-- [ ] Power management - think about what we might need to do to manage the ppower needs of the robot.
+- [X] intake out (if we need to dump into the human station)
+- [X] Add ramp rate to the shooter flywheels (might help)
+- [ ] Power management - think about what we might need to do to manage the power needs of the robot.
 - [ ] Implement logging / dbug and competition streamlined logging
 - [ ] Find CAN Issues source - IDK if this is really an issue or not.
 - [ ] occasional loop overruns - get those undercontrol.
+
+
+
+# ALEXANDRIA TODO LIST
+
+- [ ] Shooter / hood distance and speed map         Testing
+- [ ] Shooter / hood routine                        Half finished   - Need to make map
+- [ ] Climber routine
+- [ ] Intake deploy routine                         Half finished   - Mac speed limiter
+- [ ] Rotate to hub                                 Testing
+- [ ] Jam routine                                   Half finished   - Can detect no routine
+- [ ] Limelight updating odometry                   Testing

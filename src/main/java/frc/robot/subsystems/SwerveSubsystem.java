@@ -551,6 +551,13 @@ public class SwerveSubsystem extends SubsystemBase {
     return robotTranslation.nearest(FieldPositions.bumpPoses).getDistance(robotTranslation);
   }
 
+  public double getDistanceToHub() {
+    Translation2d hubTranslation = getAlliance() == Alliance.Red ? 
+          FieldPositions.kBlueFieldElements.get(0) : FieldPositions.kRedFieldElements.get(0);
+    Translation2d robotTranslation = swerveDrive.getPose().getTranslation();
+    return robotTranslation.getDistance(hubTranslation);
+  }
+
   // --- Vision integration methods ---
 
   /** Fuses a vision measurement with custom standard deviations into the Kalman filter. */

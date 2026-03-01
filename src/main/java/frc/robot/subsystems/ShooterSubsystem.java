@@ -15,6 +15,7 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -77,6 +78,10 @@ public class ShooterSubsystem extends SubsystemBase {
   private final NetworkTableEntry secondaryCurrentEntryHood = hoodTable.getEntry(NetworkTableNames.Hood.kSecondaryCurrent);
 
 
+  private InterpolatingDoubleTreeMap shooterSpeedMap = new InterpolatingDoubleTreeMap();
+  private InterpolatingDoubleTreeMap hoodAngleMap = new InterpolatingDoubleTreeMap();
+
+
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem() {
 
@@ -111,6 +116,8 @@ public class ShooterSubsystem extends SubsystemBase {
     // Calculate FF once and reuse — it uses the ramped setpoint (not the final target)
     // so the FF matches what the PID is currently tracking.
     double ff = calculateShooterFeedForward();
+
+    
     shooterPrimaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ff);
     shooterSecondaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ff);
   }
@@ -212,6 +219,13 @@ public class ShooterSubsystem extends SubsystemBase {
     return shooterVelocityTarget > 0
         && shooterVelocity >= shooterVelocityTarget
         && Math.abs(getShooterVelocity() - shooterVelocityTarget) < ShooterConstants.kReadyToleranceRPM;
+  }
+
+  public void setShooterMap(double distanceToHub) {
+    // set hood based on distance
+
+    // set shooter based on distance
+
   }
 
   /** @return Velocity in RPM */

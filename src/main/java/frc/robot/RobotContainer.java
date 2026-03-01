@@ -18,6 +18,7 @@ import frc.robot.commands.RunConveyorAndKickerCommand;
 import frc.robot.commands.RunConveyorCommand;
 import frc.robot.commands.RunIntakeCommand;
 import frc.robot.commands.RunKickerCommand;
+import frc.robot.commands.ShootCommand;
 import frc.robot.commands.SlowHoodMove;
 import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.ConveyorSubsystem;
@@ -131,8 +132,10 @@ public class RobotContainer {
     // Axis/Triggers/Sticks
     m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1500)))
                                      .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
-    // m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubCommand(controllerInput))))
-    //                                  .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)));
+    m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput))))
+                                     .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)))
+            .whileTrue(new ShootCommand(shooterSubsystem, driveBase))
+            .whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem).onlyWhile(shooterSubsystem::isShooterReady));
 
     m_primaryController.leftBumper  ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 1000, 5000));
     m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
