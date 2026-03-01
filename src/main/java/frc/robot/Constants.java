@@ -47,12 +47,16 @@ public final class Constants {
   }
 
   public static final class HoodConstants {
-    public static final double kEncoderOffset = 1.35; // in hood/motor rotations
+    public static final double kEncoderOffset = 0.30; // in hood/motor rotations
+
+    public static final double kSetpointLow = 0.3;
+    public static final double kSetpointMed = 0.9;
+    public static final double kSetpointHigh = 1.8;
 
     public static final double kP = 0.3;
     public static final double kI = 0.;
     public static final double kD = 5.;
-    public static final double kG = 0.4; // 0.4
+    public static final double kG = 0.6; // 0.4
     public static final double kS = 0.2; // 0.2
     // public static final double kV = 0;
     // public static final double kA = 0;
@@ -273,6 +277,7 @@ public final class Constants {
       public static final String kTable = "Kicker";
       public static final String kVelocityRPM = "Velocity RPM";
       public static final String kCurrentAmps = "Current Amps";
+      public static final String kStallStatus = "Stall Status";
     }
 
     public static final class Intake {
@@ -336,6 +341,7 @@ public final class Constants {
     public static final int AMP25 = 25;
     public static final int AMP20 = 20;
     public static final int AMP15 = 15;
+    public static final int AMP10 = 10;
 
   }
 

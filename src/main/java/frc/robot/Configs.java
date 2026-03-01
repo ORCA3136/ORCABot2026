@@ -44,7 +44,7 @@ public class Configs {
             secondaryHoodConfig
                 .idleMode(IdleMode.kBrake)
                 .follow(CanIdConstants.kHoodPrimaryCanId, true)
-                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
+                .smartCurrentLimit(CurrentConstants.AMP30, CurrentConstants.AMP20);
             primaryHoodConfig.absoluteEncoder
                 .positionConversionFactor(HoodConstants.kMotorGearRatio)
                 .velocityConversionFactor(HoodConstants.kMotorGearRatio);
@@ -55,7 +55,7 @@ public class Configs {
                 .positionWrappingEnabled(true)
                 .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
                 .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD)
-                .outputRange(-0.7, 0.7); // Old was +-0.8
+                .outputRange(-0.4, 0.4); // Old was +-0.8
             // primaryHoodConfig.closedLoop.feedForward
             //     .kG(HoodConstants.kG);
         }

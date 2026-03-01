@@ -10,6 +10,8 @@ import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -45,6 +47,17 @@ public class KickerSubsystem extends SubsystemBase {
   // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
   private final NetworkTableEntry velocityEntry = kickerTable.getEntry(NetworkTableNames.Kicker.kVelocityRPM);
   private final NetworkTableEntry currentEntry = kickerTable.getEntry(NetworkTableNames.Kicker.kCurrentAmps);
+  private final NetworkTableEntry stallEntry = kickerTable.getEntry(NetworkTableNames.Kicker.kStallStatus);
+
+
+
+  boolean isStalled;
+  double kStallCurrent = 25; // Amps
+  double stallTime = .25; // Seconds
+  DebounceType debounceType = DebounceType.kRising;
+  Debouncer m_debouncer = new Debouncer(stallTime, debounceType);
+
+
 
   /** Creates a new KickerSubsystem. */
   public KickerSubsystem() {
@@ -80,18 +93,11 @@ public class KickerSubsystem extends SubsystemBase {
   public double getKickerCurrent() {
     return kickerMotor.getOutputCurrent();
   }
-
-  /** @return if the kicker is stalling */
-  public boolean isMotorStalling() {
-    double currentDraw = getKickerCurrent();
-    double motorVelocity = getKickerVelocity();
-    // double motorAcceleration = kickerMotor.get
-    return false;
-  }
-
+  
   public void updateNetworkTable() {
     velocityEntry.setDouble(getKickerVelocity());
     currentEntry.setDouble(getKickerCurrent());
+    stallEntry.setBoolean(isStalled);
   }
 
   /** This method will be called once per scheduler run */
@@ -107,6 +113,9 @@ public class KickerSubsystem extends SubsystemBase {
     } else if (velocity < SHOT_VELOCITY_THRESHOLD) {
       shotDetected = false;
     }
+
+
+    isStalled = m_debouncer.calculate(getKickerCurrent() > kStallCurrent);
   }
 
   /** This method will be called once per scheduler run during simulation */

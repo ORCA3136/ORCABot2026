@@ -86,21 +86,8 @@ public class TeleopPathplanner extends SubsystemBase {
   }
 
 
-  
-  public Command createTrenchPathCommand(SwerveSubsystem m_drive) {
-    return Commands.defer(() -> {
-      // Find nearest trench in heading direction
-      // Get the waypoint with correct heading
-      // Get next waypoint for after the trench
 
-      // Make the waypoint list
-      // Make the path
-      // Make the command
 
-      // TODO: Implement trench path generation
-      return Commands.none();
-    }, Set.of(m_drive));
-  }
 
   public Pose2d hubRotation() {
     Pose2d targetPose2d = targetHubPose;
@@ -115,7 +102,7 @@ public class TeleopPathplanner extends SubsystemBase {
     return targetPose2d;
   }
 
-  public Command getHubCommand(SwerveInputStream controllerInput) {
+  public Command getHubDriveCommand(SwerveInputStream controllerInput) {
     SwerveInputStream hubRotation = controllerInput.copy()
                       .aim(hubRotation());
     return swerveSubsystem.driveFieldOriented(hubRotation);
@@ -161,10 +148,6 @@ public class TeleopPathplanner extends SubsystemBase {
     updateHubTargets();
     updateCurrentSide();
   }
-
-
-
-
 }
 
 

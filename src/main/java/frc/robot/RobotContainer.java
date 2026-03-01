@@ -73,7 +73,7 @@ public class RobotContainer {
     DriverStation.silenceJoystickConnectionWarning(true);
 
     // Configure the trigger bindings (set to false for test bindings)
-    boolean useProductionBindings = true;
+    boolean useProductionBindings = false;
     if (useProductionBindings) {
       configureBindings();
     } else {
@@ -169,7 +169,7 @@ public class RobotContainer {
     m_primaryController.y           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
 
     m_primaryController.back        ().onTrue(Commands.runOnce(driveBase::zeroGyro));
-    m_primaryController.start       ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubCommand(controllerInput))))
+    m_primaryController.start       ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput))))
                                      .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)));
 
     m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseHoodAngle()));
