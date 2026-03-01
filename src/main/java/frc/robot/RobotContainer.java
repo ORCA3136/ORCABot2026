@@ -124,7 +124,15 @@ public class RobotContainer {
     m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
     m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
 
-    m_primaryController.start       (); // Unbound for now
+    m_primaryController.start       ().onTrue(Commands.runOnce(() -> {
+      var pose = driveBase.getPose();
+      System.out.println("=== POSE CHECK ===");
+      System.out.printf("  X: %.2f  Y: %.2f  Heading: %.1f deg%n",
+          pose.getX(), pose.getY(), pose.getRotation().getDegrees());
+      System.out.println("  Vision healthy: " + visionSubsystem.isVisionHealthy());
+      System.out.println("  Beam break: " + kickerSubsystem.hasFuel());
+      System.out.println("==================");
+    }));
     
     // D pad
     m_primaryController.povUp       ().and(m_primaryController.back().negate()).whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
