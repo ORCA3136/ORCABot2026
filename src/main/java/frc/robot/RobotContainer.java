@@ -153,7 +153,7 @@ public class RobotContainer {
 		m_primaryController.povRight    ().and(m_primaryController.back().negate()).whileTrue(new RunConveyorCommand(conveyorSubsystem, -1000));
 
     // Axis/Triggers/Sticks
-    m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1500)))
+    m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(2500)))
                                      .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(teleopPathplanner.getHubDriveCommand(controllerInput))))
                                      .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(defaultDriveCommand)))

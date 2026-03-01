@@ -39,7 +39,7 @@ public class ShooterSubsystem extends SubsystemBase {
   double shooterVelocityTarget = 0;  // Where we want to be (set by commands)
   double shooterVelocity = 0;        // Current ramped setpoint (fed to PID each cycle)
   boolean toggleDirection = false;
-  double rotations; // Position of the Hood in Rotations
+  double hoodTarget; // Position of the Hood in Rotations
   boolean hoodMovingForward = true; // true is positive
   
   final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
@@ -128,7 +128,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** Sets the hood setpoint angle */
   public void setHoodPIDAngle() {
-    hoodPIDController.setSetpoint(rotations, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateHodFeedForward());
+    hoodPIDController.setSetpoint(hoodTarget, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateHodFeedForward());
   }
 
   public void setShooterVelocityTarget(double target) {
@@ -186,23 +186,23 @@ public class ShooterSubsystem extends SubsystemBase {
    * @param angle is in Degrees
    * TODO: TUNE ON ROBOT — verify this calculation matches the encoder conversion factor in Configs.java */
   public void updateHoodTarget(double angle) {
-    rotations = HoodConstants.kEncoderOffset + (angle / 360) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+    hoodTarget = HoodConstants.kEncoderOffset + (angle / 360) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
   }
 
   public void increaseHoodAngle() {
-    rotations += (1. / 360.) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+    hoodTarget += (1. / 360.) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
   }
 
   public void decreaseHoodAngle() {
-    rotations -= (1. / 360.) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+    hoodTarget -= (1. / 360.) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
   }
 
   public void setHoodTarget(double target) {
-    rotations = target;
+    hoodTarget = target;
   }
 
   public double getHoodTarget() {
-    return rotations;
+    return hoodTarget;
   }
 
   public void changeHoodDirection() {
@@ -310,7 +310,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     velocityEntryHood.setDouble(getHoodVelocity());
     positionEntryHood.setDouble(getHoodMotorRotations());
-    targetEntryHood.setDouble(rotations);
+    targetEntryHood.setDouble(hoodTarget);
     angleEntryHood.setDouble(Math.toDegrees(getHoodAngle()));
     primaryCurrentEntryHood.setDouble(getHoodPrimaryCurrent());
     secondaryCurrentEntryHood.setDouble(getHoodSecondaryCurrent());

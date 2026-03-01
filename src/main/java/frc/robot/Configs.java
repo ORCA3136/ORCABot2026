@@ -125,6 +125,12 @@ public class Configs {
                 .idleMode(IdleMode.kBrake)
                 .follow(CanIdConstants.kClimberPrimaryCanId, false)
                 .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
+            climberSecondaryMotor.absoluteEncoder
+                .positionConversionFactor(ClimberConstants.kClimberGearRatio);
+            climberSecondaryMotor.closedLoop
+                .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+                .pid(ClimberConstants.kP, ClimberConstants.kI, ClimberConstants.kD)
+                .outputRange(-0.8, 0.8); // Old was +-0.8 coppied from intake
         }
     }
 
