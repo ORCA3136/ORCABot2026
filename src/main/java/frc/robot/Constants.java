@@ -72,13 +72,13 @@ public final class Constants {
     public static final double kVelocityHigh = 1500;
     public static final double kVelocityMax = 2500;
 
-    public static final double kP = 2.0; // 2
+    public static final double kP = 2.5; // 2
     public static final double kI = 0.0;
-    public static final double kD = 8.0; // 8
+    public static final double kD = 5.0; // 8
     // TODO: TUNE ON ROBOT — kG gravity FF disabled because getIntakeAngle() doesn't return
     // the true physical angle. To re-enable: measure encoder position when arm is horizontal,
     // subtract that offset in getIntakeAngle(), then tune kG starting at ~0.1
-    public static final double kG = 0.45;
+    public static final double kG = 0.5;
     public static final double kS = 0.0;
     // public static final double kV = 0;
     // public static final double kA = 0;
@@ -96,8 +96,8 @@ public final class Constants {
 
     // Deploy position ramp rates (rotations per 20ms cycle)
     // Full travel ~0.175 rot → at 0.003/cycle ≈ 1.2s to deploy fully
-    public static final double kDeployRampRate = 0.003;
-    public static final double kRetractRampRate = 0.002;
+    public static final double kDeployRampRate = 0.007;
+    public static final double kRetractRampRate = 0.006;
   }
 
   public static final class ClimberConstants {
