@@ -284,7 +284,7 @@ public final class Constants {
       public static final String kTable = "Intake";
       public static final String kVelocityRPM = "Velocity RPM";
       public static final String kCurrentAmps = "Current Amps";
-      public static final String kDeployCurrentAmps = "Deploy Current Amps";
+      
     }
 
     public static final class IntakeDeploy {

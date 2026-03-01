@@ -181,7 +181,7 @@ public class RobotContainer {
     m_primaryController.povUp       ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 500, 6500));
 		m_primaryController.povDown     ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, -1000, -1000));
     m_primaryController.povLeft     ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
-		m_primaryController.povRight    ().whileTrue(new RunIntakeCommand(intakeSubsystem, 0));
+		m_primaryController.povRight    ().whileTrue(new RunIntakeCommand(intakeSubsystem, -6500));
 
     m_primaryController.leftTrigger (0.3).whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
 
@@ -237,8 +237,9 @@ public class RobotContainer {
     NamedCommands.registerCommand("Stop Intake",          Commands.runOnce(() -> intakeSubsystem.setIntakeDutyCycle(0), intakeSubsystem));
 
     // Deploy Intake
-    NamedCommands.registerCommand("Deploy Intake" ,         Commands.runOnce(() -> intakeSubsystem.deployIntake(true )));
-    NamedCommands.registerCommand("Retract Intake",         Commands.runOnce(() -> intakeSubsystem.deployIntake(false)));
+    NamedCommands.registerCommand("Deploy Intake" ,         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
+    NamedCommands.registerCommand("Intake Safe" ,         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
+    NamedCommands.registerCommand("Retract Intake",         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
 
     // Shoot
     NamedCommands.registerCommand("Stop Shooter",         Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
