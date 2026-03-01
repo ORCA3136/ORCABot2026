@@ -89,6 +89,9 @@ public class SwerveSubsystem extends SubsystemBase {
   DoubleArrayPublisher robotAngularVelocity3dPublisher = odometryTable
       .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotAngularVelocity3d).publish();
 
+  private final NetworkTableEntry hubDistanceEntry = odometryTable.getEntry(NetworkTableNames.Odometry.kDistanceToHub);
+  private final NetworkTableEntry trenchDistanceEntry = odometryTable.getEntry(NetworkTableNames.Odometry.kDistanceToTrench);
+
 
   
   public enum FieldTargets {
@@ -590,6 +593,9 @@ public class SwerveSubsystem extends SubsystemBase {
     enabledEntry.setBoolean(DriverStation.isEnabled());
     batteryVoltageEntry.setDouble(RobotController.getBatteryVoltage());
     batteryBrownoutEntry.setDouble(RobotController.getBrownoutVoltage());
+
+    hubDistanceEntry.setDouble(getDistanceToHub());
+    trenchDistanceEntry.setDouble(getDistanceToNearestTrench());
 
     try {
       robotPose2dPublisher.set(swerveDrive.getPose());

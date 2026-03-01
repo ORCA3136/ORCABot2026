@@ -88,7 +88,7 @@ public final class Constants {
     public static final double intakeDeployOffset = 0.035;
     public static final double kMaxDeployPosition = 0.20 + intakeDeployOffset;
     public static final double kSafeDeployPosition = 0.10 + intakeDeployOffset;
-    public static final double kMinDeployPosition = 0.025 + intakeDeployOffset;
+    public static final double kMinDeployPosition = 0.0 + intakeDeployOffset;
 
     // TODO: MEASURE ON ROBOT — hold arm perfectly horizontal, read IntakeDeploy/Position from NT
     public static final double kEncoderHorizontalOffset = 0.0;
@@ -246,6 +246,8 @@ public final class Constants {
       public static final String kRobotRotation3d = "Robot Pitch, Roll, Yaw Rotations";
       public static final String kRobotAngularVelocity3d = "Robot Pitch, Roll, Yaw Velocities";
       public static final String kRobotVelocity = "Robot X, Y, Z Velocities";
+      public static final String kDistanceToHub = "Distance to Hub";
+      public static final String kDistanceToTrench = "Distance to Nearest Trench";
     }
 
     public static final class Vision {

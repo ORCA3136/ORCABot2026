@@ -101,7 +101,7 @@ public final class FuelPathCommands {
     })
     .finallyDo(interrupted -> {
       intake.ocillateIntake(false);
-      intake.setIntakeDeployTarget(Setpoint.kUp);
+      intake.setIntakeDeployTarget(Setpoint.kSafe);
     })
     .withName("FullFuelPath");
   }
