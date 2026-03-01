@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
@@ -33,13 +34,15 @@ import frc.robot.Constants.RobotConstants;
 
 public class ClimberSubsystem extends SubsystemBase {
 
-  final SparkFlex climberPrimaryMotor = new SparkFlex(CanIdConstants.kClimberPrimaryCanId, MotorType.kBrushless);
+  private final SparkFlex climberPrimaryMotor = new SparkFlex(CanIdConstants.kClimberPrimaryCanId, MotorType.kBrushless);
   final SparkFlex climberSecondaryMotor = new SparkFlex(CanIdConstants.kClimberSecondaryCanId, MotorType.kBrushless);
 
-  final RelativeEncoder climberEncoder = climberPrimaryMotor.getEncoder();
+  private final RelativeEncoder climberEncoder = climberPrimaryMotor.getEncoder();
 
-  final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
-  final NetworkTable climberTable = networkTable.getTable(NetworkTableNames.Climber.kTable);
+  // private final SparkClosedLoopController = ClimberPIDController Climber
+
+  private final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
+  private final NetworkTable climberTable = networkTable.getTable(NetworkTableNames.Climber.kTable);
 
   // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
   private final NetworkTableEntry velocityEntry = climberTable.getEntry(NetworkTableNames.Climber.kVelocityRPM);

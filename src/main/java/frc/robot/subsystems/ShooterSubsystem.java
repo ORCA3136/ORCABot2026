@@ -97,7 +97,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public double calculateShooterFeedForward() {
     // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
     double ff = ShooterConstants.kS + shooterVelocity * ShooterConstants.kVelocityModifier;
-    return shooterVelocity < 300 ? 0 : ff;
+    return ff;
   }
 
   /** Calculates the current hood feedforward
@@ -116,10 +116,14 @@ public class ShooterSubsystem extends SubsystemBase {
     // Calculate FF once and reuse — it uses the ramped setpoint (not the final target)
     // so the FF matches what the PID is currently tracking.
     double ff = calculateShooterFeedForward();
+    if (Math.abs(shooterVelocity) > 200) {
+      shooterPrimaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ff);
+      shooterSecondaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ff);
+    } else {
+      shooterPrimaryMotor.set(0);
+      shooterSecondaryMotor.set(0);
+    }
 
-    
-    shooterPrimaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ff);
-    shooterSecondaryPIDController.setSetpoint(shooterVelocity, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ff);
   }
 
   /** Sets the hood setpoint angle */
@@ -285,6 +289,16 @@ public class ShooterSubsystem extends SubsystemBase {
     return hoodSecondaryMotor.getOutputCurrent();
   }
 
+  /** Ramp the setpoint toward the target each cycle. */
+  private void rampSetpoint() {
+    if (shooterVelocity < shooterVelocityTarget) {
+      shooterVelocity = Math.min(shooterVelocity + ShooterConstants.kRampUpRate, shooterVelocityTarget);
+    } else if (shooterVelocity > shooterVelocityTarget) {
+      shooterVelocity = Math.max(shooterVelocity - ShooterConstants.kRampDownRate, shooterVelocityTarget);
+    }
+  }
+
+
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
     velocityEntryShooter.setDouble(getShooterVelocity());
@@ -300,15 +314,6 @@ public class ShooterSubsystem extends SubsystemBase {
     angleEntryHood.setDouble(Math.toDegrees(getHoodAngle()));
     primaryCurrentEntryHood.setDouble(getHoodPrimaryCurrent());
     secondaryCurrentEntryHood.setDouble(getHoodSecondaryCurrent());
-  }
-
-  /** Ramp the setpoint toward the target each cycle. */
-  private void rampSetpoint() {
-    if (shooterVelocity < shooterVelocityTarget) {
-      shooterVelocity = Math.min(shooterVelocity + ShooterConstants.kRampUpRate, shooterVelocityTarget);
-    } else if (shooterVelocity > shooterVelocityTarget) {
-      shooterVelocity = Math.max(shooterVelocity - ShooterConstants.kRampDownRate, shooterVelocityTarget);
-    }
   }
 
   /** This method will be called once per scheduler run */
