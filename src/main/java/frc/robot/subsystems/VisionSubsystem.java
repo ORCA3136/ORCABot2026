@@ -49,8 +49,8 @@ import limelight.results.RawFiducial;
  * <ul>
  *   <li><b>Disabled:</b> SyncInternalImu — Limelight syncs its IMU to our gyro.
  *       MT1 used to seed odometry with heading-independent pose.</li>
- *   <li><b>Enabled:</b> InternalImuExternalAssist — Limelight uses its own IMU, assisted by our gyro.
- *       MT2 used for Kalman filter fusion.</li>
+ *   <li><b>Enabled:</b> ExternalImu — Limelight uses ONLY the heading we provide via
+ *       {@code withRobotOrientation()}. MT2 used for Kalman filter fusion.</li>
  * </ul>
  */
 public class VisionSubsystem extends SubsystemBase {
@@ -100,9 +100,24 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry backAcceptedEntry = backTable.getEntry(NetworkTableNames.Vision.kAccepted);
   private final NetworkTableEntry backRejectEntry = backTable.getEntry(NetworkTableNames.Vision.kRejectReason);
 
+  // Front MT1 pose
+  private final StructPublisher<Pose2d> frontPoseMT1Publisher = frontTable
+      .getStructTopic(NetworkTableNames.Vision.kVisionPoseMT1, Pose2d.struct).publish();
+  // Back MT1 pose
+  private final StructPublisher<Pose2d> backPoseMT1Publisher = backTable
+      .getStructTopic(NetworkTableNames.Vision.kVisionPoseMT1, Pose2d.struct).publish();
+
   // System-level
   private final NetworkTableEntry visionHealthyEntry = visionTable.getEntry(NetworkTableNames.Vision.kVisionHealthy);
   private final NetworkTableEntry imuSettledEntry = visionTable.getEntry(NetworkTableNames.Vision.kImuSettled);
+  private final NetworkTableEntry odometryHeadingEntry = visionTable.getEntry(NetworkTableNames.Vision.kOdometryHeading);
+  private final NetworkTableEntry pigeonRawYawEntry = visionTable.getEntry(NetworkTableNames.Vision.kPigeonRawYaw);
+  private final NetworkTableEntry detectedAllianceEntry = visionTable.getEntry(NetworkTableNames.Vision.kDetectedAlliance);
+  private final NetworkTableEntry firstFixStatusEntry = visionTable.getEntry(NetworkTableNames.Vision.kFirstFixStatus);
+  private final NetworkTableEntry imuModeEntry = visionTable.getEntry(NetworkTableNames.Vision.kImuMode);
+
+  // Track current IMU mode label for telemetry
+  private String currentImuModeLabel = "SyncInternalImu";
 
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(SwerveSubsystem swerveSubsystem) {
@@ -196,6 +211,23 @@ public class VisionSubsystem extends SubsystemBase {
     Pose2d visionPose = estimate.pose.toPose2d();
     double now = Timer.getFPGATimestamp();
 
+    // Publish MT1 pose alongside MT2 for comparison
+    StructPublisher<Pose2d> mt1Publisher = isFront ? frontPoseMT1Publisher : backPoseMT1Publisher;
+    PoseEstimate mt1Obj = isFront ? frontPoseMT1Estimate : backPoseMT1Estimate;
+    Optional<PoseEstimate> mt1Opt = mt1Obj.getPoseEstimate();
+    if (mt1Opt.isPresent() && mt1Opt.get().hasData && mt1Opt.get().tagCount > 0) {
+      Pose2d mt1Pose = mt1Opt.get().pose.toPose2d();
+      mt1Publisher.set(mt1Pose);
+
+      // Log large MT1 vs MT2 heading divergence for post-match analysis
+      double headingDiff = Math.abs(mt1Pose.getRotation().getDegrees() - visionPose.getRotation().getDegrees());
+      if (headingDiff > 180) headingDiff = 360 - headingDiff;
+      if (headingDiff > 10) {
+        DataLogManager.log("Vision: MT1/MT2 heading divergence "
+            + String.format("%.1f", headingDiff) + "deg on " + (isFront ? "front" : "back"));
+      }
+    }
+
     // --- 4-stage rejection ---
     String rejectReason = getRejectReason(estimate, visionPose, now);
 
@@ -217,9 +249,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     if (!hasEverHadFix || (!DriverStation.isEnabled() && highConfidence)) {
       // --- Seed odometry from MT1 (heading-independent ground truth) ---
-      PoseEstimate mt1Obj = isFront ? frontPoseMT1Estimate : backPoseMT1Estimate;
-      Optional<PoseEstimate> mt1Opt = mt1Obj.getPoseEstimate();
-
+      // Reuse mt1Opt fetched above for telemetry
       Pose2d seedPose;
       if (mt1Opt.isPresent() && mt1Opt.get().hasData && mt1Opt.get().tagCount > 0) {
         seedPose = mt1Opt.get().pose.toPose2d();
@@ -228,6 +258,8 @@ public class VisionSubsystem extends SubsystemBase {
       }
 
       swerveSubsystem.resetOdometry(seedPose);
+      imuSettleCycleCount = 0;
+      imuSettled = false;
 
       if (!hasEverHadFix) {
         DataLogManager.log("Vision: first fix — reset odometry to " + seedPose);
@@ -293,15 +325,17 @@ public class VisionSubsystem extends SubsystemBase {
     limelightBack.getSettings().withImuMode(ImuMode.SyncInternalImu).save();
     imuSettleCycleCount = 0;
     imuSettled = false;
+    currentImuModeLabel = "SyncInternalImu";
     DataLogManager.log("Vision: entering seed mode (SyncInternalImu)");
   }
 
   private void enterActiveMode() {
-    limelightFront.getSettings().withImuMode(ImuMode.InternalImuExternalAssist).save();
-    limelightBack.getSettings().withImuMode(ImuMode.InternalImuExternalAssist).save();
+    limelightFront.getSettings().withImuMode(ImuMode.ExternalImu).save();
+    limelightBack.getSettings().withImuMode(ImuMode.ExternalImu).save();
     imuSettleCycleCount = 0;
     imuSettled = false;
-    DataLogManager.log("Vision: entering active mode, settling for "
+    currentImuModeLabel = "ExternalImu";
+    DataLogManager.log("Vision: entering active mode (ExternalImu), settling for "
         + VisionConstants.kImuSettleCycles + " cycles");
   }
 
@@ -357,6 +391,12 @@ public class VisionSubsystem extends SubsystemBase {
   private void publishSystemTelemetry() {
     visionHealthyEntry.setBoolean(isVisionHealthy());
     imuSettledEntry.setBoolean(imuSettled);
+    odometryHeadingEntry.setDouble(swerveSubsystem.getHeading().getDegrees());
+    pigeonRawYawEntry.setDouble(swerveSubsystem.getPigeonRawYawDeg());
+    Optional<DriverStation.Alliance> rawAlliance = DriverStation.getAlliance();
+    detectedAllianceEntry.setString(rawAlliance.isPresent() ? rawAlliance.get().name() : "NOT_SET");
+    firstFixStatusEntry.setBoolean(hasEverHadFix);
+    imuModeEntry.setString(currentImuModeLabel);
   }
 
   @Override

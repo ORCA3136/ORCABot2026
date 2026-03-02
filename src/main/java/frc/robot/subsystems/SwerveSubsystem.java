@@ -75,10 +75,10 @@ public class SwerveSubsystem extends SubsystemBase {
   private final NetworkTableEntry batteryVoltageEntry = robotTable.getEntry(NetworkTableNames.Robot.kBatteryVoltage);
   private final NetworkTableEntry batteryBrownoutEntry = robotTable.getEntry(NetworkTableNames.Robot.kBatteryBrownout);
 
-  // Pigeon2 angular velocity suppliers — X=pitch, Y=roll, Z=yaw in device frame
+  // Pigeon2 angular velocity suppliers — X=roll, Y=pitch, Z=yaw in device frame
   Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityZDevice().asSupplier();
-  Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
-  Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityYDevice().asSupplier();
+  Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
+  Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityYDevice().asSupplier();
 
   StructPublisher<Pose2d> robotPose2dPublisher = odometryTable
       .getStructTopic(NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();
@@ -305,9 +305,21 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Checks the current zone the robot is in 
    *  @return Blue, Middle, Red */
 
-  /** @return The current alliance, defaulting to Blue if not yet set */
+  // Alliance override NT entry — user can set to "Red" or "Blue" in AdvantageScope to force alliance
+  private final NetworkTableEntry allianceOverrideEntry =
+      networkTable.getTable(NetworkTableNames.Vision.kTable).getEntry(NetworkTableNames.Vision.kAllianceOverride);
+
+  /** @return The current alliance, checking NT override first, then DS, defaulting to Blue. */
   public Alliance getAlliance() {
+    String override = allianceOverrideEntry.getString("auto");
+    if (override.equalsIgnoreCase("Red")) return Alliance.Red;
+    if (override.equalsIgnoreCase("Blue")) return Alliance.Blue;
     return DriverStation.getAlliance().orElse(Alliance.Blue);
+  }
+
+  /** @return -1.0 for Red alliance (flip), +1.0 for Blue/unknown (no flip). */
+  public double getAllianceFlip() {
+    return getAlliance() == Alliance.Red ? -1.0 : 1.0;
   }
 
  
@@ -555,8 +567,8 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public double getDistanceToHub() {
-    Translation2d hubTranslation = getAlliance() == Alliance.Red ? 
-          FieldPositions.kBlueFieldElements.get(0) : FieldPositions.kRedFieldElements.get(0);
+    Translation2d hubTranslation = getAlliance() == Alliance.Red ?
+          FieldPositions.kRedFieldElements.get(0) : FieldPositions.kBlueFieldElements.get(0);
     Translation2d robotTranslation = swerveDrive.getPose().getTranslation();
     return robotTranslation.getDistance(hubTranslation);
   }
@@ -586,6 +598,11 @@ public class SwerveSubsystem extends SubsystemBase {
   /** @return Pigeon2 yaw rate in degrees per second (Z-axis in device frame). */
   public double getPigeon2YawRateDegPerSec() {
     return yawSupplier.get().baseUnitMagnitude();
+  }
+
+  /** @return Raw Pigeon2 yaw in degrees (not reset by odometry). */
+  public double getPigeonRawYawDeg() {
+    return pigeon2.getYaw().getValueAsDouble();
   }
 
   /** Publish continuous values to network table */

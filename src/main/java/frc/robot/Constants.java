@@ -244,9 +244,18 @@ public final class Constants {
       public static final String kAccepted = "Accepted";
       public static final String kRejectReason = "RejectReason";
 
+      // Per-camera MT1 pose key
+      public static final String kVisionPoseMT1 = "VisionPoseMT1";
+
       // System-level keys
       public static final String kVisionHealthy = "VisionHealthy";
       public static final String kImuSettled = "ImuSettled";
+      public static final String kOdometryHeading = "OdometryHeading";
+      public static final String kPigeonRawYaw = "PigeonRawYaw";
+      public static final String kDetectedAlliance = "DetectedAlliance";
+      public static final String kFirstFixStatus = "FirstFixStatus";
+      public static final String kImuMode = "ImuMode";
+      public static final String kAllianceOverride = "AllianceOverride";
     }
 
     public static final class Shooter {
