@@ -131,6 +131,7 @@ public class RobotContainer {
     m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
     m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
 
+    /*
     m_primaryController.start       ().onTrue(Commands.runOnce(() -> {
       var nt = edu.wpi.first.networktables.NetworkTableInstance.getDefault();
       var llFront = nt.getTable("limelight-front");
@@ -151,6 +152,7 @@ public class RobotContainer {
       System.out.println("  tid: " + llFront.getEntry("tid").getDouble(-1));
       System.out.println("===================");
     }));
+    */
     
     // D pad
     m_primaryController.povUp       ().and(m_primaryController.back().negate()).whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
@@ -187,10 +189,12 @@ public class RobotContainer {
     m_primaryController.back().and(m_primaryController.y())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-000)))
                                                                       .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0))); // Shooter + by 50
 
-    m_primaryController.back().and(m_primaryController.povUp())       .whileTrue(new RunIntakeCommand(intakeSubsystem, 5000)); // Intake up
-    m_primaryController.back().and(m_primaryController.povDown())     .whileTrue(new RunIntakeCommand(intakeSubsystem, 5000)); // Intake down
-    m_primaryController.back().and(m_primaryController.povLeft())     .whileTrue(new RunIntakeCommand(intakeSubsystem, 5000)); // Hood up
-    m_primaryController.back().and(m_primaryController.povRight())    .whileTrue(new RunIntakeCommand(intakeSubsystem, 5000)); // Hood down
+    m_primaryController.start().onTrue(Commands.runOnce(() -> shooterSubsystem.setToggleDirection()));
+
+    m_primaryController.back().and(m_primaryController.povUp())   .whileTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4))); // Intake up
+    m_primaryController.back().and(m_primaryController.povDown()) .whileTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1))); // Intake down
+    m_primaryController.back().and(m_primaryController.povLeft()) .whileTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(3))); // Hood up
+    m_primaryController.back().and(m_primaryController.povRight()).whileTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2))); // Hood down
 
     // m_primaryController.back().and(m_primaryController.leftBumper()); - intake out
     // m_primaryController.back().and(m_primaryController.rightBumper()); - slow shooter vomit

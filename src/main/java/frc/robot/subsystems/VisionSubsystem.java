@@ -174,14 +174,18 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     // --- Feed heading to both cameras ---
-    Rotation3d currentRotation = swerveSubsystem.getGyroRotation3d();
+    Rotation3d pidgeonRotation = swerveSubsystem.getGyroRotation3d();
+    Rotation3d feedRotation = new Rotation3d(
+          pidgeonRotation.getMeasureX(),
+          pidgeonRotation.getMeasureY(),
+          swerveSubsystem.getHeading().getMeasure());
 
     double rollRateDegPerSec = swerveSubsystem.getPigeon2RollRateDegPerSec();
     double pitchRateDegPerSec = swerveSubsystem.getPigeon2PitchRateDegPerSec();
     double yawRateDegPerSec = swerveSubsystem.getPigeon2YawRateDegPerSec();
 
     Orientation3d orientation = new Orientation3d(
-        currentRotation,
+        feedRotation,
         new AngularVelocity3d(
             DegreesPerSecond.of(rollRateDegPerSec),
             DegreesPerSecond.of(pitchRateDegPerSec),
@@ -265,7 +269,7 @@ public class VisionSubsystem extends SubsystemBase {
       boolean highConfidence = estimate.tagCount >= 2
           && estimate.avgTagDist < VisionConstants.kMaxHeadingCorrectionDistM;
 
-      if (firstFix || !DriverStation.isEnabled() && highConfidence) {
+      if (firstFix || (!DriverStation.isEnabled() && highConfidence)) {
         // Seed with MT1 yaw
         PoseEstimate poseEstimateObjMT1 = isFront ? frontPoseMT1Estimate : backPoseMT1Estimate;
         Optional<PoseEstimate> estimateOptMT1 = poseEstimateObjMT1.getPoseEstimate();
@@ -281,9 +285,9 @@ public class VisionSubsystem extends SubsystemBase {
         // While disabled with high-confidence multi-tag: hard-reset heading to stay synced - with MT1 yaw
         swerveSubsystem.resetOdometry(seedPose);
         if (firstFix)
-          DataLogManager.log("Vision: high confidence fix — reset odometry to " + seedPose);
-        else 
           DataLogManager.log("Vision: first fix — reset odometry to " + seedPose);
+        else 
+          DataLogManager.log("Vision: high confidence fix — reset odometry to " + seedPose);
       } else {
         // Normal enabled operation: fuse via Kalman filter with dynamic std devs
         double rotStdDev;
@@ -308,6 +312,7 @@ public class VisionSubsystem extends SubsystemBase {
 
             // While disabled with high-confidence multi-tag: hard-reset heading to stay synced - with MT1 yaw
             swerveSubsystem.resetOdometry(MT1Pose);
+            enterSeedMode();
             DataLogManager.log("Vision: high confidence teleop fix — reset odometry to " + MT1Pose);
           }
         }

@@ -118,6 +118,10 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(164)), Double.valueOf(2525));
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(176)), Double.valueOf(2595));
 
+    // shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2250));
+    // shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(134)), Double.valueOf(2300));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(2850)); // 2800
+
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(  8)), Double.valueOf(0.74));
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 20)), Double.valueOf(0.82));
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 32)), Double.valueOf(0.90));
@@ -133,6 +137,10 @@ public class ShooterSubsystem extends SubsystemBase {
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(152)), Double.valueOf(1.63));
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(164)), Double.valueOf(1.70));
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(176)), Double.valueOf(1.78));
+
+    // hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(1.46));
+    // hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(134)), Double.valueOf(1.48));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(1.90)); // 1.78
   }
 
   public double calculateShooterFeedForward() {
@@ -188,6 +196,10 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void setToggleDirection(boolean toggle) {
     toggleDirection = toggle;
+  };
+
+  public void setToggleDirection() {
+    toggleDirection = !toggleDirection;
   };
 
   /** Increases the speed of the shooter by ~ 100 RPM */

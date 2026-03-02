@@ -157,6 +157,8 @@ public class TeleopPathplanner extends SubsystemBase {
 
     double targetAngle = Math.atan2(currentPose2d.getY() - targetPose2d.getY(), currentPose2d.getX() - targetPose2d.getX());
 
+    // Convert angle to speed
+
     DataLogManager.log("Hub Rotation: current rotation radians " + targetAngle);
   
     return targetAngle;
