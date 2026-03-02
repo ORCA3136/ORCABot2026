@@ -4,9 +4,8 @@ import static edu.wpi.first.units.Units.DegreesPerSecond;
 
 import java.util.Optional;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.NetworkTable;
@@ -88,13 +87,6 @@ public class VisionSubsystem extends SubsystemBase {
   private double lastBackAcceptTime = 0;
 
   private int totalTagCount = 0;
-
-  // --- Limelight Yaw Manual Seeding ---
-  boolean yawSeedingFailed;
-  double degreeError = 5; // Degrees
-  double errorTime = 1.0; // Seconds
-  DebounceType debounceType = DebounceType.kRising;
-  Debouncer m_debouncer = new Debouncer(errorTime, debounceType);
 
   // --- Cached NetworkTable entries ---
   NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
@@ -247,10 +239,10 @@ public class VisionSubsystem extends SubsystemBase {
     Pose2d visionPose = estimate.pose.toPose2d();
     double now = Timer.getFPGATimestamp();
     
-    // checkLimelightSeeding(visionPose, isFront);
-
     double headingDeviation = Math.abs(
-        visionPose.getRotation().getDegrees() - swerveSubsystem.getHeading().getDegrees());
+        MathUtil.inputModulus(
+            visionPose.getRotation().getDegrees() - swerveSubsystem.getHeading().getDegrees(),
+            -180, 180));
 
     // --- Rejection pipeline ---
     String rejectReason = getRejectReason(estimate, visionPose, now, isFront);
@@ -313,7 +305,9 @@ public class VisionSubsystem extends SubsystemBase {
             // While disabled with high-confidence multi-tag: hard-reset heading to stay synced - with MT1 yaw
             swerveSubsystem.resetOdometry(MT1Pose);
             enterSeedMode();
-            DataLogManager.log("Vision: high confidence teleop fix — reset odometry to " + MT1Pose);
+            wasEnabled = false;
+            DataLogManager.log("Vision: safety net — heading off by "
+                + headingDeviation + " deg, re-seeding from MT1: " + MT1Pose);
           }
         }
       }
