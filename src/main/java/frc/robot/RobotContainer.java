@@ -90,8 +90,8 @@ public class RobotContainer {
   }
 
   SwerveInputStream controllerInput = SwerveInputStream.of(driveBase.getSwerveDrive(),
-                    () -> driveBase.getAllianceFlip() * m_primaryController.getLeftY(),
-                    () -> driveBase.getAllianceFlip() * m_primaryController.getLeftX())
+                    () -> driveBase.getAllianceFlip() * -m_primaryController.getLeftY(),
+                    () -> driveBase.getAllianceFlip() * -m_primaryController.getLeftX())
                     .deadband(OperatorConstants.kStickDeadband);
 
   SwerveInputStream blueHubRotation = controllerInput.copy()

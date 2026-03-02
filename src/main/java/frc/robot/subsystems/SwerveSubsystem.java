@@ -133,6 +133,9 @@ public class SwerveSubsystem extends SubsystemBase {
                                                1); // Enable if you want to resynchronize your absolute encoders and motor encoders periodically when they are not moving.
     // swerveDrive.pushOffsetsToEncoders(); // Set the absolute encoder to be used over the internal encoder and push the offsets onto it. Throws warning if not possible
 
+    // Publish default so the entry is visible in AdvantageScope
+    allianceOverrideEntry.setString("auto");
+
     setupPathPlanner();
   }
 
@@ -308,6 +311,8 @@ public class SwerveSubsystem extends SubsystemBase {
   // Alliance override NT entry — user can set to "Red" or "Blue" in AdvantageScope to force alliance
   private final NetworkTableEntry allianceOverrideEntry =
       networkTable.getTable(NetworkTableNames.Vision.kTable).getEntry(NetworkTableNames.Vision.kAllianceOverride);
+  private final NetworkTableEntry allianceFlipEntry =
+      networkTable.getTable(NetworkTableNames.Vision.kTable).getEntry("AllianceFlip");
 
   /** @return The current alliance, checking NT override first, then DS, defaulting to Blue. */
   public Alliance getAlliance() {
@@ -319,7 +324,9 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** @return -1.0 for Red alliance (flip), +1.0 for Blue/unknown (no flip). */
   public double getAllianceFlip() {
-    return getAlliance() == Alliance.Red ? -1.0 : 1.0;
+    double flip = getAlliance() == Alliance.Red ? -1.0 : 1.0;
+    allianceFlipEntry.setDouble(flip);
+    return flip;
   }
 
  
