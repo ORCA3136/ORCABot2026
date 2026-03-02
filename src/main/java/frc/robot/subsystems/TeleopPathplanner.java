@@ -145,6 +145,7 @@ public class TeleopPathplanner extends SubsystemBase {
   }
 
   public double hubRotation() {
+    if (targetHubPose == null) return 0;
     Pose2d targetPose2d = targetHubPose;
     Pose2d currentPose2d = swerveSubsystem.getPose();
     

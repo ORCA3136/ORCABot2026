@@ -94,8 +94,8 @@ public class RobotContainer {
                     () -> driveBase.getAllianceFlip() * -m_primaryController.getLeftX())
                     .deadband(OperatorConstants.kStickDeadband);
 
-  SwerveInputStream blueHubRotation = controllerInput.copy()
-                    .withControllerRotationAxis(() -> teleopPathplanner.hubRotation());
+  SwerveInputStream aimAtHubStream = controllerInput.copy()
+                    .aimWhile(true);
 
   // Transformations for different driving commands
   SwerveInputStream slowSpeedDrive   = controllerInput.copy().scaleTranslation(0.4);
@@ -110,7 +110,7 @@ public class RobotContainer {
   Command mediumDriveCommand = driveBase.driveFieldOriented(mediumRegularTurning);
   Command fastDriveCommand   = driveBase.driveFieldOriented(fastRegularTurning);
 
-  Command blueHubRotationCommand = driveBase.driveFieldOriented(blueHubRotation);
+  Command aimAtHubCommand = driveBase.driveFieldOriented(aimAtHubStream);
   
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
@@ -168,8 +168,20 @@ public class RobotContainer {
 
     m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(2500)))
                                      .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
-    m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(blueHubRotationCommand)))
-                                     .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)))
+    m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> {
+                                        Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+                                            ? FieldPositions.kRedFieldElements.get(0)
+                                            : FieldPositions.kBlueFieldElements.get(0);
+                                        aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+                                        Command current = driveBase.getCurrentCommand();
+                                        if (current != null) current.cancel();
+                                        driveBase.setDefaultCommand(aimAtHubCommand);
+                                     }))
+                                     .onFalse(Commands.runOnce(() -> {
+                                        Command current = driveBase.getCurrentCommand();
+                                        if (current != null) current.cancel();
+                                        driveBase.setDefaultCommand(fastDriveCommand);
+                                     }))
             .whileTrue(new ShootCommand(shooterSubsystem, driveBase))
             .whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem).onlyWhile(shooterSubsystem::isShooterReady));
 
@@ -177,8 +189,20 @@ public class RobotContainer {
     m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
 
     m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
-    m_primaryController.rightStick  ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(blueHubRotationCommand)))
-                                     .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
+    m_primaryController.rightStick  ().onTrue(Commands.runOnce(() -> {
+                                        Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+                                            ? FieldPositions.kRedFieldElements.get(0)
+                                            : FieldPositions.kBlueFieldElements.get(0);
+                                        aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+                                        Command current = driveBase.getCurrentCommand();
+                                        if (current != null) current.cancel();
+                                        driveBase.setDefaultCommand(aimAtHubCommand);
+                                     }))
+                                     .onFalse(Commands.runOnce(() -> {
+                                        Command current = driveBase.getCurrentCommand();
+                                        if (current != null) current.cancel();
+                                        driveBase.setDefaultCommand(fastDriveCommand);
+                                     }));
 
     // Toggled button options (active while holding back button)
     m_primaryController.back().and(m_primaryController.a())   .whileTrue(new ShootCommand(shooterSubsystem, driveBase)); 
@@ -213,8 +237,20 @@ public class RobotContainer {
     m_primaryController.y           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
 
     m_primaryController.back        ().onTrue(Commands.runOnce(driveBase::zeroGyro));
-    m_primaryController.start       ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(blueHubRotationCommand)))
-                                     .onFalse(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
+    m_primaryController.start       ().onTrue(Commands.runOnce(() -> {
+                                        Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+                                            ? FieldPositions.kRedFieldElements.get(0)
+                                            : FieldPositions.kBlueFieldElements.get(0);
+                                        aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+                                        Command current = driveBase.getCurrentCommand();
+                                        if (current != null) current.cancel();
+                                        driveBase.setDefaultCommand(aimAtHubCommand);
+                                     }))
+                                     .onFalse(Commands.runOnce(() -> {
+                                        Command current = driveBase.getCurrentCommand();
+                                        if (current != null) current.cancel();
+                                        driveBase.setDefaultCommand(fastDriveCommand);
+                                     }));
 
     // m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseHoodAngle()));
     // m_primaryController.leftBumper  ().onTrue(Commands.runOnce(() -> shooterSubsystem.decreaseHoodAngle()));
@@ -290,28 +326,35 @@ public class RobotContainer {
     // Aim at hub — driver keeps full translation control, heading auto-locks to face hub
     m_secondaryController.button(7)
         .onTrue(Commands.runOnce(() -> {
+          System.out.println("BTN7: aim at hub pressed");
           Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
               ? FieldPositions.kRedFieldElements.get(0)
               : FieldPositions.kBlueFieldElements.get(0);
-          System.out.println("BTN7: aim at hub pressed, alliance=" + driveBase.getAlliance() + " hubPos=" + hubPos);
-          SwerveInputStream aimAtHub = controllerInput.copy()
-              .aim(new Pose2d(hubPos, new Rotation2d()));
-          driveBase.setDefaultCommand(driveBase.driveFieldOriented(aimAtHub));
+          aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+          Command current = driveBase.getCurrentCommand();
+          if (current != null) current.cancel();
+          driveBase.setDefaultCommand(aimAtHubCommand);
         }))
         .onFalse(Commands.runOnce(() -> {
           System.out.println("BTN7: released, restoring normal drive");
+          Command current = driveBase.getCurrentCommand();
+          if (current != null) current.cancel();
           driveBase.setDefaultCommand(fastDriveCommand);
         }));
 
-    m_secondaryController.button(8)
-        .onTrue(Commands.runOnce(() -> {
-          System.out.println("BTN8: hub drive pressed");
-          driveBase.setDefaultCommand(blueHubRotationCommand);
-        }))
-        .onFalse(Commands.runOnce(() -> {
-          System.out.println("BTN8: released, restoring normal drive");
-          driveBase.setDefaultCommand(fastDriveCommand);
-        }));
+    // m_secondaryController.button(8)
+    //     .onTrue(Commands.runOnce(() -> {
+    //       System.out.println("BTN8: hub drive pressed");
+    //       Command current = driveBase.getCurrentCommand();
+    //       if (current != null) current.cancel();
+    //       driveBase.setDefaultCommand(aimAtHubCommand);
+    //     }))
+    //     .onFalse(Commands.runOnce(() -> {
+    //       System.out.println("BTN8: released, restoring normal drive");
+    //       Command current = driveBase.getCurrentCommand();
+    //       if (current != null) current.cancel();
+    //       driveBase.setDefaultCommand(fastDriveCommand);
+    //     }));
   }
 
   private void configureNamedCommands() {
