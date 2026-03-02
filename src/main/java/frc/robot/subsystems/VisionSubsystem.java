@@ -5,8 +5,6 @@ import static edu.wpi.first.units.Units.DegreesPerSecond;
 import java.util.Optional;
 
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.NetworkTable;
@@ -38,21 +36,21 @@ import limelight.results.RawFiducial;
  * subsystem, because vision fusion must never be interrupted.
  *
  * <h2>What this does</h2>
- * Each cycle, this subsystem:
+ * Each cycle:
  * <ol>
- *   <li>Feeds the robot's gyro heading to both Limelights (required for MegaTag2)</li>
- *   <li>Gets pose estimates from both cameras</li>
- *   <li>Runs a 6-stage rejection filter to discard bad measurements</li>
+ *   <li>Feeds the robot's heading to both Limelights (required for MegaTag2)</li>
+ *   <li>Gets MegaTag2 pose estimates from both cameras</li>
+ *   <li>Runs a 4-stage rejection filter (stale, field boundary, yaw rate, odometry cross-check)</li>
  *   <li>Calculates dynamic standard deviations based on tag distance and count</li>
  *   <li>Fuses accepted measurements into the swerve drive's Kalman filter</li>
  * </ol>
  *
  * <h2>IMU mode lifecycle</h2>
- * Managed automatically — no external commands needed:
  * <ul>
- *   <li><b>Disabled:</b> SyncInternalImu — Limelight syncs its internal IMU to our gyro heading</li>
- *   <li><b>Enabled:</b> InternalImuExternalAssist — Limelight uses its own IMU, assisted by our gyro</li>
- *   <li><b>Settling:</b> Brief pause after mode switch to let the Limelight stabilize</li>
+ *   <li><b>Disabled:</b> SyncInternalImu — Limelight syncs its IMU to our gyro.
+ *       MT1 used to seed odometry with heading-independent pose.</li>
+ *   <li><b>Enabled:</b> ExternalImu — Limelight uses ONLY the heading we provide via
+ *       {@code withRobotOrientation()}. MT2 used for Kalman filter fusion.</li>
  * </ul>
  */
 public class VisionSubsystem extends SubsystemBase {
@@ -62,74 +60,64 @@ public class VisionSubsystem extends SubsystemBase {
   private final Limelight limelightFront;
   private final Limelight limelightBack;
 
-  // We construct PoseEstimate objects directly per camera instead of using
-  // limelight.createPoseEstimator(MEGATAG2).getPoseEstimate().
-  // Reason: YALL's BotPose enum is a Java singleton — the first camera to call
-  // createPoseEstimator binds the internal PoseEstimate to its NT table, and the
-  // second camera silently reads the first camera's data. Constructing directly
-  // gives each camera its own independent PoseEstimate bound to its own NT table.
+  // MT2 for enabled-period Kalman fusion
+  // Direct construction avoids YALL's singleton PoseEstimate binding (see class-level comment)
   private final PoseEstimate frontPoseEstimate;
   private final PoseEstimate backPoseEstimate;
 
+  // MT1 for disabled-period seeding (heading-independent ground truth)
   private final PoseEstimate frontPoseMT1Estimate;
   private final PoseEstimate backPoseMT1Estimate;
 
-  // --- IMU mode state machine ---
+  // --- IMU state ---
   private boolean wasEnabled = false;
   private int imuSettleCycleCount = 0;
   private boolean imuSettled = false;
-  private int postSettleGraceCount = 0;
-  private String imuPhase = "SEEDING";
 
-  // --- Per-camera tracking ---
-  private Pose2d lastFrontPose = null;
-  private Pose2d lastBackPose = null;
-  private double lastFrontAcceptTime = 0;
-  private double lastBackAcceptTime = 0;
+  // --- Vision tracking ---
+  private boolean hasEverHadFix = false;
+  private double lastAcceptTime = 0;
 
-  private int totalTagCount = 0;
-
-  // --- Limelight Yaw Manual Seeding ---
-  boolean yawSeedingFailed;
-  double degreeError = 5; // Degrees
-  double errorTime = 1.0; // Seconds
-  DebounceType debounceType = DebounceType.kRising;
-  Debouncer m_debouncer = new Debouncer(errorTime, debounceType);
-
-  // --- Cached NetworkTable entries ---
-  NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
+  // --- NetworkTable entries ---
+  private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
   private final NetworkTable frontTable = ntInstance.getTable(NetworkTableNames.Vision.kFrontTable);
   private final NetworkTable backTable = ntInstance.getTable(NetworkTableNames.Vision.kBackTable);
   private final NetworkTable visionTable = ntInstance.getTable(NetworkTableNames.Vision.kTable);
 
-  // Front camera NT entries
+  // Front camera
   private final StructPublisher<Pose2d> frontPosePublisher = frontTable
-        .getStructTopic(NetworkTableNames.Vision.kVisionPose, Pose2d.struct).publish();
+      .getStructTopic(NetworkTableNames.Vision.kVisionPose, Pose2d.struct).publish();
   private final NetworkTableEntry frontTagCountEntry = frontTable.getEntry(NetworkTableNames.Vision.kTagCount);
   private final NetworkTableEntry frontAvgDistEntry = frontTable.getEntry(NetworkTableNames.Vision.kAvgTagDistance);
-  private final NetworkTableEntry frontStdDevEntry = frontTable.getEntry(NetworkTableNames.Vision.kXYStdDev);
   private final NetworkTableEntry frontAcceptedEntry = frontTable.getEntry(NetworkTableNames.Vision.kAccepted);
   private final NetworkTableEntry frontRejectEntry = frontTable.getEntry(NetworkTableNames.Vision.kRejectReason);
-  private final NetworkTableEntry frontLatencyEntry = frontTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
-  private final NetworkTableEntry frontPoseJumpEntry = frontTable.getEntry(NetworkTableNames.Vision.kPoseJumpMeters);
-  private final NetworkTableEntry frontHeadingDevEntry = frontTable.getEntry(NetworkTableNames.Vision.kHeadingDeviationDeg);
 
-  // Back camera NT entries
+  // Back camera
   private final StructPublisher<Pose2d> backPosePublisher = backTable
-        .getStructTopic(NetworkTableNames.Vision.kVisionPose, Pose2d.struct).publish();
+      .getStructTopic(NetworkTableNames.Vision.kVisionPose, Pose2d.struct).publish();
   private final NetworkTableEntry backTagCountEntry = backTable.getEntry(NetworkTableNames.Vision.kTagCount);
   private final NetworkTableEntry backAvgDistEntry = backTable.getEntry(NetworkTableNames.Vision.kAvgTagDistance);
-  private final NetworkTableEntry backStdDevEntry = backTable.getEntry(NetworkTableNames.Vision.kXYStdDev);
   private final NetworkTableEntry backAcceptedEntry = backTable.getEntry(NetworkTableNames.Vision.kAccepted);
   private final NetworkTableEntry backRejectEntry = backTable.getEntry(NetworkTableNames.Vision.kRejectReason);
-  private final NetworkTableEntry backLatencyEntry = backTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
-  private final NetworkTableEntry backPoseJumpEntry = backTable.getEntry(NetworkTableNames.Vision.kPoseJumpMeters);
-  private final NetworkTableEntry backHeadingDevEntry = backTable.getEntry(NetworkTableNames.Vision.kHeadingDeviationDeg);
 
-  // System-level NT entries
-  private final NetworkTableEntry totalTagCountEntry = visionTable.getEntry(NetworkTableNames.Vision.kTotalTagCount);
+  // Front MT1 pose
+  private final StructPublisher<Pose2d> frontPoseMT1Publisher = frontTable
+      .getStructTopic(NetworkTableNames.Vision.kVisionPoseMT1, Pose2d.struct).publish();
+  // Back MT1 pose
+  private final StructPublisher<Pose2d> backPoseMT1Publisher = backTable
+      .getStructTopic(NetworkTableNames.Vision.kVisionPoseMT1, Pose2d.struct).publish();
+
+  // System-level
   private final NetworkTableEntry visionHealthyEntry = visionTable.getEntry(NetworkTableNames.Vision.kVisionHealthy);
-  private final NetworkTableEntry imuPhaseEntry = visionTable.getEntry(NetworkTableNames.Vision.kImuPhase);
+  private final NetworkTableEntry imuSettledEntry = visionTable.getEntry(NetworkTableNames.Vision.kImuSettled);
+  private final NetworkTableEntry odometryHeadingEntry = visionTable.getEntry(NetworkTableNames.Vision.kOdometryHeading);
+  private final NetworkTableEntry pigeonRawYawEntry = visionTable.getEntry(NetworkTableNames.Vision.kPigeonRawYaw);
+  private final NetworkTableEntry detectedAllianceEntry = visionTable.getEntry(NetworkTableNames.Vision.kDetectedAlliance);
+  private final NetworkTableEntry firstFixStatusEntry = visionTable.getEntry(NetworkTableNames.Vision.kFirstFixStatus);
+  private final NetworkTableEntry imuModeEntry = visionTable.getEntry(NetworkTableNames.Vision.kImuMode);
+
+  // Track current IMU mode label for telemetry
+  private String currentImuModeLabel = "SyncInternalImu";
 
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(SwerveSubsystem swerveSubsystem) {
@@ -138,32 +126,27 @@ public class VisionSubsystem extends SubsystemBase {
     limelightFront = new Limelight(VisionConstants.kLimelightFrontName);
     limelightBack = new Limelight(VisionConstants.kLimelightBackName);
 
-    // Configure front camera (camera offsets are set via Limelight web UI — not overridden here)
     limelightFront.getSettings()
         .withLimelightLEDMode(LEDMode.ForceOff)
         .withImuMode(ImuMode.SyncInternalImu)
         .save();
 
-    // Configure back camera (camera offsets are set via Limelight web UI — not overridden here)
     limelightBack.getSettings()
         .withLimelightLEDMode(LEDMode.ForceOff)
         .withImuMode(ImuMode.SyncInternalImu)
         .save();
 
-    // Create per-camera PoseEstimate objects (see class-level comment for why)
     frontPoseEstimate = new PoseEstimate(limelightFront, "botpose_orb_wpiblue", true);
     backPoseEstimate = new PoseEstimate(limelightBack, "botpose_orb_wpiblue", true);
-
     frontPoseMT1Estimate = new PoseEstimate(limelightFront, "botpose_wpiblue", true);
     backPoseMT1Estimate = new PoseEstimate(limelightBack, "botpose_wpiblue", true);
   }
 
   @Override
   public void periodic() {
-    // --- IMU mode state machine ---
     boolean isEnabled = DriverStation.isEnabled();
 
-    // TODO add limelight modes to Robot
+    // --- IMU mode transitions ---
     if (!isEnabled && wasEnabled) {
       enterSeedMode();
       wasEnabled = false;
@@ -173,49 +156,36 @@ public class VisionSubsystem extends SubsystemBase {
       wasEnabled = true;
     }
 
-    // --- Feed heading to both cameras ---
-    Rotation3d pidgeonRotation = swerveSubsystem.getGyroRotation3d();
+    // --- Feed heading to both cameras every frame ---
+    Rotation3d pigeonRotation = swerveSubsystem.getGyroRotation3d();
     Rotation3d feedRotation = new Rotation3d(
-          pidgeonRotation.getMeasureX(),
-          pidgeonRotation.getMeasureY(),
-          swerveSubsystem.getHeading().getMeasure());
-
-    double rollRateDegPerSec = swerveSubsystem.getPigeon2RollRateDegPerSec();
-    double pitchRateDegPerSec = swerveSubsystem.getPigeon2PitchRateDegPerSec();
-    double yawRateDegPerSec = swerveSubsystem.getPigeon2YawRateDegPerSec();
+        pigeonRotation.getMeasureX(),
+        pigeonRotation.getMeasureY(),
+        swerveSubsystem.getHeading().getMeasure());
 
     Orientation3d orientation = new Orientation3d(
         feedRotation,
         new AngularVelocity3d(
-            DegreesPerSecond.of(rollRateDegPerSec),
-            DegreesPerSecond.of(pitchRateDegPerSec),
-            DegreesPerSecond.of(yawRateDegPerSec)));
+            DegreesPerSecond.of(swerveSubsystem.getPigeon2RollRateDegPerSec()),
+            DegreesPerSecond.of(swerveSubsystem.getPigeon2PitchRateDegPerSec()),
+            DegreesPerSecond.of(swerveSubsystem.getPigeon2YawRateDegPerSec())));
 
     limelightFront.getSettings().withRobotOrientation(orientation);
     limelightBack.getSettings().withRobotOrientation(orientation);
 
-    // --- Settling check ---
+    // --- Wait for IMU to settle after mode switch ---
     if (!imuSettled) {
       imuSettleCycleCount++;
       if (imuSettleCycleCount >= VisionConstants.kImuSettleCycles) {
         imuSettled = true;
-        postSettleGraceCount = 0;
       }
-      imuPhase = "SETTLING";
       publishSystemTelemetry();
       return;
     }
 
-    if (postSettleGraceCount < VisionConstants.kPostSettleGraceCycles) {
-      postSettleGraceCount++;
-    }
-
-    // --- Process cameras ---
-    imuPhase = "ACTIVE";
-    totalTagCount = 0;
+    // --- Process both cameras ---
     processCamera(frontPoseEstimate, true);
     processCamera(backPoseEstimate, false);
-
     publishSystemTelemetry();
   }
 
@@ -223,127 +193,98 @@ public class VisionSubsystem extends SubsystemBase {
    * Core vision pipeline for a single camera.
    */
   private void processCamera(PoseEstimate poseEstimateObj, boolean isFront) {
-
     StructPublisher<Pose2d> posePublisher = isFront ? frontPosePublisher : backPosePublisher;
     NetworkTableEntry tagCountEntry = isFront ? frontTagCountEntry : backTagCountEntry;
     NetworkTableEntry avgDistEntry = isFront ? frontAvgDistEntry : backAvgDistEntry;
-    NetworkTableEntry stdDevEntry = isFront ? frontStdDevEntry : backStdDevEntry;
     NetworkTableEntry acceptedEntry = isFront ? frontAcceptedEntry : backAcceptedEntry;
     NetworkTableEntry rejectEntry = isFront ? frontRejectEntry : backRejectEntry;
-    NetworkTableEntry latencyEntry = isFront ? frontLatencyEntry : backLatencyEntry;
-    NetworkTableEntry poseJumpEntry = isFront ? frontPoseJumpEntry : backPoseJumpEntry;
-    NetworkTableEntry headingDevEntry = isFront ? frontHeadingDevEntry : backHeadingDevEntry;
 
     Optional<PoseEstimate> estimateOpt = poseEstimateObj.getPoseEstimate();
 
     if (estimateOpt.isEmpty() || !estimateOpt.get().hasData) {
-      publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, stdDevEntry,
-          acceptedEntry, rejectEntry, latencyEntry, poseJumpEntry, headingDevEntry,
-          null, 0, 0, 0, false, "no_data", 0, 0, 0);
+      publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, acceptedEntry, rejectEntry,
+          null, 0, 0, false, "no_data");
       return;
     }
 
     PoseEstimate estimate = estimateOpt.get();
     Pose2d visionPose = estimate.pose.toPose2d();
     double now = Timer.getFPGATimestamp();
-    
-    // checkLimelightSeeding(visionPose, isFront);
 
-    double headingDeviation = Math.abs(
-        visionPose.getRotation().getDegrees() - swerveSubsystem.getHeading().getDegrees());
+    // Publish MT1 pose alongside MT2 for comparison
+    StructPublisher<Pose2d> mt1Publisher = isFront ? frontPoseMT1Publisher : backPoseMT1Publisher;
+    PoseEstimate mt1Obj = isFront ? frontPoseMT1Estimate : backPoseMT1Estimate;
+    Optional<PoseEstimate> mt1Opt = mt1Obj.getPoseEstimate();
+    if (mt1Opt.isPresent() && mt1Opt.get().hasData && mt1Opt.get().tagCount > 0) {
+      Pose2d mt1Pose = mt1Opt.get().pose.toPose2d();
+      mt1Publisher.set(mt1Pose);
 
-    // --- Rejection pipeline ---
-    String rejectReason = getRejectReason(estimate, visionPose, now, isFront);
-    double poseJump = getLastPoseJump(visionPose, isFront);
-
-    if (rejectReason.isEmpty()) {
-      boolean firstFix = (lastFrontPose == null && lastBackPose == null);
-
-      // Calculate std devs (used for both fusion and telemetry)
-      double distanceFactor = estimate.avgTagDist * estimate.avgTagDist;
-      double tagFactor = 1.0 / Math.max(1, estimate.tagCount);
-      double singleTagPenalty = (estimate.tagCount == 1) ? VisionConstants.kSingleTagPenalty : 1.0;
-      double xyStdDev = Math.max(VisionConstants.kMinXYStdDev,
-          VisionConstants.kXYStdDevBase * distanceFactor * tagFactor * singleTagPenalty);
-
-      boolean highConfidence = estimate.tagCount >= 2
-          && estimate.avgTagDist < VisionConstants.kMaxHeadingCorrectionDistM;
-
-      if (firstFix || (!DriverStation.isEnabled() && highConfidence)) {
-        // Seed with MT1 yaw
-        PoseEstimate poseEstimateObjMT1 = isFront ? frontPoseMT1Estimate : backPoseMT1Estimate;
-        Optional<PoseEstimate> estimateOptMT1 = poseEstimateObjMT1.getPoseEstimate();
-
-        Pose2d seedPose;
-        if (estimateOptMT1.isPresent() && estimateOptMT1.get().hasData && estimateOptMT1.get().tagCount > 0) {
-          PoseEstimate estimateMT1 = estimateOptMT1.get();
-          seedPose = estimateMT1.pose.toPose2d();
-        } else {
-          seedPose = visionPose;
-        }
-
-        // While disabled with high-confidence multi-tag: hard-reset heading to stay synced - with MT1 yaw
-        swerveSubsystem.resetOdometry(seedPose);
-        if (firstFix)
-          DataLogManager.log("Vision: first fix — reset odometry to " + seedPose);
-        else 
-          DataLogManager.log("Vision: high confidence fix — reset odometry to " + seedPose);
-      } else {
-        // Normal enabled operation: fuse via Kalman filter with dynamic std devs
-        double rotStdDev;
-        if (highConfidence) {
-          // Multi-tag at close range — gently nudge gyro drift
-          rotStdDev = Math.toRadians(VisionConstants.kHeadingStdDevBaseDeg) * distanceFactor;
-        } else {
-          rotStdDev = 9999.0; // single tag or far away — trust gyro entirely
-        }
-        swerveSubsystem.addVisionMeasurement(
-            visionPose,
-            estimate.timestampSeconds,
-            VecBuilder.fill(xyStdDev, xyStdDev, rotStdDev));
-
-        if (highConfidence && headingDeviation > VisionConstants.kHeadingSafetyNetDeg) {
-          PoseEstimate poseEstimateObjMT1 = isFront ? frontPoseMT1Estimate : backPoseMT1Estimate;
-          Optional<PoseEstimate> estimateOptMT1 = poseEstimateObjMT1.getPoseEstimate();
-
-          if (estimateOptMT1.isPresent() && estimateOptMT1.get().hasData && estimateOptMT1.get().tagCount > 0) {
-            PoseEstimate estimateMT1 = estimateOptMT1.get();
-            Pose2d MT1Pose = estimateMT1.pose.toPose2d();
-
-            // While disabled with high-confidence multi-tag: hard-reset heading to stay synced - with MT1 yaw
-            swerveSubsystem.resetOdometry(MT1Pose);
-            enterSeedMode();
-            DataLogManager.log("Vision: high confidence teleop fix — reset odometry to " + MT1Pose);
-          }
-        }
+      // Log large MT1 vs MT2 heading divergence for post-match analysis
+      double headingDiff = Math.abs(mt1Pose.getRotation().getDegrees() - visionPose.getRotation().getDegrees());
+      if (headingDiff > 180) headingDiff = 360 - headingDiff;
+      if (headingDiff > 10) {
+        DataLogManager.log("Vision: MT1/MT2 heading divergence "
+            + String.format("%.1f", headingDiff) + "deg on " + (isFront ? "front" : "back"));
       }
-
-      if (isFront) {
-        lastFrontPose = visionPose;
-        lastFrontAcceptTime = now;
-      } else {
-        lastBackPose = visionPose;
-        lastBackAcceptTime = now;
-      }
-
-      totalTagCount += estimate.tagCount;
-
-      publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, stdDevEntry,
-          acceptedEntry, rejectEntry, latencyEntry, poseJumpEntry, headingDevEntry,
-          visionPose, estimate.tagCount, estimate.avgTagDist, xyStdDev,
-          true, "", estimate.latency, poseJump, headingDeviation);
-    } else {
-      publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, stdDevEntry,
-          acceptedEntry, rejectEntry, latencyEntry, poseJumpEntry, headingDevEntry,
-          visionPose, estimate.tagCount, estimate.avgTagDist, 0,
-          false, rejectReason, estimate.latency, poseJump, headingDeviation);
     }
+
+    // --- 4-stage rejection ---
+    String rejectReason = getRejectReason(estimate, visionPose, now);
+
+    if (!rejectReason.isEmpty()) {
+      publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, acceptedEntry, rejectEntry,
+          visionPose, estimate.tagCount, estimate.avgTagDist, false, rejectReason);
+      return;
+    }
+
+    // --- Calculate dynamic XY std devs ---
+    double distanceFactor = estimate.avgTagDist * estimate.avgTagDist;
+    double tagFactor = 1.0 / Math.max(1, estimate.tagCount);
+    double singleTagPenalty = (estimate.tagCount == 1) ? VisionConstants.kSingleTagPenalty : 1.0;
+    double xyStdDev = Math.max(VisionConstants.kMinXYStdDev,
+        VisionConstants.kXYStdDevBase * distanceFactor * tagFactor * singleTagPenalty);
+
+    boolean highConfidence = estimate.tagCount >= VisionConstants.kSeedMinTagCount
+        && estimate.avgTagDist < VisionConstants.kSeedMaxDistM;
+
+    if (!hasEverHadFix || (!DriverStation.isEnabled() && highConfidence)) {
+      // --- Seed odometry from MT1 (heading-independent ground truth) ---
+      // Reuse mt1Opt fetched above for telemetry
+      Pose2d seedPose;
+      if (mt1Opt.isPresent() && mt1Opt.get().hasData && mt1Opt.get().tagCount > 0) {
+        seedPose = mt1Opt.get().pose.toPose2d();
+      } else {
+        seedPose = visionPose;
+      }
+
+      swerveSubsystem.resetOdometry(seedPose);
+      imuSettleCycleCount = 0;
+      imuSettled = false;
+
+      if (!hasEverHadFix) {
+        DataLogManager.log("Vision: first fix — reset odometry to " + seedPose);
+        hasEverHadFix = true;
+      } else {
+        DataLogManager.log("Vision: disabled seed — reset odometry to " + seedPose);
+      }
+    } else {
+      // --- Normal enabled fusion: Kalman filter with dynamic std devs ---
+      swerveSubsystem.addVisionMeasurement(
+          visionPose,
+          estimate.timestampSeconds,
+          VecBuilder.fill(xyStdDev, xyStdDev, 9999.0));
+    }
+
+    lastAcceptTime = now;
+
+    publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, acceptedEntry, rejectEntry,
+        visionPose, estimate.tagCount, estimate.avgTagDist, true, "");
   }
 
   /**
-   * Runs the 6-stage rejection filter. Returns empty string if accepted.
+   * 4-stage rejection filter. Returns empty string if accepted.
    */
-  private String getRejectReason(PoseEstimate estimate, Pose2d visionPose, double now, boolean isFront) {
+  private String getRejectReason(PoseEstimate estimate, Pose2d visionPose, double now) {
     // 1. Stale timestamp
     double age = now - estimate.timestampSeconds;
     if (age > VisionConstants.kMaxTimestampAgeSec || age < 0) {
@@ -358,55 +299,23 @@ public class VisionSubsystem extends SubsystemBase {
       return "out_of_field";
     }
 
-    // 3. High yaw rate
+    // 3. High yaw rate (MegaTag2 is unreliable during fast rotation)
     double yawRate = Math.abs(swerveSubsystem.getPigeon2YawRateDegPerSec());
     if (yawRate > VisionConstants.kMaxYawRateDegPerSec) {
       return "high_yaw_rate";
     }
 
-    // 4. Single tag ambiguity
-    if (estimate.tagCount == 1 && estimate.getMaxTagAmbiguity() > VisionConstants.kMaxAmbiguitySingleTag) {
-      return "high_ambiguity";
-    }
-
-    // 5. Per-camera pose jump
-    Pose2d lastPose = isFront ? lastFrontPose : lastBackPose;
-    if (lastPose != null) {
-      double jump = visionPose.getTranslation().getDistance(lastPose.getTranslation());
-      double jumpLimit;
-      if (postSettleGraceCount < VisionConstants.kPostSettleGraceCycles) {
-        jumpLimit = VisionConstants.kMaxPoseJumpSettling;
-      } else if (estimate.tagCount > 1) {
-        jumpLimit = VisionConstants.kMaxPoseJumpMultiTag;
-      } else {
-        jumpLimit = VisionConstants.kMaxPoseJumpSingleTag;
-      }
-      if (jump > jumpLimit) {
-        return "pose_jump";
-      }
-    }
-
-    // 6. Odometry cross-check — skip if we've never had a vision fix yet
-    //    (on startup odometry is at 0,0 so the first fix would always be rejected)
-    boolean hasEverHadFix = (lastFrontPose != null || lastBackPose != null);
+    // 4. Odometry cross-check (skip if we've never had a fix — odometry is at 0,0)
     if (hasEverHadFix) {
       double odometryJump = visionPose.getTranslation()
           .getDistance(swerveSubsystem.getPose().getTranslation());
-      double odometryLimit = (postSettleGraceCount < VisionConstants.kPostSettleGraceCycles)
-          ? VisionConstants.kMaxOdometryJumpSettlingM
-          : VisionConstants.kMaxOdometryJumpM;
+      double odometryLimit = VisionConstants.kMaxOdometryJumpM;
       if (odometryJump > odometryLimit) {
         return "odometry_jump";
       }
     }
 
     return "";
-  }
-
-  private double getLastPoseJump(Pose2d visionPose, boolean isFront) {
-    Pose2d lastPose = isFront ? lastFrontPose : lastBackPose;
-    if (lastPose == null) return 0;
-    return visionPose.getTranslation().getDistance(lastPose.getTranslation());
   }
 
   // --- IMU mode transitions ---
@@ -416,23 +325,17 @@ public class VisionSubsystem extends SubsystemBase {
     limelightBack.getSettings().withImuMode(ImuMode.SyncInternalImu).save();
     imuSettleCycleCount = 0;
     imuSettled = false;
-    postSettleGraceCount = 0;
-    imuPhase = "SEEDING";
-    lastFrontPose = null;
-    lastBackPose = null;
+    currentImuModeLabel = "SyncInternalImu";
     DataLogManager.log("Vision: entering seed mode (SyncInternalImu)");
   }
 
   private void enterActiveMode() {
-    limelightFront.getSettings().withImuMode(ImuMode.InternalImuExternalAssist).save();
-    limelightBack.getSettings().withImuMode(ImuMode.InternalImuExternalAssist).save();
+    limelightFront.getSettings().withImuMode(ImuMode.ExternalImu).save();
+    limelightBack.getSettings().withImuMode(ImuMode.ExternalImu).save();
     imuSettleCycleCount = 0;
     imuSettled = false;
-    postSettleGraceCount = 0;
-    imuPhase = "SETTLING";
-    lastFrontPose = null;
-    lastBackPose = null;
-    DataLogManager.log("Vision: entering active mode, settling for "
+    currentImuModeLabel = "ExternalImu";
+    DataLogManager.log("Vision: entering active mode (ExternalImu), settling for "
         + VisionConstants.kImuSettleCycles + " cycles");
   }
 
@@ -440,14 +343,11 @@ public class VisionSubsystem extends SubsystemBase {
 
   /** @return true if at least one camera accepted a measurement recently. */
   public boolean isVisionHealthy() {
-    double now = Timer.getFPGATimestamp();
-    return (now - lastFrontAcceptTime < VisionConstants.kVisionHealthyTimeoutSec)
-        || (now - lastBackAcceptTime < VisionConstants.kVisionHealthyTimeoutSec);
+    return (Timer.getFPGATimestamp() - lastAcceptTime) < VisionConstants.kVisionHealthyTimeoutSec;
   }
 
   /**
    * Gets the distance to a specific AprilTag from either camera.
-   * Useful for variable-distance shooting interpolation.
    *
    * @param tagId The AprilTag ID to find.
    * @return Distance in meters, or -1 if tag not visible or data is stale.
@@ -477,28 +377,26 @@ public class VisionSubsystem extends SubsystemBase {
 
   private void publishCameraTelemetry(
       StructPublisher<Pose2d> posePub, NetworkTableEntry tagCountNt, NetworkTableEntry avgDistNt,
-      NetworkTableEntry stdDevNt, NetworkTableEntry acceptedNt, NetworkTableEntry rejectNt,
-      NetworkTableEntry latencyNt, NetworkTableEntry poseJumpNt, NetworkTableEntry headingDevNt,
-      Pose2d pose, int tagCount, double avgTagDist, double xyStdDev,
-      boolean accepted, String rejectReason, double latencyMs, double poseJump,
-      double headingDeviationDeg) {
+      NetworkTableEntry acceptedNt, NetworkTableEntry rejectNt,
+      Pose2d pose, int tagCount, double avgTagDist, boolean accepted, String rejectReason) {
     if (pose != null) {
       posePub.set(pose);
     }
     tagCountNt.setDouble(tagCount);
     avgDistNt.setDouble(avgTagDist);
-    stdDevNt.setDouble(xyStdDev);
     acceptedNt.setBoolean(accepted);
     rejectNt.setString(rejectReason);
-    latencyNt.setDouble(latencyMs);
-    poseJumpNt.setDouble(poseJump);
-    headingDevNt.setDouble(headingDeviationDeg);
   }
 
   private void publishSystemTelemetry() {
-    totalTagCountEntry.setDouble(totalTagCount);
     visionHealthyEntry.setBoolean(isVisionHealthy());
-    imuPhaseEntry.setString(imuPhase);
+    imuSettledEntry.setBoolean(imuSettled);
+    odometryHeadingEntry.setDouble(swerveSubsystem.getHeading().getDegrees());
+    pigeonRawYawEntry.setDouble(swerveSubsystem.getPigeonRawYawDeg());
+    Optional<DriverStation.Alliance> rawAlliance = DriverStation.getAlliance();
+    detectedAllianceEntry.setString(rawAlliance.isPresent() ? rawAlliance.get().name() : "NOT_SET");
+    firstFixStatusEntry.setBoolean(hasEverHadFix);
+    imuModeEntry.setString(currentImuModeLabel);
   }
 
   @Override

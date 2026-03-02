@@ -126,26 +126,10 @@ public final class Constants {
     public static final String kLimelightFrontName = "limelight-front";
     public static final String kLimelightBackName = "limelight-back";
 
-    // Front camera mount offsets (TODO: measure on real robot to nearest mm)
-    public static final double kFrontCamForwardM = 0.30;
-    public static final double kFrontCamLeftM = 0.0;
-    public static final double kFrontCamUpM = 0.25;
-    public static final double kFrontCamPitchDeg = 15.0;
-
-    // Back camera mount offsets (TODO: measure on real robot to nearest mm)
-    public static final double kBackCamForwardM = -0.30;
-    public static final double kBackCamLeftM = 0.0;
-    public static final double kBackCamUpM = 0.25;
-    public static final double kBackCamPitchDeg = 15.0;
-
     // --- Rejection thresholds ---
     public static final double kMaxYawRateDegPerSec = 270.0;
-    public static final double kMaxAmbiguitySingleTag = 0.5;
-    public static final double kMaxPoseJumpMultiTag = 0.75;
-    public static final double kMaxPoseJumpSingleTag = 0.5;
-    public static final double kMaxPoseJumpSettling = 1.5;
     public static final double kMaxOdometryJumpM = 1.0;
-    public static final double kMaxOdometryJumpSettlingM = 2.0;
+    public static final double kMaxOdometryJumpFirstFixM = 2.0;
     public static final double kMaxTimestampAgeSec = 0.5;
 
     // 2026 REBUILT field boundary + 0.5m margin (field is 16.54m x 8.21m)
@@ -159,19 +143,15 @@ public final class Constants {
     public static final double kSingleTagPenalty = 2.0;
     public static final double kMinXYStdDev = 0.1;
 
-    // --- Heading correction (multi-tag only) ---
-    // Only correct heading when seeing 2+ tags within this distance
-    public static final double kMaxHeadingCorrectionDistM = 4.0;
-    // Base std dev in degrees — higher = gentler nudge (scaled by distance²)
-    public static final double kHeadingStdDevBaseDeg = 25.0;
-
     // --- IMU settling ---
-    public static final int kImuSettleCycles = 25;
-    public static final int kPostSettleGraceCycles = 5;
+    public static final int kImuSettleCycles = 15; // ~300ms at 50Hz
 
     public static final double kVisionHealthyTimeoutSec = 0.5;
     public static final double kTagDistanceStaleSec = 0.08;
-    public static double kHeadingSafetyNetDeg = 10.0;
+
+    // Minimum conditions for disabled-period odometry seeding
+    public static final int kSeedMinTagCount = 2;
+    public static final double kSeedMaxDistM = 4.0;
   }
   
   public static final class OperatorConstants {
@@ -261,18 +241,21 @@ public final class Constants {
       public static final String kVisionPose = "VisionPose";
       public static final String kTagCount = "TagCount";
       public static final String kAvgTagDistance = "AvgTagDistance";
-      public static final String kXYStdDev = "XYStdDev";
       public static final String kAccepted = "Accepted";
       public static final String kRejectReason = "RejectReason";
-      public static final String kLatencyMs = "LatencyMs";
-      public static final String kPoseJumpMeters = "PoseJumpMeters";
-      public static final String kHeadingDeviationDeg = "HeadingDeviationDeg";
-      public static final String kSeedingFailure = "SeedingFailure";
+
+      // Per-camera MT1 pose key
+      public static final String kVisionPoseMT1 = "VisionPoseMT1";
 
       // System-level keys
-      public static final String kTotalTagCount = "TotalTagCount";
       public static final String kVisionHealthy = "VisionHealthy";
-      public static final String kImuPhase = "ImuPhase";
+      public static final String kImuSettled = "ImuSettled";
+      public static final String kOdometryHeading = "OdometryHeading";
+      public static final String kPigeonRawYaw = "PigeonRawYaw";
+      public static final String kDetectedAlliance = "DetectedAlliance";
+      public static final String kFirstFixStatus = "FirstFixStatus";
+      public static final String kImuMode = "ImuMode";
+      public static final String kAllianceOverride = "AllianceOverride";
     }
 
     public static final class Shooter {
