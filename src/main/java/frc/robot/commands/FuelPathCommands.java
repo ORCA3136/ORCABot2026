@@ -143,6 +143,18 @@ public final class FuelPathCommands {
      .withName("ConveyorJog");
   }
 
+  /** Pulse intake on/off to free jammed fuel. Loops while held. */
+  public static Command intakePulse(IntakeSubsystem intake) {
+    return Commands.sequence(
+        Commands.runOnce(() -> intake.setIntakeDutyCycle(FuelPathConstants.kIntakePulseSpeed), intake),
+        Commands.waitSeconds(FuelPathConstants.kIntakePulseDurationSec),
+        Commands.runOnce(() -> intake.setIntakeDutyCycle(0), intake),
+        Commands.waitSeconds(FuelPathConstants.kIntakePulsePauseSec)
+    ).repeatedly()
+     .finallyDo(interrupted -> intake.setIntakeDutyCycle(0))
+     .withName("IntakePulse");
+  }
+
   /** Brief kicker burst for single-ball feeding. Runs once. */
   public static Command kickerPulse(KickerSubsystem kicker) {
     return Commands.sequence(

@@ -424,6 +424,11 @@ public final class Constants {
     public static final double kJamReverseSpeed = -2000;
     public static final int kJamMaxRetries = 3;
 
+    // Intake pulse (free jammed fuel)
+    public static final double kIntakePulseSpeed = 4000;
+    public static final double kIntakePulseDurationSec = 0.5;
+    public static final double kIntakePulsePauseSec = 0.5;
+
     // Emergency reverse (all motors reverse at high speed)
     public static final double kEmergencyIntakeSpeed = -5000;
     public static final double kEmergencyConveyorSpeed = -2000;

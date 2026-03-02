@@ -342,19 +342,7 @@ public class RobotContainer {
           driveBase.setDefaultCommand(fastDriveCommand);
         }));
 
-    // m_secondaryController.button(8)
-    //     .onTrue(Commands.runOnce(() -> {
-    //       System.out.println("BTN8: hub drive pressed");
-    //       Command current = driveBase.getCurrentCommand();
-    //       if (current != null) current.cancel();
-    //       driveBase.setDefaultCommand(aimAtHubCommand);
-    //     }))
-    //     .onFalse(Commands.runOnce(() -> {
-    //       System.out.println("BTN8: released, restoring normal drive");
-    //       Command current = driveBase.getCurrentCommand();
-    //       if (current != null) current.cancel();
-    //       driveBase.setDefaultCommand(fastDriveCommand);
-    //     }));
+    m_secondaryController.button(8).whileTrue(FuelPathCommands.intakePulse(intakeSubsystem));
   }
 
   private void configureNamedCommands() {
