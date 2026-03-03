@@ -305,6 +305,11 @@ public class SwerveSubsystem extends SubsystemBase {
     });
   }
 
+  /** Locks the swerve modules into an X pattern to resist being pushed. */
+  public void lockPose() {
+    swerveDrive.lockPose();
+  }
+
   /** Checks the current zone the robot is in 
    *  @return Blue, Middle, Red */
 
