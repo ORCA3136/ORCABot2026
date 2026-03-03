@@ -79,6 +79,17 @@ public class VisionSubsystem extends SubsystemBase {
   private boolean loggedDisabledSeed = false;
   private double lastAcceptTime = 0;
 
+  // Tag count tracking for combined total
+  private int lastFrontTagCount = 0;
+  private int lastBackTagCount = 0;
+
+  // LED pattern state machine
+  private enum LedState { OFF, SOLID, BLINK_ON, BLINK_OFF, PAUSE }
+  private LedState ledState = LedState.OFF;
+  private int ledCycleCounter = 0;
+  private int ledBlinksRemaining = 0;
+  private boolean ledIsOn = false;
+
   // --- NetworkTable entries ---
   private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
   private final NetworkTable frontTable = ntInstance.getTable(NetworkTableNames.Vision.kFrontTable);
@@ -116,6 +127,8 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry detectedAllianceEntry = visionTable.getEntry(NetworkTableNames.Vision.kDetectedAlliance);
   private final NetworkTableEntry firstFixStatusEntry = visionTable.getEntry(NetworkTableNames.Vision.kFirstFixStatus);
   private final NetworkTableEntry imuModeEntry = visionTable.getEntry(NetworkTableNames.Vision.kImuMode);
+  private final NetworkTableEntry aprilTagReadyEntry = visionTable.getEntry(NetworkTableNames.Vision.kAprilTagReady);
+  private final NetworkTableEntry totalTagCountEntry = visionTable.getEntry(NetworkTableNames.Vision.kTotalTagCount);
 
   // Track current IMU mode label for telemetry
   private String currentImuModeLabel = "SyncInternalImu";
@@ -187,6 +200,13 @@ public class VisionSubsystem extends SubsystemBase {
     // --- Process both cameras ---
     processCamera(frontPoseEstimate, true);
     processCamera(backPoseEstimate, false);
+
+    // --- LED feedback while disabled ---
+    int totalTags = lastFrontTagCount + lastBackTagCount;
+    if (!isEnabled) {
+      updateDisabledLeds(totalTags);
+    }
+
     publishSystemTelemetry();
   }
 
@@ -203,12 +223,14 @@ public class VisionSubsystem extends SubsystemBase {
     Optional<PoseEstimate> estimateOpt = poseEstimateObj.getPoseEstimate();
 
     if (estimateOpt.isEmpty() || !estimateOpt.get().hasData) {
+      if (isFront) lastFrontTagCount = 0; else lastBackTagCount = 0;
       publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, acceptedEntry, rejectEntry,
           null, 0, 0, false, "no_data");
       return;
     }
 
     PoseEstimate estimate = estimateOpt.get();
+    if (isFront) lastFrontTagCount = estimate.tagCount; else lastBackTagCount = estimate.tagCount;
     Pose2d visionPose = estimate.pose.toPose2d();
     double now = Timer.getFPGATimestamp();
 
@@ -333,13 +355,87 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   private void enterActiveMode() {
-    limelightFront.getSettings().withImuMode(ImuMode.ExternalImu).save();
-    limelightBack.getSettings().withImuMode(ImuMode.ExternalImu).save();
+    limelightFront.getSettings()
+        .withImuMode(ImuMode.ExternalImu)
+        .withLimelightLEDMode(LEDMode.ForceOff)
+        .save();
+    limelightBack.getSettings()
+        .withImuMode(ImuMode.ExternalImu)
+        .withLimelightLEDMode(LEDMode.ForceOff)
+        .save();
+    ledIsOn = false;
+    ledState = LedState.OFF;
     imuSettleCycleCount = 0;
     imuSettled = false;
     currentImuModeLabel = "ExternalImu";
     DataLogManager.log("Vision: entering active mode (ExternalImu), settling for "
         + VisionConstants.kImuSettleCycles + " cycles");
+  }
+
+  // --- LED feedback ---
+
+  private void setLedOn(boolean on) {
+    if (on == ledIsOn) return;
+    LEDMode mode = on ? LEDMode.ForceOn : LEDMode.ForceOff;
+    limelightFront.getSettings().withLimelightLEDMode(mode).save();
+    limelightBack.getSettings().withLimelightLEDMode(mode).save();
+    ledIsOn = on;
+  }
+
+  private void updateDisabledLeds(int totalTags) {
+    if (totalTags == 0 || !hasEverHadFix) {
+      setLedOn(false);
+      ledState = LedState.OFF;
+      return;
+    }
+
+    ledCycleCounter++;
+
+    switch (ledState) {
+      case OFF:
+        setLedOn(true);
+        ledState = LedState.SOLID;
+        ledCycleCounter = 0;
+        break;
+
+      case SOLID:
+        if (ledCycleCounter >= 250) {
+          ledBlinksRemaining = totalTags;
+          ledState = LedState.BLINK_ON;
+          ledCycleCounter = 0;
+          setLedOn(true);
+        }
+        break;
+
+      case BLINK_ON:
+        if (ledCycleCounter >= 15) {
+          setLedOn(false);
+          ledState = LedState.BLINK_OFF;
+          ledCycleCounter = 0;
+        }
+        break;
+
+      case BLINK_OFF:
+        if (ledCycleCounter >= 15) {
+          ledBlinksRemaining--;
+          if (ledBlinksRemaining > 0) {
+            setLedOn(true);
+            ledState = LedState.BLINK_ON;
+          } else {
+            ledState = LedState.PAUSE;
+          }
+          ledCycleCounter = 0;
+        }
+        break;
+
+      case PAUSE:
+        if (ledCycleCounter >= 150) {
+          setLedOn(true);
+          ledState = LedState.SOLID;
+          ledCycleCounter = 0;
+        }
+        break;
+    }
   }
 
   // --- Utility methods ---
@@ -400,6 +496,8 @@ public class VisionSubsystem extends SubsystemBase {
     detectedAllianceEntry.setString(rawAlliance.isPresent() ? rawAlliance.get().name() : "NOT_SET");
     firstFixStatusEntry.setBoolean(hasEverHadFix);
     imuModeEntry.setString(currentImuModeLabel);
+    aprilTagReadyEntry.setBoolean(hasEverHadFix && (lastFrontTagCount + lastBackTagCount) > 0);
+    totalTagCountEntry.setDouble(lastFrontTagCount + lastBackTagCount);
   }
 
   @Override

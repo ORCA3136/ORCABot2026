@@ -256,6 +256,8 @@ public final class Constants {
       public static final String kFirstFixStatus = "FirstFixStatus";
       public static final String kImuMode = "ImuMode";
       public static final String kAllianceOverride = "AllianceOverride";
+      public static final String kAprilTagReady = "AprilTagReady";
+      public static final String kTotalTagCount = "TotalTagCount";
     }
 
     public static final class Shooter {
