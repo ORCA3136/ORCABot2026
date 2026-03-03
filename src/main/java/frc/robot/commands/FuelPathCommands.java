@@ -8,6 +8,7 @@ import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.IntakeSubsystem.Setpoint;
 
 /**
@@ -20,6 +21,12 @@ import frc.robot.subsystems.IntakeSubsystem.Setpoint;
 public final class FuelPathCommands {
 
   private FuelPathCommands() {} // Prevent instantiation
+
+  // Temporary Command for Shooter
+
+  public static Command shootToHub(ShooterSubsystem shooter, SwerveSubsystem driveBase) {
+    return new ShootCommand(shooter, driveBase);
+  }
 
   // ── Individual: Intake ──────────────────────────────────────────────
 

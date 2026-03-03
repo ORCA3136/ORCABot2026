@@ -298,6 +298,7 @@ public class RobotContainer {
 
   private void configureNamedCommands() {
     // Pathplanner commands
+    NamedCommands.registerCommand("Aim at Hub",           DriveToPositionCommand.aimAtHub(driveBase));
 
     // Run Intake
     NamedCommands.registerCommand("Run Intake",           new RunIntakeCommand(intakeSubsystem, 6000));
@@ -309,6 +310,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("Retract Intake",       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
 
     // Shoot
+    NamedCommands.registerCommand("Shoot to Hub",         FuelPathCommands.shootToHub(shooterSubsystem, driveBase));
     NamedCommands.registerCommand("Stop Shooter",         Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     NamedCommands.registerCommand("Run Shooter Low",      Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityLow)));
     NamedCommands.registerCommand("Run Shooter Medium",   Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityMedium)));

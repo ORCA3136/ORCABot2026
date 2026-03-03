@@ -1,14 +1,19 @@
 package frc.robot.commands;
 
+import java.text.FieldPosition;
 import java.util.Set;
 
 import com.pathplanner.lib.path.PathConstraints;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldPositions;
 import frc.robot.subsystems.SwerveSubsystem;
+import swervelib.SwerveDrive;
 
 /**
  * Factory class for drive-to-position commands using PathPlanner pathfinding.
@@ -60,6 +65,19 @@ public final class DriveToPositionCommand {
     /** Drive to the right trench entrance. */
   public static Command driveToTestPosition(SwerveSubsystem swerve) {
     return deferredDriveTo(swerve, FieldPositions.kTestPosition, "Drive To Test Position");
+  }
+
+  public static Command aimAtHub(SwerveSubsystem swerve) {
+    return Commands.defer(() -> {
+      Translation2d robotPos = swerve.getPose().getTranslation();
+      Translation2d hubPos = swerve.getAlliance() == Alliance.Red
+        ? FieldPositions.kRedFieldElements.get(0)
+        : FieldPositions.kBlueFieldElements.get(0);
+      Translation2d toHub = hubPos.minus(robotPos);
+      Rotation2d heading = new Rotation2d(toHub.getX(), toHub.getY());
+      return swerve.driveToPose(
+        new Pose2d(robotPos, heading), TELEOP_CONSTRAINTS);
+    }, Set.of(swerve)).withName("Aim At Hub");
   }
 
   /**
