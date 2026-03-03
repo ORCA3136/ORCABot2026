@@ -67,18 +67,18 @@ public final class DriveToPositionCommand {
     return deferredDriveTo(swerve, FieldPositions.kTestPosition, "Drive To Test Position");
   }
 
-  public static Command aimAtHub(SwerveSubsystem swerve) {
-    return Commands.defer(() -> {
-      Translation2d robotPos = swerve.getPose().getTranslation();
-      Translation2d hubPos = swerve.getAlliance() == Alliance.Red
-        ? FieldPositions.kRedFieldElements.get(0)
-        : FieldPositions.kBlueFieldElements.get(0);
-      Translation2d toHub = hubPos.minus(robotPos);
-      Rotation2d heading = new Rotation2d(toHub.getX(), toHub.getY());
-      return swerve.driveToPose(
-        new Pose2d(robotPos, heading), TELEOP_CONSTRAINTS);
-    }, Set.of(swerve)).withName("Aim At Hub");
-  }
+ public static Command aimAtHub(SwerveSubsystem swerve) {
+       return Commands.defer(() -> {
+         Translation2d robotPos = swerve.getPose().getTranslation();
+         Translation2d hubPos = swerve.getAlliance() == Alliance.Red
+             ? FieldPositions.kRedFieldElements.get(0)
+             : FieldPositions.kBlueFieldElements.get(0);
+         Translation2d toHub = hubPos.minus(robotPos);
+         Rotation2d heading = new Rotation2d(toHub.getX(), toHub.getY());
+         return swerve.driveToPose(
+             new Pose2d(robotPos, heading), TELEOP_CONSTRAINTS);
+       }, Set.of(swerve)).withName("Aim At Hub");
+     }
 
   /**
    * Creates a deferred pathfinding command to the given blue-origin pose.
