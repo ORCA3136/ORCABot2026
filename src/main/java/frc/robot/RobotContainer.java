@@ -164,7 +164,11 @@ public class RobotContainer {
             .whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
     m_primaryController.leftBumper  ().whileTrue(Commands.parallel(
         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 1000, 5000),
-        FuelPathCommands.intakePulse(intakeSubsystem)
+        Commands.sequence(
+            Commands.waitSeconds(1),
+            FuelPathCommands.intakePulse(intakeSubsystem).withTimeout(3),
+            Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp))
+        )
     ));
     m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
 

@@ -425,7 +425,7 @@ public final class Constants {
     public static final int kJamMaxRetries = 3;
 
     // Intake pulse (free jammed fuel)
-    public static final double kIntakePulseSpeed = 4000;
+    public static final double kIntakePulseSpeed = 3000;
     public static final double kIntakePulseDurationSec = 0.5;
     public static final double kIntakePulsePauseSec = 0.5;
 
