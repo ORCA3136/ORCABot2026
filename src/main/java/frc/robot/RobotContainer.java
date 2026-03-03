@@ -130,29 +130,6 @@ public class RobotContainer {
     m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
     m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
 
-    /*
-    m_primaryController.start       ().onTrue(Commands.runOnce(() -> {
-      var nt = edu.wpi.first.networktables.NetworkTableInstance.getDefault();
-      var llFront = nt.getTable("limelight-front");
-      var pose = driveBase.getPose();
-      System.out.println("=== DIAGNOSTICS ===");
-      System.out.printf("  Odometry Pose: X=%.2f  Y=%.2f  Heading=%.1f deg%n",
-          pose.getX(), pose.getY(), pose.getRotation().getDegrees());
-      System.out.println("  IMU phase: " + nt.getTable("Vision").getEntry("ImuPhase").getString("NOT SET"));
-      System.out.println("  Vision healthy: " + visionSubsystem.isVisionHealthy());
-      System.out.println("  Front Reject: [" + nt.getTable("Vision/Front").getEntry("RejectReason").getString("NOT SET") + "]");
-      // Print full botpose array to see exactly what the LL is publishing
-      double[] bp = llFront.getEntry("botpose_orb_wpiblue").getDoubleArray(new double[]{});
-      System.out.println("  botpose_orb_wpiblue (" + bp.length + " elements):");
-      for (int i = 0; i < bp.length; i++) {
-        System.out.printf("    [%d] = %.4f%n", i, bp[i]);
-      }
-      System.out.println("  tv: " + llFront.getEntry("tv").getDouble(-1));
-      System.out.println("  tid: " + llFront.getEntry("tid").getDouble(-1));
-      System.out.println("===================");
-    }));
-    */
-    
     // D pad
     m_primaryController.povUp       ().and(m_primaryController.back().negate()).whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
 		m_primaryController.povDown     ().and(m_primaryController.back().negate()).whileTrue(new RunKickerCommand(kickerSubsystem, -2500));
@@ -183,9 +160,12 @@ public class RobotContainer {
                                         driveBase.setDefaultCommand(fastDriveCommand);
                                      }))
             .whileTrue(new ShootCommand(shooterSubsystem, driveBase))
-            .whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem).onlyWhile(shooterSubsystem::isShooterReady));
-
-    m_primaryController.leftBumper  ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 1000, 5000));
+           // .whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem).onlyWhile(shooterSubsystem::isShooterReady));
+            .whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
+    m_primaryController.leftBumper  ().whileTrue(Commands.parallel(
+        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 1000, 5000),
+        FuelPathCommands.intakePulse(intakeSubsystem)
+    ));
     m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
 
     m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
@@ -321,7 +301,7 @@ public class RobotContainer {
     m_secondaryController.button(3).whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
     // m_secondaryController.button(4).whileTrue(DriveToPositionCommand.driveToRightTrench(driveBase));
     // m_secondaryController.button(5).whileTrue(DriveToPositionCommand.driveToOutpost(driveBase));
-    // m_secondaryController.button(6).whileTrue(DriveToPositionCommand.driveToDepot(driveBase));
+    m_secondaryController.button(6).whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
 
     // Aim at hub — driver keeps full translation control, heading auto-locks to face hub
     m_secondaryController.button(7)
