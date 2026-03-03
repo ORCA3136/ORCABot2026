@@ -76,6 +76,7 @@ public class VisionSubsystem extends SubsystemBase {
 
   // --- Vision tracking ---
   private boolean hasEverHadFix = false;
+  private boolean loggedDisabledSeed = false;
   private double lastAcceptTime = 0;
 
   // --- NetworkTable entries ---
@@ -264,8 +265,9 @@ public class VisionSubsystem extends SubsystemBase {
       if (!hasEverHadFix) {
         DataLogManager.log("Vision: first fix — reset odometry to " + seedPose);
         hasEverHadFix = true;
-      } else {
+      } else if (!loggedDisabledSeed) {
         DataLogManager.log("Vision: disabled seed — reset odometry to " + seedPose);
+        loggedDisabledSeed = true;
       }
     } else {
       // --- Normal enabled fusion: Kalman filter with dynamic std devs ---
@@ -326,6 +328,7 @@ public class VisionSubsystem extends SubsystemBase {
     imuSettleCycleCount = 0;
     imuSettled = false;
     currentImuModeLabel = "SyncInternalImu";
+    loggedDisabledSeed = false;
     DataLogManager.log("Vision: entering seed mode (SyncInternalImu)");
   }
 

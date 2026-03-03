@@ -44,9 +44,9 @@ public final class RobotLogger {
    */
   public static void init(boolean useUSB) {
     if (useUSB) {
-      DataLogManager.start("/U");
+      DataLogManager.start("/U", "", 0.1);
     } else {
-      DataLogManager.start();
+      DataLogManager.start("", "", 0.1);
     }
     DataLogManager.logNetworkTables(true);
 

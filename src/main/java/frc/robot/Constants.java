@@ -342,6 +342,8 @@ public final class Constants {
       new Translation2d(11.93, 0.630)
     );
 
+    public static final Pose2d kTestPosition = new Pose2d(13.9, 4.1, Rotation2d.fromDegrees(180));
+
     // TODO: Populate with actual bump field coordinates
     public static final List<Translation2d> kBumpPoses = List.of();
 

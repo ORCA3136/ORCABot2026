@@ -57,6 +57,11 @@ public final class DriveToPositionCommand {
     return deferredDriveTo(swerve, FieldPositions.kRightTrenchPose, "Drive To Right Trench");
   }
 
+    /** Drive to the right trench entrance. */
+  public static Command driveToTestPosition(SwerveSubsystem swerve) {
+    return deferredDriveTo(swerve, FieldPositions.kTestPosition, "Drive To Test Position");
+  }
+
   /**
    * Creates a deferred pathfinding command to the given blue-origin pose.
    * The path is generated at runtime so the robot always plans from its current position.

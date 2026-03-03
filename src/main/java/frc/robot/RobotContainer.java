@@ -248,12 +248,20 @@ public class RobotContainer {
   /** Operator button board bindings for drive-to-position commands. */
   private void configureOperatorBindings() {
     // Drive-to-position buttons — disabled until field-tested
-    m_secondaryController.button(1).onTrue (Commands.runOnce(() -> climberSubsystem.setClimberTarget(ClimberConstants.kClimberMinPosition)))
-                                          .onFalse(Commands.runOnce(() -> climberSubsystem.stopClimber()));
-    m_secondaryController.button(2).onTrue (Commands.runOnce(() -> climberSubsystem.setClimberTarget(ClimberConstants.kClimberMaxPosition)))
-                                          .onFalse(Commands.runOnce(() -> climberSubsystem.stopClimber()));
-    m_secondaryController.button(3).whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
-    // m_secondaryController.button(4).whileTrue(DriveToPositionCommand.driveToRightTrench(driveBase));
+    m_secondaryController.button(1).whileTrue(
+        Commands.runEnd(
+            () -> climberSubsystem.setClimberDutyCycle(-1500),
+            () -> climberSubsystem.setClimberDutyCycle(0),
+            climberSubsystem
+        ));
+    m_secondaryController.button(2).whileTrue(
+        Commands.runEnd(
+            () -> climberSubsystem.setClimberDutyCycle(1500),
+            () -> climberSubsystem.setClimberDutyCycle(0),
+            climberSubsystem
+        ));
+    m_secondaryController.button(3).whileTrue(new RunIntakeCommand(intakeSubsystem, 3500));
+    m_secondaryController.button(4).whileTrue(DriveToPositionCommand.driveToTestPosition(driveBase));
     m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
     m_secondaryController.button(6).whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
 

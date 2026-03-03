@@ -42,11 +42,11 @@ public class Robot extends TimedRobot {
     }
 
     // Start data logging before subsystems so early messages are captured
-    RobotLogger.init(false); // Set to true for USB logging at competition
+    RobotLogger.init(true); // Logging to USB stick
 
     commandScheduler = CommandScheduler.getInstance();
     m_robotContainer = new RobotContainer();
-    CameraServer.startAutomaticCapture();
+    // CameraServer.startAutomaticCapture();
 
     // Register subsystems for shot logging
     RobotLogger.registerSubsystems(
