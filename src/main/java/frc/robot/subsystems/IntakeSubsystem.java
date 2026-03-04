@@ -22,9 +22,13 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.*;
+
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.FeedbackSensor;
 
 /*
  * This subsystem is for fuel interactions
@@ -97,6 +101,21 @@ public class IntakeSubsystem extends SubsystemBase {
   private Setpoint intakeDeployTarget = Setpoint.kDown;
   private double rampedPosition = IntakeConstants.kMinDeployPosition;
 
+  // Mutable tuning variables (read from SmartDashboard each cycle)
+  private double tuneP = IntakeConstants.kP;
+  private double tuneI = IntakeConstants.kI;
+  private double tuneD = IntakeConstants.kD;
+  private double tuneG = IntakeConstants.kG;
+  private double tuneDeployRamp = IntakeConstants.kDeployRampRate;
+  private double tuneRetractRamp = IntakeConstants.kRetractRampRate;
+  private double tuneSafePosition = IntakeConstants.kSafeDeployPosition;
+  private boolean tuneSafeBoostEnabled = true;
+
+  // Diagnostic NT entries
+  private final NetworkTableEntry deployErrorEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kError);
+  private final NetworkTableEntry deployOutputEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kOutput);
+  private final NetworkTableEntry deployDirectionEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kDirection);
+
   public enum Setpoint{
     kDown,
     kSafe,
@@ -112,13 +131,50 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeMotor.configure(IntakeConfigs.intakeMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     intakeDeployMotor.configure(IntakeConfigs.intakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+    // Initialize SmartDashboard tuning entries with current values
+    SmartDashboard.putNumber("IntakeDeploy/Tune P", tuneP);
+    SmartDashboard.putNumber("IntakeDeploy/Tune I", tuneI);
+    SmartDashboard.putNumber("IntakeDeploy/Tune D", tuneD);
+    SmartDashboard.putNumber("IntakeDeploy/Tune G", tuneG);
+    SmartDashboard.putNumber("IntakeDeploy/Tune DeployRamp", tuneDeployRamp);
+    SmartDashboard.putNumber("IntakeDeploy/Tune RetractRamp", tuneRetractRamp);
+    SmartDashboard.putNumber("IntakeDeploy/Tune SafePosition", tuneSafePosition);
+    SmartDashboard.putBoolean("IntakeDeploy/Tune SafeBoost", tuneSafeBoostEnabled);
   }
 
   /** Calculates the current intake feedforward
    * {@summary intake feedforward includes gravitational force, static loss, air resistance, and robot acceleration} */
   public double calculateFeedForward() {
     // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
-    return IntakeConstants.kS + IntakeConstants.kG * Math.cos(getIntakeAngle());
+    return IntakeConstants.kS + tuneG * Math.cos(getIntakeAngle());
+  }
+
+  /** Reads tuning values from SmartDashboard and reconfigures SparkMax if PID gains changed */
+  private void updateTuning() {
+    // Read non-PID values (immediate effect, no reconfigure needed)
+    tuneDeployRamp = SmartDashboard.getNumber("IntakeDeploy/Tune DeployRamp", tuneDeployRamp);
+    tuneRetractRamp = SmartDashboard.getNumber("IntakeDeploy/Tune RetractRamp", tuneRetractRamp);
+    tuneSafePosition = SmartDashboard.getNumber("IntakeDeploy/Tune SafePosition", tuneSafePosition);
+    tuneSafeBoostEnabled = SmartDashboard.getBoolean("IntakeDeploy/Tune SafeBoost", tuneSafeBoostEnabled);
+    tuneG = SmartDashboard.getNumber("IntakeDeploy/Tune G", tuneG);
+
+    // Read PID gains and reconfigure SparkMax only if changed
+    double newP = SmartDashboard.getNumber("IntakeDeploy/Tune P", tuneP);
+    double newI = SmartDashboard.getNumber("IntakeDeploy/Tune I", tuneI);
+    double newD = SmartDashboard.getNumber("IntakeDeploy/Tune D", tuneD);
+
+    if (newP != tuneP || newI != tuneI || newD != tuneD) {
+      tuneP = newP;
+      tuneI = newI;
+      tuneD = newD;
+
+      SparkMaxConfig config = new SparkMaxConfig();
+      config.closedLoop
+          .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+          .pid(tuneP, tuneI, tuneD)
+          .outputRange(-0.8, 0.8);
+      intakeDeployMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+    }
   }
 
   public double calculatePosition() {
@@ -128,7 +184,7 @@ public class IntakeSubsystem extends SubsystemBase {
     if (intakeDeployTarget == Setpoint.kDown)
       tempTargetPosition = IntakeConstants.kMinDeployPosition;
     else if (intakeDeployTarget == Setpoint.kSafe)
-      tempTargetPosition = IntakeConstants.kSafeDeployPosition;
+      tempTargetPosition = tuneSafePosition;
     else
       tempTargetPosition = IntakeConstants.kMaxDeployPosition;
 
@@ -139,7 +195,7 @@ public class IntakeSubsystem extends SubsystemBase {
       tempTargetPosition = IntakeConstants.kMinDeployPosition;
     }
 
-    if (tempTargetPosition == IntakeConstants.kSafeDeployPosition && getIntakeDeployPosition() < 0.1)
+    if (tuneSafeBoostEnabled && tempTargetPosition == tuneSafePosition && getIntakeDeployPosition() < 0.1)
       tempTargetPosition += 0.2;
 
     // This was adding rotations which would be way too big a change, so I changed it to degrees for the time being
@@ -159,9 +215,9 @@ public class IntakeSubsystem extends SubsystemBase {
   private void rampPosition() {
     double target = calculatePosition();
     if (rampedPosition < target) {
-      rampedPosition = Math.min(rampedPosition + IntakeConstants.kRetractRampRate, target);
+      rampedPosition = Math.min(rampedPosition + tuneRetractRamp, target);
     } else if (rampedPosition > target) {
-      rampedPosition = Math.max(rampedPosition - IntakeConstants.kDeployRampRate, target);
+      rampedPosition = Math.max(rampedPosition - tuneDeployRamp, target);
     }
   }
 
@@ -256,11 +312,18 @@ public class IntakeSubsystem extends SubsystemBase {
     deployVoltageEntry.setDouble(calculateFeedForward());
     _intakeDeployTarget.setDouble(calculatePosition());
     rampedPositionEntry.setDouble(rampedPosition);
+
+    double target = calculatePosition();
+    deployErrorEntry.setDouble(target - getIntakeDeployPosition());
+    deployOutputEntry.setDouble(intakeDeployMotor.getAppliedOutput());
+    deployDirectionEntry.setString(rampedPosition < target ? "RETRACTING" :
+                                   rampedPosition > target ? "DEPLOYING" : "AT_TARGET");
   }
 
   /** This method will be called once per scheduler run */
   @Override
   public void periodic() {
+    updateTuning();
     rampPosition();
     setPIDAngle();
     updateNetworkTable();

@@ -308,6 +308,9 @@ public final class Constants {
       public static final String kCurrentAmps = "Current Amps";
       public static final String kTarget = "Intake Deploy Target";
       public static final String kRampedPosition = "Ramped Position";
+      public static final String kError = "Error";
+      public static final String kOutput = "Output";
+      public static final String kDirection = "Direction";
     }
 
     public static final class Climber {
