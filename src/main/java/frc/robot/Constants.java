@@ -30,13 +30,13 @@ public final class Constants {
     public static final double kVelocityHigh = 5000;
     public static final double kVelocityMax = 6500;
 
-    public static final double kP = 0.00075;
+    public static final double kP = 0.003;
     public static final double kI = 0.;
     public static final double kD = 0.25;
     public static final double kG = 0.;
     // TODO: TUNE ON ROBOT — characterize with SysId. Typical kS = 0.05–0.2
     public static final double kS = 0.15;
-    public static final double kVelocityModifier = .002;
+    public static final double kVelocityModifier = .0033;
 
     // Setpoint ramp rates (RPM per 20ms cycle)
     // At 200 RPM/cycle spin-up: 0 → 5000 RPM takes ~0.5 seconds

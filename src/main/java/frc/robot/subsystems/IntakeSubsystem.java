@@ -136,7 +136,7 @@ public class IntakeSubsystem extends SubsystemBase {
     Translation2d robotPose2d = m_swerveSubsystem.getPose().getTranslation();
     Translation2d nearestTrench = robotPose2d.nearest(FieldPositions.kTrenchPoses);
     if (robotPose2d.getDistance(nearestTrench) < 1) {
-      tempTargetPosition = IntakeConstants.kSafeDeployPosition;
+      tempTargetPosition = IntakeConstants.kMinDeployPosition;
     }
 
     if (tempTargetPosition == IntakeConstants.kSafeDeployPosition && getIntakeDeployPosition() < 0.1)

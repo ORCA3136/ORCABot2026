@@ -111,8 +111,8 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 80)), Double.valueOf(2035));
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 92)), Double.valueOf(2105));
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(104)), Double.valueOf(2175));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2250));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(128)), Double.valueOf(2300));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2300));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(128)), Double.valueOf(2350));
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(2400));
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(152)), Double.valueOf(2450));
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(164)), Double.valueOf(2525));

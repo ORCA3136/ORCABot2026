@@ -5,6 +5,7 @@ import java.util.Set;
 
 import com.pathplanner.lib.path.PathConstraints;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -67,18 +68,36 @@ public final class DriveToPositionCommand {
     return deferredDriveTo(swerve, FieldPositions.kTestPosition, "Drive To Test Position");
   }
 
- public static Command aimAtHub(SwerveSubsystem swerve) {
-       return Commands.defer(() -> {
-         Translation2d robotPos = swerve.getPose().getTranslation();
-         Translation2d hubPos = swerve.getAlliance() == Alliance.Red
-             ? FieldPositions.kRedFieldElements.get(0)
-             : FieldPositions.kBlueFieldElements.get(0);
-         Translation2d toHub = hubPos.minus(robotPos);
-         Rotation2d heading = new Rotation2d(toHub.getX(), toHub.getY());
-         return swerve.driveToPose(
-             new Pose2d(robotPos, heading), TELEOP_CONSTRAINTS);
-       }, Set.of(swerve)).withName("Aim At Hub");
-     }
+  /**
+   * Rotate in place to face the hub. Uses a PID controller instead of PathPlanner
+   * pathfinding, since pathfinding finishes instantly when there's no translational
+   * distance to cover.
+   */
+  public static Command aimAtHub(SwerveSubsystem swerve) {
+    PIDController pid = new PIDController(5.0, 0, 0.3);
+    pid.enableContinuousInput(-Math.PI, Math.PI);
+    pid.setTolerance(Math.toRadians(2));
+
+    return Commands.defer(() -> {
+      Translation2d robotPos = swerve.getPose().getTranslation();
+      Translation2d hubPos = swerve.getAlliance() == Alliance.Red
+          ? FieldPositions.kRedFieldElements.get(0)
+          : FieldPositions.kBlueFieldElements.get(0);
+      double targetRad = Math.atan2(
+          hubPos.getY() - robotPos.getY(),
+          hubPos.getX() - robotPos.getX());
+
+      pid.reset();
+
+      return Commands.run(() -> {
+            double omega = pid.calculate(swerve.getHeadingRadians(), targetRad);
+            swerve.drive(new Translation2d(0, 0), omega, true);
+          }, swerve)
+          .until(pid::atSetpoint)
+          .withTimeout(3.0)
+          .finallyDo(() -> swerve.drive(new Translation2d(0, 0), 0, true));
+    }, Set.of(swerve)).withName("Aim At Hub");
+  }
 
   /**
    * Creates a deferred pathfinding command to the given blue-origin pose.

@@ -20,7 +20,7 @@
         "y": 3.2457000000000007
       },
       "prevControl": {
-        "x": 3.017744444444445,
+        "x": 3.0177444444444443,
         "y": 3.2067222222222225
       },
       "nextControl": null,
@@ -48,7 +48,7 @@
   "folder": "Right Human Player Pickup",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 37.11785992072838
+    "rotation": 37.117859920728385
   },
   "useDefaultConstraints": true
 }

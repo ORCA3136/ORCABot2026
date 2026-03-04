@@ -8,20 +8,20 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.299600570613409,
-        "y": 0.7291726105563499
+        "x": 4.49191155492154,
+        "y": 0.5221540656205423
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 7.947,
-        "y": 2.7087874465049935
+        "x": 6.769,
+        "y": 0.7032952924393738
       },
       "prevControl": {
-        "x": 7.84955160649704,
-        "y": 2.065654711526262
+        "x": 6.354962910128388,
+        "y": 0.6386019971469343
       },
       "nextControl": null,
       "isLocked": false,
@@ -33,7 +33,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 4.0,
+    "maxVelocity": 2.0,
     "maxAcceleration": 4.0,
     "maxAngularVelocity": 360.0,
     "maxAngularAcceleration": 360.0,
@@ -42,7 +42,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 81.703
+    "rotation": 1.2730300200565383
   },
   "reversed": false,
   "folder": "Right mid fuel",
@@ -50,5 +50,5 @@
     "velocity": 0,
     "rotation": 0.0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }
