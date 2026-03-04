@@ -103,9 +103,9 @@ public class RobotContainer {
   SwerveInputStream mediumSpeedDrive = controllerInput.copy().scaleTranslation(0.8);
 
   // Rotations for controller input for different driving commands
-  SwerveInputStream slowRegularTurning   = slowSpeedDrive  .copy().withControllerRotationAxis(() -> -m_primaryController.getRightX());
-  SwerveInputStream mediumRegularTurning = mediumSpeedDrive.copy().withControllerRotationAxis(() -> -m_primaryController.getRightX());
-  SwerveInputStream fastRegularTurning   = controllerInput .copy().withControllerRotationAxis(() -> -m_primaryController.getRightX());
+  SwerveInputStream slowRegularTurning   = slowSpeedDrive  .copy().withControllerRotationAxis(() -> -MathUtil.applyDeadband(m_primaryController.getRightX(), OperatorConstants.kStickDeadband));
+  SwerveInputStream mediumRegularTurning = mediumSpeedDrive.copy().withControllerRotationAxis(() -> -MathUtil.applyDeadband(m_primaryController.getRightX(), OperatorConstants.kStickDeadband));
+  SwerveInputStream fastRegularTurning   = controllerInput .copy().withControllerRotationAxis(() -> -MathUtil.applyDeadband(m_primaryController.getRightX(), OperatorConstants.kStickDeadband));
 
   Command slowDriveCommand   = driveBase.driveFieldOriented(slowRegularTurning);
   Command mediumDriveCommand = driveBase.driveFieldOriented(mediumRegularTurning);
