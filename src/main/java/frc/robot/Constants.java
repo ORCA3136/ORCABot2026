@@ -74,20 +74,20 @@ public final class Constants {
     public static final double kVelocityHigh = 1500;
     public static final double kVelocityMax = 2500;
 
-    public static final double kP = 2.5; // 2
-    public static final double kI = 0.0;
+    public static final double kP = 2.8; // 2
+    public static final double kI = 0.001;
     public static final double kD = 5.0; // 8
     // TODO: TUNE ON ROBOT — kG gravity FF disabled because getIntakeAngle() doesn't return
     // the true physical angle. To re-enable: measure encoder position when arm is horizontal,
     // subtract that offset in getIntakeAngle(), then tune kG starting at ~0.1
-    public static final double kG = 0.5;
+    public static final double kG = 0.6;
     public static final double kS = 0.0;
     // public static final double kV = 0;
     // public static final double kA = 0;
 
     public static final double intakeDeployOffset = 0.035;
     public static final double kMaxDeployPosition = 0.20 + intakeDeployOffset;
-    public static final double kSafeDeployPosition = 0.10 + intakeDeployOffset;
+    public static final double kSafeDeployPosition = 0.095 + intakeDeployOffset;
     public static final double kMinDeployPosition = 0.0 + intakeDeployOffset;
 
     // TODO: MEASURE ON ROBOT — hold arm perfectly horizontal, read IntakeDeploy/Position from NT
