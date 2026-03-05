@@ -108,22 +108,29 @@ public final class Constants {
   }
 
   public static final class ClimberConstants {
-    // Climber position in motor rotations
-    // TODO: TUNE ON ROBOT — measure actual travel limits
-    public static final double kClimberMaxPosition = 150.0;
-    public static final double kClimberMinPosition = 250.0;
-    public static final double kClimberIncrement = -1.0;
+    // Gear ratios
+    public static final double kTotalReduction = (28. / 11.) * 125.; // ≈318.18:1 motor rot → arm rot
+    public static final double kSprocketRatio = 28. / 11.; // 11T drives 28T
 
-    public static final double kP = 1.0; // Coppied from hood
+    // Position defaults (arm degrees) — tune via SmartDashboard
+    public static final double kStowedDegrees = 0.0;
+    public static final double kHorizontalDegrees = 90.0;   // TODO: MEASURE on robot
+    public static final double kClimbedDegrees = 170.0;      // TODO: MEASURE on robot
+    public static final double kMaxArmDegrees = 185.0;       // TODO: MEASURE — safety limit
+    public static final double kMinArmDegrees = -5.0;        // slight tolerance below stowed
+
+    // PID defaults — start VERY low, tune via dashboard
+    public static final double kP = 0.01;
     public static final double kI = 0.0;
-    public static final double kD = 5.0;
-    public static final double kG = 0.6;
-    public static final double kS = 0.2;
-    // public static final double kV = 0.0;
-    // public static final double kA = 0.0;
+    public static final double kD = 0.0;
+    public static final double kG = 0.0; // gravity FF — add after basic PID works
+    public static final double kS = 0.0; // static FF — add after basic PID works
 
-    public static final double kClimberGearRatio = (28. / 11.) * 125.;
-    // public static final double 
+    // Absolute encoder expected reading at stowed position (raw 0-1 rotations)
+    public static final double kAbsEncoderStowedReading = 0.5; // TODO: MEASURE on robot
+
+    // Tolerance for atSetpoint check
+    public static final double kSetpointToleranceDeg = 5.0;
   }
 
   public static final class VisionConstants {
@@ -322,12 +329,18 @@ public final class Constants {
 
     public static final class Climber {
       public static final String kTable = "Climber";
-      public static final String kVelocityRPM = "Velocity RPM";
-      public static final String kPositionRotations = "Position Rotations";
-      public static final String kTargetRotations = "Target Rotations";
+      public static final String kArmDegrees = "Arm Degrees";
+      public static final String kTargetDegrees = "Target Degrees";
+      public static final String kError = "Error";
+      public static final String kMotorRotations = "Motor Rotations";
+      public static final String kLeftMotorOutput = "Left Motor Output";
+      public static final String kRightMotorOutput = "Right Motor Output";
       public static final String kPrimaryCurrent = "Primary Current Amps";
       public static final String kSecondaryCurrent = "Secondary Current Amps";
-
+      public static final String kAbsEncoderRaw = "Abs Encoder Raw";
+      public static final String kIsZeroed = "Is Zeroed";
+      public static final String kAtSetpoint = "At Setpoint";
+      public static final String kState = "State";
     }
   }
 

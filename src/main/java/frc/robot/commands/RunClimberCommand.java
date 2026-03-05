@@ -9,12 +9,15 @@ import frc.robot.subsystems.ClimberSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 
 /**
- * Runs the climber at a fixed speed until a position limit is reached.
- * Stops automatically if the climber exceeds max or min position (safety limit).
+ * Runs the climber at a fixed speed with software position limits.
+ * Stops automatically if the arm exceeds max or min degrees.
+ *
+ * @deprecated Use inline Commands.runEnd() with setManualDutyCycle() instead,
+ *             or use ClimberCommands for the sequenced climb.
  */
+@Deprecated
 public class RunClimberCommand extends Command {
   private final ClimberSubsystem m_climberSubsystem;
-  private double climberPosition;
   private final double velocity;
 
   /**
@@ -24,38 +27,27 @@ public class RunClimberCommand extends Command {
   public RunClimberCommand(ClimberSubsystem subsystem, double inputVelocity) {
     m_climberSubsystem = subsystem;
     velocity = inputVelocity;
-    // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(m_climberSubsystem);
   }
 
-
-  // Called when the command is initially scheduled.
   @Override
-  public void initialize() {
-    climberPosition = m_climberSubsystem.getClimberPosition();
-  }
+  public void initialize() {}
 
-  // Called every time the scheduler runs while the command is scheduled.
-  // Motor is commanded every cycle so it recovers automatically from CAN bus glitches.
   @Override
   public void execute() {
-    climberPosition = m_climberSubsystem.getClimberPosition();
-    m_climberSubsystem.setClimberDutyCycle(velocity);
+    m_climberSubsystem.setManualDutyCycle(velocity);
   }
 
-  // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    m_climberSubsystem.setClimberDutyCycle(0);
+    m_climberSubsystem.stopManual();
   }
 
-  // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    if (climberPosition > ClimberConstants.kClimberMaxPosition && velocity > 0)
-      return true;
-    if (climberPosition < ClimberConstants.kClimberMinPosition && velocity < 0)
-      return true;
+    double armDeg = m_climberSubsystem.getArmDegrees();
+    if (armDeg > ClimberConstants.kMaxArmDegrees && velocity > 0) return true;
+    if (armDeg < ClimberConstants.kMinArmDegrees && velocity < 0) return true;
     return false;
   }
 }
