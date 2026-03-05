@@ -118,7 +118,7 @@ public class Configs {
         static {
             // Primary: PID leader with relative encoder
             climberPrimaryMotor
-                .inverted(false)
+                .inverted(true)
                 .idleMode(IdleMode.kBrake)
                 .voltageCompensation(12)
                 .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);

@@ -221,13 +221,13 @@ public class RobotContainer {
     // Manual climber jog with software limits
     m_secondaryController.button(1).whileTrue(
         Commands.runEnd(
-            () -> climberSubsystem.setManualDutyCycle(-1500),
+            () -> climberSubsystem.setManualDutyCycle(1500),
             () -> climberSubsystem.stopManual(),
             climberSubsystem
         ));
     m_secondaryController.button(2).whileTrue(
         Commands.runEnd(
-            () -> climberSubsystem.setManualDutyCycle(1500),
+            () -> climberSubsystem.setManualDutyCycle(-1500),
             () -> climberSubsystem.stopManual(),
             climberSubsystem
         ));

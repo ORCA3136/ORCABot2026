@@ -115,12 +115,12 @@ public final class Constants {
     // Position defaults (arm degrees) — tune via SmartDashboard
     public static final double kStowedDegrees = 0.0;
     public static final double kHorizontalDegrees = 90.0;   // TODO: MEASURE on robot
-    public static final double kClimbedDegrees = 170.0;      // TODO: MEASURE on robot
-    public static final double kMaxArmDegrees = 185.0;       // TODO: MEASURE — safety limit
+    public static final double kClimbedDegrees = 195.0;
+    public static final double kMaxArmDegrees = 200.0;       // TODO: MEASURE — safety limit
     public static final double kMinArmDegrees = -5.0;        // slight tolerance below stowed
 
     // PID defaults — start VERY low, tune via dashboard
-    public static final double kP = 0.01;
+    public static final double kP = 0.03;
     public static final double kI = 0.0;
     public static final double kD = 0.0;
     public static final double kG = 0.0; // gravity FF — add after basic PID works
