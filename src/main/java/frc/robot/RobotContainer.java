@@ -178,14 +178,11 @@ public class RobotContainer {
     m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
 
     m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
+    // Right stick held: medium speed driving (0.8x translation)
     m_primaryController.rightStick  ().onTrue(Commands.runOnce(() -> {
-                                        Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
-                                            ? FieldPositions.kRedFieldElements.get(0)
-                                            : FieldPositions.kBlueFieldElements.get(0);
-                                        aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
                                         Command current = driveBase.getCurrentCommand();
                                         if (current != null) current.cancel();
-                                        driveBase.setDefaultCommand(aimAtHubCommand);
+                                        driveBase.setDefaultCommand(mediumDriveCommand);
                                      }))
                                      .onFalse(Commands.runOnce(() -> {
                                         Command current = driveBase.getCurrentCommand();
