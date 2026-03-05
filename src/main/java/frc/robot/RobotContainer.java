@@ -14,6 +14,7 @@ import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.FuelPathConstants;
 import frc.robot.Constants.IntakeConstants;
 import frc.robot.Constants.FieldPositions;
+import frc.robot.Constants.DioConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.commands.DriveToPositionCommand;
@@ -77,6 +78,9 @@ public class RobotContainer {
   public RobotContainer() {
 
     DriverStation.silenceJoystickConnectionWarning(true);
+
+    // TODO: Uncomment once hood limit switch is physically wired to DIO 1
+    // shooterSubsystem.enableHoodLimitSwitch(DioConstants.kHoodLimitSwitchPort);
 
     // Configure the trigger bindings (set to false for test bindings)
     boolean useProductionBindings = true;
