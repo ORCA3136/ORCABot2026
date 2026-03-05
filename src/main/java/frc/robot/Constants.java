@@ -65,6 +65,11 @@ public final class Constants {
 
     public static final double kEncoderGearRatio = 40. / 18;
     public static final double kMotorGearRatio = 12;
+
+    public static final double kMaxAngleDegrees = 55.0;
+    public static final double kMinEncoderPosition = kEncoderOffset; // 0.30
+    public static final double kMaxEncoderPosition = kEncoderOffset
+        + (kMaxAngleDegrees / 360.0) * kEncoderGearRatio * kMotorGearRatio; // ~4.37
   }
 
   public static final class IntakeConstants {
@@ -209,6 +214,11 @@ public final class Constants {
 
     // PDH
     public static final int kPDHCanId = 63;
+  }
+
+  public static final class DioConstants {
+    public static final int kBeamBreakPort = 0;
+    public static final int kHoodLimitSwitchPort = 1;
   }
 
   public static final class NetworkTableNames {

@@ -15,11 +15,15 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.*;
 import frc.robot.Constants.*;
@@ -44,6 +48,18 @@ public class ShooterSubsystem extends SubsystemBase {
   boolean toggleDirection = false;
   double hoodTarget; // Position of the Hood in Rotations
   boolean hoodMovingForward = true; // true is positive
+
+  private double hoodCalibrationOffset = 0.0;
+  private DigitalInput hoodLimitSwitch = null;
+  private boolean hoodManualOverride = false;
+  private boolean hoodEncoderValid = true;
+
+  // Stall detection for auto re-zero
+  private static final String kCalibrationOffsetKey = "HoodCalibrationOffset";
+  private static final double kStallCurrentThreshold = 12.0; // Amps
+  private static final double kStallVelocityThreshold = 0.5; // RPM
+  private static final double kStallDebounceSec = 0.5;
+  private final Debouncer stallDebouncer = new Debouncer(kStallDebounceSec, DebounceType.kRising);
   
   final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
   final SparkFlex shooterSecondaryMotor = new SparkFlex(CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
@@ -79,6 +95,8 @@ public class ShooterSubsystem extends SubsystemBase {
   private final NetworkTableEntry angleEntryHood = hoodTable.getEntry(NetworkTableNames.Hood.kAngleDegrees);
   private final NetworkTableEntry primaryCurrentEntryHood = hoodTable.getEntry(NetworkTableNames.Hood.kPrimaryCurrent);
   private final NetworkTableEntry secondaryCurrentEntryHood = hoodTable.getEntry(NetworkTableNames.Hood.kSecondaryCurrent);
+  private final NetworkTableEntry calibrationOffsetEntryHood = hoodTable.getEntry("Calibration Offset");
+  private final NetworkTableEntry encoderValidEntryHood = hoodTable.getEntry("Encoder Valid");
 
 
   private InterpolatingDoubleTreeMap shooterSpeedMap = new InterpolatingDoubleTreeMap();
@@ -96,9 +114,19 @@ public class ShooterSubsystem extends SubsystemBase {
     hoodPrimaryMotor.configure(HoodConfigs.primaryHoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     hoodSecondaryMotor.configure(HoodConfigs.secondaryHoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+    hoodCalibrationOffset = Preferences.getDouble(kCalibrationOffsetKey, 0.0);
+
     setHoodTarget(HoodConstants.kEncoderOffset);
 
     addMapValues();
+  }
+
+  private void clampHoodTarget() {
+    if (hoodTarget < HoodConstants.kMinEncoderPosition) {
+      hoodTarget = HoodConstants.kMinEncoderPosition;
+    } else if (hoodTarget > HoodConstants.kMaxEncoderPosition) {
+      hoodTarget = HoodConstants.kMaxEncoderPosition;
+    }
   }
 
   private void addMapValues() {
@@ -156,6 +184,20 @@ public class ShooterSubsystem extends SubsystemBase {
     return HoodConstants.kS + HoodConstants.kG * Math.cos(getHoodAngle());
   }
 
+  /** Re-zero the hood encoder by computing a calibration offset from the current raw position.
+   *  Call this when the hood is physically at the home (down) position. */
+  public void reZeroHood() {
+    hoodCalibrationOffset = HoodConstants.kEncoderOffset - hoodEncoder.getPosition();
+    hoodTarget = HoodConstants.kEncoderOffset;
+    clampHoodTarget();
+    Preferences.setDouble(kCalibrationOffsetKey, hoodCalibrationOffset);
+  }
+
+  /** Enable a limit switch on the given DIO port for auto-re-zeroing the hood. */
+  public void enableHoodLimitSwitch(int dioPort) {
+    hoodLimitSwitch = new DigitalInput(dioPort);
+  }
+
   /**
    * Sets the shooters velocity
    * 
@@ -175,9 +217,22 @@ public class ShooterSubsystem extends SubsystemBase {
 
   }
 
-  /** Sets the hood setpoint angle */
+  /** Sets the hood setpoint angle (compensates for calibration offset in raw encoder space) */
   public void setHoodPIDAngle() {
-    hoodPIDController.setSetpoint(hoodTarget, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateHodFeedForward());
+    if (hoodManualOverride) return;
+
+    double correctedPosition = hoodEncoder.getPosition() + hoodCalibrationOffset;
+    double margin = 0.5;
+    if (correctedPosition < (HoodConstants.kMinEncoderPosition - margin)
+        || correctedPosition > (HoodConstants.kMaxEncoderPosition + margin)) {
+      // Encoder is reading garbage — stop motor rather than chasing nonsensical position
+      hoodEncoderValid = false;
+      hoodPrimaryMotor.set(0);
+      return;
+    }
+    hoodEncoderValid = true;
+    double rawSetpoint = hoodTarget - hoodCalibrationOffset;
+    hoodPIDController.setSetpoint(rawSetpoint, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateHodFeedForward());
   }
 
   public void setShooterVelocityTarget(double target) {
@@ -240,18 +295,22 @@ public class ShooterSubsystem extends SubsystemBase {
    * TODO: TUNE ON ROBOT — verify this calculation matches the encoder conversion factor in Configs.java */
   public void updateHoodTarget(double angle) {
     hoodTarget = HoodConstants.kEncoderOffset + (angle / 360) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+    clampHoodTarget();
   }
 
   public void increaseHoodAngle() {
     hoodTarget += (1. / 360.) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+    clampHoodTarget();
   }
 
   public void decreaseHoodAngle() {
     hoodTarget -= (1. / 360.) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
+    clampHoodTarget();
   }
 
   public void setHoodTarget(double target) {
     hoodTarget = target;
+    clampHoodTarget();
   }
 
   public double getHoodTarget() {
@@ -282,6 +341,7 @@ public class ShooterSubsystem extends SubsystemBase {
     double distanceToHub = m_swerveSubsystem.getDistanceToHub();
     // set hood based on distance
     hoodTarget = hoodAngleMap.get(distanceToHub);
+    clampHoodTarget();
     // set shooter based on distance
     shooterVelocityTarget = shooterSpeedMap.get(distanceToHub);
   }
@@ -313,19 +373,31 @@ public class ShooterSubsystem extends SubsystemBase {
     hoodPrimaryMotor.set(speed / RobotConstants.kNeo550FreeSpeedRPM);
   }
 
+  /** Drive hood down at low duty cycle, bypassing PID. Works even with bad encoder. */
+  public void nudgeHoodDown() {
+    hoodManualOverride = true;
+    hoodPrimaryMotor.set(-0.05);
+  }
+
+  /** Stop manual override, return to PID control. */
+  public void stopHoodNudge() {
+    hoodManualOverride = false;
+    hoodPrimaryMotor.set(0);
+  }
+
   /** @return Primary motor for simulation access */
   public SparkMax getPrimaryHoodMotor() {
     return hoodPrimaryMotor;
   }
 
-  /** @return Motor Rotations */
+  /** @return Motor Rotations (corrected for calibration offset) */
   public double getHoodMotorRotations() {
-    return hoodEncoder.getPosition();
+    return hoodEncoder.getPosition() + hoodCalibrationOffset;
   }
 
-  /** @return Angle in Rad */
+  /** @return Angle in Rad (corrected for calibration offset) */
   public double getHoodAngle() {
-    return 2 * Math.PI * ((hoodEncoder.getPosition() - HoodConstants.kEncoderOffset) / (HoodConstants.kMotorGearRatio * HoodConstants.kEncoderGearRatio));
+    return 2 * Math.PI * ((hoodEncoder.getPosition() + hoodCalibrationOffset - HoodConstants.kEncoderOffset) / (HoodConstants.kMotorGearRatio * HoodConstants.kEncoderGearRatio));
   }
 
   /** @return Velocity in RPM */
@@ -368,12 +440,29 @@ public class ShooterSubsystem extends SubsystemBase {
     angleEntryHood.setDouble(Math.toDegrees(getHoodAngle()));
     primaryCurrentEntryHood.setDouble(getHoodPrimaryCurrent());
     secondaryCurrentEntryHood.setDouble(getHoodSecondaryCurrent());
+    calibrationOffsetEntryHood.setDouble(hoodCalibrationOffset);
+    encoderValidEntryHood.setBoolean(hoodEncoderValid);
   }
 
   /** This method will be called once per scheduler run */
   @Override
   public void periodic() {
     rampSetpoint();
+
+    // Limit switch auto-re-zero
+    if (hoodLimitSwitch != null && !hoodLimitSwitch.get()) {
+      reZeroHood();
+    }
+
+    // Stall detection auto-re-zero: if targeting home, high current, no movement → stalled at hard stop
+    boolean isStalled = stallDebouncer.calculate(
+        shooterVelocityTarget == 0
+        && Math.abs(hoodTarget - HoodConstants.kEncoderOffset) < 0.05
+        && getHoodPrimaryCurrent() > kStallCurrentThreshold
+        && Math.abs(getHoodVelocity()) < kStallVelocityThreshold);
+    if (isStalled) {
+      reZeroHood();
+    }
 
     updateNetworkTable();
 

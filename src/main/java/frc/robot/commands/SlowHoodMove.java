@@ -24,8 +24,8 @@ public class SlowHoodMove extends Command {
   private static final double ENCODER_UNITS_PER_DEGREE =
       (1.0 / 360.0) * HoodConstants.kEncoderGearRatio * HoodConstants.kMotorGearRatio;
 
-  private static final double UPPER_BOUND = 5;  // max target (encoder position units)
-  private static final double LOWER_BOUND = 1;  // min target (encoder position units)
+  private static final double UPPER_BOUND = HoodConstants.kMaxEncoderPosition;
+  private static final double LOWER_BOUND = HoodConstants.kMinEncoderPosition;
 
   double currentTime;
   double dTime; // Delta time

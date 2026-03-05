@@ -141,8 +141,14 @@ public class RobotContainer {
 		m_primaryController.povRight    ().and(m_primaryController.back().negate()).whileTrue(new RunIntakeCommand(intakeSubsystem, -4000));
 
     // Axis/Triggers/Sticks
-    m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(2500)))
-                                     .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
+    m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> {
+                                        shooterSubsystem.setShooterVelocityTarget(3000);
+                                        shooterSubsystem.updateHoodTarget(35);
+                                     }))
+                                     .onFalse(Commands.runOnce(() -> {
+                                        shooterSubsystem.setShooterVelocityTarget(0);
+                                        shooterSubsystem.updateHoodTarget(0);
+                                     }));
     m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> {
                                         Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
                                             ? FieldPositions.kRedFieldElements.get(0)
@@ -207,46 +213,7 @@ public class RobotContainer {
 
     }
 
-  // Testing buttons
-  private void configureTestBindings() {
-  	driveBase.setDefaultCommand(fastDriveCommand);
-    
-    m_primaryController.a           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
-    m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
-    m_primaryController.x           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(3)));
-    m_primaryController.y           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
-
-    m_primaryController.back        ().onTrue(Commands.runOnce(driveBase::zeroGyro));
-    m_primaryController.start       ().onTrue(Commands.runOnce(() -> {
-                                        Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
-                                            ? FieldPositions.kRedFieldElements.get(0)
-                                            : FieldPositions.kBlueFieldElements.get(0);
-                                        aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
-                                        Command current = driveBase.getCurrentCommand();
-                                        if (current != null) current.cancel();
-                                        driveBase.setDefaultCommand(aimAtHubCommand);
-                                     }))
-                                     .onFalse(Commands.runOnce(() -> {
-                                        Command current = driveBase.getCurrentCommand();
-                                        if (current != null) current.cancel();
-                                        driveBase.setDefaultCommand(fastDriveCommand);
-                                     }));
-
-
-		m_primaryController.leftStick		().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(0)));
-		m_primaryController.rightStick	().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(30)));
-    
-    m_primaryController.povUp       ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 500, 6500));
-		m_primaryController.povDown     ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, -1000, -1000));
-    m_primaryController.povLeft     ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
-		m_primaryController.povRight    ().whileTrue(new RunIntakeCommand(intakeSubsystem, -6500));
-
-    m_primaryController.leftTrigger (0.3).whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
-
-    m_primaryController.rightTrigger(0.3).onTrue (Commands.runOnce(() -> shooterSubsystem.setToggleDirection(true )))
-                                                   .onFalse(Commands.runOnce(() -> shooterSubsystem.setToggleDirection(false)));
-
-  }
+ 
 
   /** Operator button board bindings for drive-to-position commands. */
   private void configureOperatorBindings() {
@@ -263,8 +230,15 @@ public class RobotContainer {
             () -> climberSubsystem.setClimberDutyCycle(0),
             climberSubsystem
         ));
-    m_secondaryController.button(3).whileTrue(new RunIntakeCommand(intakeSubsystem, 3500));
-    m_secondaryController.button(4).whileTrue(DriveToPositionCommand.driveToTestPosition(driveBase));
+    // Button 3: Re-zero hood (press when hood is physically at home position)
+    m_secondaryController.button(3).onTrue(
+        Commands.runOnce(() -> shooterSubsystem.reZeroHood()));
+
+    // Button 4: Manual hood down — bypasses PID, works even with bad encoder
+    m_secondaryController.button(4).whileTrue(
+        Commands.runEnd(
+            () -> shooterSubsystem.nudgeHoodDown(),
+            () -> shooterSubsystem.stopHoodNudge()));
     m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
     m_secondaryController.button(6).whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
 
@@ -400,6 +374,47 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     return autoChooser.getSelected();
+  }
+
+   // Testing buttons
+  private void configureTestBindings() {
+  	driveBase.setDefaultCommand(fastDriveCommand);
+    
+    m_primaryController.a           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
+    m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
+    m_primaryController.x           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(3)));
+    m_primaryController.y           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
+
+    m_primaryController.back        ().onTrue(Commands.runOnce(driveBase::zeroGyro));
+    m_primaryController.start       ().onTrue(Commands.runOnce(() -> {
+                                        Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+                                            ? FieldPositions.kRedFieldElements.get(0)
+                                            : FieldPositions.kBlueFieldElements.get(0);
+                                        aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+                                        Command current = driveBase.getCurrentCommand();
+                                        if (current != null) current.cancel();
+                                        driveBase.setDefaultCommand(aimAtHubCommand);
+                                     }))
+                                     .onFalse(Commands.runOnce(() -> {
+                                        Command current = driveBase.getCurrentCommand();
+                                        if (current != null) current.cancel();
+                                        driveBase.setDefaultCommand(fastDriveCommand);
+                                     }));
+
+
+		m_primaryController.leftStick		().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(0)));
+		m_primaryController.rightStick	().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(30)));
+    
+    m_primaryController.povUp       ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 500, 6500));
+		m_primaryController.povDown     ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, -1000, -1000));
+    m_primaryController.povLeft     ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
+		m_primaryController.povRight    ().whileTrue(new RunIntakeCommand(intakeSubsystem, -6500));
+
+    m_primaryController.leftTrigger (0.3).whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+
+    m_primaryController.rightTrigger(0.3).onTrue (Commands.runOnce(() -> shooterSubsystem.setToggleDirection(true )))
+                                                   .onFalse(Commands.runOnce(() -> shooterSubsystem.setToggleDirection(false)));
+
   }
 
 }
