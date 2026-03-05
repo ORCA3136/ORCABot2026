@@ -20,7 +20,7 @@ import frc.robot.Constants.ShooterConstants;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.commands.AutoCommands;
 import frc.robot.commands.FuelPathCommands;
-import frc.robot.commands.RunClimberCommand;
+import frc.robot.commands.ClimberCommands;
 import frc.robot.commands.RunConveyorAndKickerCommand;
 import frc.robot.commands.RunConveyorCommand;
 import frc.robot.commands.RunIntakeCommand;
@@ -218,17 +218,17 @@ public class RobotContainer {
 
   /** Operator button board bindings for drive-to-position commands. */
   private void configureOperatorBindings() {
-    // Drive-to-position buttons — disabled until field-tested
+    // Manual climber jog with software limits
     m_secondaryController.button(1).whileTrue(
         Commands.runEnd(
-            () -> climberSubsystem.setClimberDutyCycle(-1500),
-            () -> climberSubsystem.setClimberDutyCycle(0),
+            () -> climberSubsystem.setManualDutyCycle(1500),
+            () -> climberSubsystem.stopManual(),
             climberSubsystem
         ));
     m_secondaryController.button(2).whileTrue(
         Commands.runEnd(
-            () -> climberSubsystem.setClimberDutyCycle(1500),
-            () -> climberSubsystem.setClimberDutyCycle(0),
+            () -> climberSubsystem.setManualDutyCycle(-1500),
+            () -> climberSubsystem.stopManual(),
             climberSubsystem
         ));
     // Button 3: Re-zero hood (press when hood is physically at home position)
@@ -241,12 +241,17 @@ public class RobotContainer {
             () -> shooterSubsystem.nudgeHoodDown(),
             () -> shooterSubsystem.stopHoodNudge()));
     m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
-    m_secondaryController.button(6).whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+    // Prepare to climb — stow intake, move arm to horizontal
+    m_secondaryController.button(6).onTrue(
+        ClimberCommands.prepareToClimb(climberSubsystem, intakeSubsystem));
 
-    // Aim at hub — driver keeps full translation control, heading auto-locks to face hub
-    m_secondaryController.button(7)
+    // Execute climb — pull arm to climbed position and hold
+    m_secondaryController.button(7).onTrue(
+        ClimberCommands.executeClimb(climberSubsystem));
+
+    // Aim at hub (moved from button 7) — driver keeps translation, heading auto-locks
+    m_secondaryController.button(8)
         .onTrue(Commands.runOnce(() -> {
-          System.out.println("BTN7: aim at hub pressed");
           Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
               ? FieldPositions.kRedFieldElements.get(0)
               : FieldPositions.kBlueFieldElements.get(0);
@@ -256,13 +261,10 @@ public class RobotContainer {
           driveBase.setDefaultCommand(aimAtHubCommand);
         }))
         .onFalse(Commands.runOnce(() -> {
-          System.out.println("BTN7: released, restoring normal drive");
           Command current = driveBase.getCurrentCommand();
           if (current != null) current.cancel();
           driveBase.setDefaultCommand(fastDriveCommand);
         }));
-
-    m_secondaryController.button(8).whileTrue(FuelPathCommands.intakePulse(intakeSubsystem));
 
     // Scoring position buttons — operator taps to send robot, driver overrides with sticks
     m_secondaryController.button(9).onTrue(

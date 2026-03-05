@@ -113,24 +113,34 @@ public class Configs {
 
     public static final class ClimberConfigs {
         public static final SparkFlexConfig climberPrimaryMotor = new SparkFlexConfig();
-        public static final SparkFlexConfig climberSecondaryMotor = new SparkFlexConfig();        
-        
+        public static final SparkFlexConfig climberSecondaryMotor = new SparkFlexConfig();
+
         static {
+            // Primary: PID leader with relative encoder
             climberPrimaryMotor
-                .inverted(false)
+                .inverted(true)
                 .idleMode(IdleMode.kBrake)
                 .voltageCompensation(12)
-                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
+            climberPrimaryMotor.encoder
+                .positionConversionFactor(360.0 / ClimberConstants.kTotalReduction)   // motor rot → arm degrees
+                .velocityConversionFactor(360.0 / ClimberConstants.kTotalReduction / 60.0); // RPM → deg/s
+            climberPrimaryMotor.closedLoop
+                .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+                .pid(ClimberConstants.kP, ClimberConstants.kI, ClimberConstants.kD)
+                .outputRange(-0.8, 0.8);
+            // Hardware soft limits — backup safety layer on motor controller
+            climberPrimaryMotor.softLimit
+                .forwardSoftLimitEnabled(true)
+                .forwardSoftLimit((float)(ClimberConstants.kMaxArmDegrees - 2.0))
+                .reverseSoftLimitEnabled(true)
+                .reverseSoftLimit((float)(ClimberConstants.kMinArmDegrees + 2.0));
+
+            // Secondary: pure follower — no PID
             climberSecondaryMotor
                 .idleMode(IdleMode.kBrake)
                 .follow(CanIdConstants.kClimberPrimaryCanId, false)
-                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
-            climberSecondaryMotor.absoluteEncoder
-                .positionConversionFactor(ClimberConstants.kClimberGearRatio);
-            climberSecondaryMotor.closedLoop
-                .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-                .pid(ClimberConstants.kP, ClimberConstants.kI, ClimberConstants.kD)
-                .outputRange(-0.8, 0.8); // Old was +-0.8 coppied from intake
+                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
         }
     }
 
