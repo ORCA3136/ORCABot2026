@@ -379,6 +379,29 @@ public final class Constants {
 
     /** Right trench entrance, heading along trench */
     public static final Pose2d kRightTrenchPose = new Pose2d(4.620, 0.630, Rotation2d.fromDegrees(-90));
+
+    // ── Scoring positions (blue-origin, PathPlanner flips for Red) ──────
+    // Left/Right are from the DRIVER STATION perspective (Left = high Y, Right = low Y)
+    // Heading faces the shooter toward the hub
+
+    // Close: ~1.5m from hub, high percentage shot
+    public static final Pose2d kScoreCloseLeft = new Pose2d(3.5, 5.5, Rotation2d.fromDegrees(30));   // TODO: MEASURE ON FIELD
+    public static final Pose2d kScoreCloseRight = new Pose2d(3.5, 2.5, Rotation2d.fromDegrees(-30)); // TODO: MEASURE ON FIELD
+
+    // Trench: shot from trench zone, medium range
+    public static final Pose2d kScoreTrenchLeft = new Pose2d(4.6, 7.0, Rotation2d.fromDegrees(60));  // TODO: MEASURE ON FIELD
+    public static final Pose2d kScoreTrenchRight = new Pose2d(4.6, 1.0, Rotation2d.fromDegrees(-60));// TODO: MEASURE ON FIELD
+
+    // Far: long range fallback, ~4m from hub
+    public static final Pose2d kScoreFarLeft = new Pose2d(2.0, 6.0, Rotation2d.fromDegrees(45));     // TODO: MEASURE ON FIELD
+    public static final Pose2d kScoreFarRight = new Pose2d(2.0, 2.0, Rotation2d.fromDegrees(-45));   // TODO: MEASURE ON FIELD
+
+    // Driver override threshold — higher than normal deadband (0.08)
+    // so minor stick wobble doesn't accidentally cancel auto-drive
+    public static final double kDriverOverrideDeadband = 0.15;
+
+    // Scoring command timeout
+    public static final double kScoringDriveTimeoutSec = 5.0;
   }
 
    public final static class CurrentConstants

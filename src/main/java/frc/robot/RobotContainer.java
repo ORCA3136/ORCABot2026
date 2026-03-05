@@ -289,6 +289,14 @@ public class RobotContainer {
 
     m_secondaryController.button(8).whileTrue(FuelPathCommands.intakePulse(intakeSubsystem));
 
+    // Scoring position buttons — operator taps to send robot, driver overrides with sticks
+    m_secondaryController.button(9).onTrue(
+        DriveToPositionCommand.driveToScoreClose(driveBase, shooterSubsystem, this::driverIsOverriding));
+    m_secondaryController.button(10).onTrue(
+        DriveToPositionCommand.driveToScoreTrench(driveBase, shooterSubsystem, this::driverIsOverriding));
+    m_secondaryController.button(11).onTrue(
+        DriveToPositionCommand.driveToScoreFar(driveBase, shooterSubsystem, this::driverIsOverriding));
+
     m_secondaryController.button(12).whileTrue(
         Commands.sequence(
             Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)),
@@ -366,6 +374,14 @@ public class RobotContainer {
     NamedCommands.registerCommand("Drive To Right Trench", DriveToPositionCommand.driveToRightTrench(driveBase));
     NamedCommands.registerCommand("Drive To Outpost",      DriveToPositionCommand.driveToOutpost(driveBase));
     NamedCommands.registerCommand("Drive To Depot",        DriveToPositionCommand.driveToDepot(driveBase));
+  }
+
+  /** Returns true if the driver is actively pushing sticks (wants manual control). */
+  private boolean driverIsOverriding() {
+    double db = FieldPositions.kDriverOverrideDeadband;
+    return Math.abs(m_primaryController.getLeftX()) > db
+        || Math.abs(m_primaryController.getLeftY()) > db
+        || Math.abs(m_primaryController.getRightX()) > db;
   }
 
   // Subsystem getters for simulation access
