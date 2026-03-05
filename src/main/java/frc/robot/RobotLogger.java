@@ -84,12 +84,14 @@ public final class RobotLogger {
     visionSubsystem = vision;
   }
 
-  /** Register command start/stop logging with the CommandScheduler. */
+  /** Register command start/stop/interrupt logging with the CommandScheduler. */
   public static void registerCommandLogging() {
     CommandScheduler.getInstance().onCommandInitialize(
         cmd -> DataLogManager.log("CMD+ " + cmd.getName()));
     CommandScheduler.getInstance().onCommandFinish(
         cmd -> DataLogManager.log("CMD- " + cmd.getName()));
+    CommandScheduler.getInstance().onCommandInterrupt(
+        cmd -> DataLogManager.log("CMD! " + cmd.getName()));
   }
 
   /**

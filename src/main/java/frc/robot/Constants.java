@@ -395,6 +395,13 @@ public final class Constants {
 
   }
 
+  public static final class AutoConstants {
+    public static final double kIntakeTimeoutSec = 3.0;
+    public static final double kShootTimeoutSec = 4.0;
+    public static final double kFeedTimeoutSec = 3.0;
+    public static final double kAimTimeoutSec = 1.5;
+  }
+
   public static final class FuelPathConstants {
     // Intake roller speeds (RPM)
     public static final double kIntakeInSlow = 2000;

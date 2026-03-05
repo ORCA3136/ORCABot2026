@@ -9,12 +9,15 @@ import java.io.File;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
+import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.ClimberConstants;
+import frc.robot.Constants.FuelPathConstants;
 import frc.robot.Constants.IntakeConstants;
 import frc.robot.Constants.FieldPositions;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.commands.DriveToPositionCommand;
+import frc.robot.commands.AutoCommands;
 import frc.robot.commands.FuelPathCommands;
 import frc.robot.commands.RunClimberCommand;
 import frc.robot.commands.RunConveyorAndKickerCommand;
@@ -304,10 +307,10 @@ public class RobotContainer {
     NamedCommands.registerCommand("Run Intake",           new RunIntakeCommand(intakeSubsystem, 6000));
     NamedCommands.registerCommand("Stop Intake",          Commands.runOnce(() -> intakeSubsystem.setIntakeDutyCycle(0), intakeSubsystem));
 
-    // Deploy Intake
-    NamedCommands.registerCommand("Deploy Intake" ,       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
-    NamedCommands.registerCommand("Intake Safe" ,         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
-    NamedCommands.registerCommand("Retract Intake",       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
+    // Deploy Intake (with subsystem requirement to prevent conflicts)
+    NamedCommands.registerCommand("Deploy Intake" ,       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown), intakeSubsystem));
+    NamedCommands.registerCommand("Intake Safe" ,         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe), intakeSubsystem));
+    NamedCommands.registerCommand("Retract Intake",       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp), intakeSubsystem));
 
     // Shoot
     NamedCommands.registerCommand("Shoot to Hub",         FuelPathCommands.shootToHub(shooterSubsystem, driveBase));
@@ -334,6 +337,27 @@ public class RobotContainer {
     NamedCommands.registerCommand("Metered Feed",         FuelPathCommands.meteredFeed(conveyorSubsystem, kickerSubsystem, shooterSubsystem));
     NamedCommands.registerCommand("Kicker Pulse",         FuelPathCommands.kickerPulse(kickerSubsystem));
     NamedCommands.registerCommand("Emergency Reverse",    FuelPathCommands.emergencyReverseAll(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+
+    // ── Auto-safe commands (timeout-safe, named, with cleanup) ──────────
+
+    // Instant deploy position commands
+    NamedCommands.registerCommand("IntakeDown",            AutoCommands.intakeDown(intakeSubsystem));
+    NamedCommands.registerCommand("IntakeSafe",            AutoCommands.intakeSafe(intakeSubsystem));
+    NamedCommands.registerCommand("IntakeUp",              AutoCommands.intakeUp(intakeSubsystem));
+
+    // Timeout-safe motor commands
+    NamedCommands.registerCommand("RunIntake3s",           AutoCommands.runIntake(intakeSubsystem, FuelPathConstants.kIntakeInStandard, 3.0));
+    NamedCommands.registerCommand("RunIntake5s",           AutoCommands.runIntake(intakeSubsystem, FuelPathConstants.kIntakeInStandard, 5.0));
+    NamedCommands.registerCommand("RunConveyor3s",         AutoCommands.runConveyor(conveyorSubsystem, FuelPathConstants.kConveyorIn, 3.0));
+    NamedCommands.registerCommand("RunKicker2s",           AutoCommands.runKicker(kickerSubsystem, FuelPathConstants.kKickerFeed, 2.0));
+    NamedCommands.registerCommand("FeedAll3s",             AutoCommands.feedAll(conveyorSubsystem, kickerSubsystem, FuelPathConstants.kConveyorIn, FuelPathConstants.kKickerFeed, 3.0));
+    NamedCommands.registerCommand("IntakeWithDeploy3s",    AutoCommands.intakeWithDeploy(intakeSubsystem, FuelPathConstants.kIntakeInStandard, 3.0));
+    NamedCommands.registerCommand("IntakeWithDeploy5s",    AutoCommands.intakeWithDeploy(intakeSubsystem, FuelPathConstants.kIntakeInStandard, 5.0));
+
+    // Smart shooting commands
+    NamedCommands.registerCommand("AimAndShoot",           AutoCommands.aimAndShoot(shooterSubsystem, driveBase, kickerSubsystem, conveyorSubsystem, AutoConstants.kShootTimeoutSec));
+    NamedCommands.registerCommand("MeteredFeed3s",         AutoCommands.meteredFeedTimed(conveyorSubsystem, kickerSubsystem, shooterSubsystem, AutoConstants.kFeedTimeoutSec));
+    NamedCommands.registerCommand("SpinUpFromDistance",    AutoCommands.spinUpFromDistance(shooterSubsystem, driveBase));
 
     // Drive-to-position
     NamedCommands.registerCommand("Drive To Hub",          DriveToPositionCommand.driveToHub(driveBase));
