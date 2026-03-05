@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.IntakeConstants;
@@ -25,7 +26,7 @@ public final class ClimberCommands {
    * @param intake  The intake subsystem (stowed for arm clearance)
    */
   public static Command prepareToClimb(ClimberSubsystem climber, IntakeSubsystem intake) {
-    return Commands.sequence(
+    Command cmd = Commands.sequence(
         // Step 1: stow intake
         Commands.runOnce(() -> intake.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)),
 
@@ -37,16 +38,23 @@ public final class ClimberCommands {
         // Step 3: move arm to horizontal and hold indefinitely
         Commands.run(() -> climber.setArmPosition(climber.getHorizontalDegrees()), climber)
     );
+    cmd.addRequirements(intake);  // climber already required by Step 3
+    return cmd;
   }
 
   /**
    * Execute the climb: pull arm to climbed position and hold.
    * Does NOT cut power on end — robot is hanging, brake mode + 318:1 reduction holds it.
+   * Guard: will not execute unless arm is near horizontal (deployed via prepareToClimb).
    *
    * @param climber The climber subsystem
    */
   public static Command executeClimb(ClimberSubsystem climber) {
     return Commands.sequence(
+        // Guard: don't pull unless arm is near horizontal
+        Commands.waitUntil(() -> climber.getArmDegrees() > climber.getHorizontalDegrees() - 15)
+            .withTimeout(0.1),
+
         // Step 1: pull up to climbed position (with timeout safety)
         Commands.run(() -> climber.setArmPosition(climber.getClimbedDegrees()), climber)
             .until(() -> climber.atSetpoint(5.0))
@@ -55,8 +63,7 @@ public final class ClimberCommands {
         // Step 2: hold at climbed position forever
         Commands.run(() -> climber.setArmPosition(climber.getClimbedDegrees()), climber)
     ).finallyDo((interrupted) -> {
-      // Log but do NOT stop — robot is hanging, brake mode holds
-      System.out.println("ClimberCommands: executeClimb ended, interrupted=" + interrupted);
+      DataLogManager.log("ClimberCommands: executeClimb ended, interrupted=" + interrupted);
     });
   }
 }

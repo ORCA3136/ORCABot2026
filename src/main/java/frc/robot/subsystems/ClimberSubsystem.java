@@ -6,6 +6,7 @@ package frc.robot.subsystems;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
+import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
@@ -15,6 +16,7 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -54,6 +56,7 @@ public class ClimberSubsystem extends SubsystemBase {
   private double targetDegrees = 0.0;
   private boolean isZeroed = false;
   private boolean manualOverride = false;
+  private boolean safetyTripped = false;
 
   // Tunable position setpoints (read from SmartDashboard)
   private double stowedDegrees = ClimberConstants.kStowedDegrees;
@@ -116,9 +119,14 @@ public class ClimberSubsystem extends SubsystemBase {
    * Seeds position to 0° (stowed).
    */
   public void zeroClimber() {
-    climberEncoder.setPosition(0);
-    targetDegrees = 0.0;
-    isZeroed = true;
+    REVLibError err = climberEncoder.setPosition(0);
+    if (err == REVLibError.kOk) {
+      targetDegrees = 0.0;
+      isZeroed = true;
+    } else {
+      isZeroed = false;
+      System.err.println("ClimberSubsystem: FAILED to zero encoder: " + err);
+    }
   }
 
   /** @return Current arm position in degrees (0° = stowed). */
@@ -178,6 +186,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @param speed RPM-scale value (positive = extend, negative = retract)
    */
   public void setManualDutyCycle(double speed) {
+    if (safetyTripped) { climberPrimaryMotor.set(0); return; }
     manualOverride = true;
     double armDeg = getArmDegrees();
     // Enforce limits even in manual mode
@@ -242,13 +251,18 @@ public class ClimberSubsystem extends SubsystemBase {
 
   /** Read tuning values from SmartDashboard and apply PID changes. */
   private void updateTuningValues() {
-    tuningEnabled = SmartDashboard.getBoolean("Climber/Tuning/Enabled", false);
+    tuningEnabled = SmartDashboard.getBoolean("Climber/Tuning/Enabled", false)
+        && !DriverStation.isFMSAttached();
     if (!tuningEnabled) return;
 
     double newP = SmartDashboard.getNumber("Climber/Tuning/kP", tuneP);
     double newD = SmartDashboard.getNumber("Climber/Tuning/kD", tuneD);
     tuneG = SmartDashboard.getNumber("Climber/Tuning/kG", tuneG);
     tuneS = SmartDashboard.getNumber("Climber/Tuning/kS", tuneS);
+
+    // Clamp PID gains to safe ranges
+    newP = MathUtil.clamp(newP, 0, 0.5);
+    newD = MathUtil.clamp(newD, 0, 2.0);
 
     // Only reconfigure if PID gains changed (avoid CAN spam)
     if (newP != tuneP || newD != tuneD) {
@@ -261,11 +275,11 @@ public class ClimberSubsystem extends SubsystemBase {
       climberPrimaryMotor.configure(updatedConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
     }
 
-    stowedDegrees = SmartDashboard.getNumber("Climber/Tuning/StowedDeg", stowedDegrees);
-    horizontalDegrees = SmartDashboard.getNumber("Climber/Tuning/HorizontalDeg", horizontalDegrees);
-    climbedDegrees = SmartDashboard.getNumber("Climber/Tuning/ClimbedDeg", climbedDegrees);
-    maxArmDegrees = SmartDashboard.getNumber("Climber/Tuning/MaxDeg", maxArmDegrees);
-    minArmDegrees = SmartDashboard.getNumber("Climber/Tuning/MinDeg", minArmDegrees);
+    stowedDegrees = MathUtil.clamp(SmartDashboard.getNumber("Climber/Tuning/StowedDeg", stowedDegrees), -10, 30);
+    horizontalDegrees = MathUtil.clamp(SmartDashboard.getNumber("Climber/Tuning/HorizontalDeg", horizontalDegrees), 30, 150);
+    climbedDegrees = MathUtil.clamp(SmartDashboard.getNumber("Climber/Tuning/ClimbedDeg", climbedDegrees), 90, 200);
+    maxArmDegrees = MathUtil.clamp(SmartDashboard.getNumber("Climber/Tuning/MaxDeg", maxArmDegrees), 0, 360);
+    minArmDegrees = MathUtil.clamp(SmartDashboard.getNumber("Climber/Tuning/MinDeg", minArmDegrees), -30, 90);
   }
 
   // ── Telemetry ───────────────────────────────────────────────────────
@@ -275,7 +289,7 @@ public class ClimberSubsystem extends SubsystemBase {
     armDegreesEntry.setDouble(armDeg);
     targetDegreesEntry.setDouble(targetDegrees);
     errorEntry.setDouble(targetDegrees - armDeg);
-    motorRotationsEntry.setDouble(climberPrimaryMotor.getEncoder().getPosition()
+    motorRotationsEntry.setDouble(climberEncoder.getPosition()
         * ClimberConstants.kTotalReduction / 360.0); // convert back to raw motor rotations
     leftOutputEntry.setDouble(climberPrimaryMotor.getAppliedOutput());
     rightOutputEntry.setDouble(climberSecondaryMotor.getAppliedOutput());
@@ -285,6 +299,12 @@ public class ClimberSubsystem extends SubsystemBase {
     isZeroedEntry.setBoolean(isZeroed);
     atSetpointEntry.setBoolean(atSetpoint());
     stateEntry.setString(getStateString());
+    // Motor temperatures and extra state
+    climberTable.getEntry("Primary Temp C").setDouble(climberPrimaryMotor.getMotorTemperature());
+    climberTable.getEntry("Secondary Temp C").setDouble(climberSecondaryMotor.getMotorTemperature());
+    climberTable.getEntry("FeedForward").setDouble(calculateFeedForward());
+    climberTable.getEntry("Manual Override").setBoolean(manualOverride);
+    climberTable.getEntry("Safety Tripped").setBoolean(safetyTripped);
   }
 
   // ── Periodic ────────────────────────────────────────────────────────
@@ -293,12 +313,18 @@ public class ClimberSubsystem extends SubsystemBase {
   public void periodic() {
     double armDeg = getArmDegrees();
 
-    // HARD SAFETY — cut motor if past limits
+    // HARD SAFETY — cut motor if past limits, clamp target to prevent oscillation
     if (isZeroed && (armDeg > maxArmDegrees || armDeg < minArmDegrees)) {
       climberPrimaryMotor.set(0);
-    } else if (!manualOverride) {
-      // Run PID to hold/reach target
-      pidController.setSetpoint(targetDegrees, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
+      targetDegrees = MathUtil.clamp(armDeg, minArmDegrees, maxArmDegrees);
+      manualOverride = false;
+      safetyTripped = true;
+    } else {
+      safetyTripped = false;
+      if (!manualOverride) {
+        // Run PID to hold/reach target
+        pidController.setSetpoint(targetDegrees, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
+      }
     }
 
     updateTuningValues();

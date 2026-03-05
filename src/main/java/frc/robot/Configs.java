@@ -121,7 +121,7 @@ public class Configs {
                 .inverted(false)
                 .idleMode(IdleMode.kBrake)
                 .voltageCompensation(12)
-                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
             climberPrimaryMotor.encoder
                 .positionConversionFactor(360.0 / ClimberConstants.kTotalReduction)   // motor rot → arm degrees
                 .velocityConversionFactor(360.0 / ClimberConstants.kTotalReduction / 60.0); // RPM → deg/s
@@ -129,12 +129,18 @@ public class Configs {
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
                 .pid(ClimberConstants.kP, ClimberConstants.kI, ClimberConstants.kD)
                 .outputRange(-0.8, 0.8);
+            // Hardware soft limits — backup safety layer on motor controller
+            climberPrimaryMotor.softLimit
+                .forwardSoftLimitEnabled(true)
+                .forwardSoftLimit((float)(ClimberConstants.kMaxArmDegrees - 2.0))
+                .reverseSoftLimitEnabled(true)
+                .reverseSoftLimit((float)(ClimberConstants.kMinArmDegrees + 2.0));
 
             // Secondary: pure follower — no PID
             climberSecondaryMotor
                 .idleMode(IdleMode.kBrake)
                 .follow(CanIdConstants.kClimberPrimaryCanId, false)
-                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
         }
     }
 
