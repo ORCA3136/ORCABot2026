@@ -182,7 +182,7 @@ public class RobotContainer {
     m_primaryController.rightStick  ().onTrue(Commands.runOnce(() -> {
                                         Command current = driveBase.getCurrentCommand();
                                         if (current != null) current.cancel();
-                                        driveBase.setDefaultCommand(mediumDriveCommand);
+                                        driveBase.setDefaultCommand(slowDriveCommand);
                                      }))
                                      .onFalse(Commands.runOnce(() -> {
                                         Command current = driveBase.getCurrentCommand();
