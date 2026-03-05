@@ -44,7 +44,7 @@ public class Configs {
             secondaryHoodConfig
                 .idleMode(IdleMode.kBrake)
                 .follow(CanIdConstants.kHoodPrimaryCanId, true)
-                .smartCurrentLimit(CurrentConstants.AMP30, CurrentConstants.AMP20);
+                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
             primaryHoodConfig.absoluteEncoder
                 .positionConversionFactor(HoodConstants.kMotorGearRatio)
                 .velocityConversionFactor(HoodConstants.kMotorGearRatio);
