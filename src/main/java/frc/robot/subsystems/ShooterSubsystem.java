@@ -51,6 +51,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private double hoodCalibrationOffset = 0.0;
   private DigitalInput hoodLimitSwitch = null;
+  private boolean prevLimitSwitchPressed = false;
   private boolean hoodManualOverride = false;
   private boolean hoodEncoderValid = true;
 
@@ -97,6 +98,7 @@ public class ShooterSubsystem extends SubsystemBase {
   private final NetworkTableEntry secondaryCurrentEntryHood = hoodTable.getEntry(NetworkTableNames.Hood.kSecondaryCurrent);
   private final NetworkTableEntry calibrationOffsetEntryHood = hoodTable.getEntry("Calibration Offset");
   private final NetworkTableEntry encoderValidEntryHood = hoodTable.getEntry("Encoder Valid");
+  private final NetworkTableEntry rawPositionEntryHood = hoodTable.getEntry("Raw Position");
 
 
   private InterpolatingDoubleTreeMap shooterSpeedMap = new InterpolatingDoubleTreeMap();
@@ -187,10 +189,14 @@ public class ShooterSubsystem extends SubsystemBase {
   /** Re-zero the hood encoder by computing a calibration offset from the current raw position.
    *  Call this when the hood is physically at the home (down) position. */
   public void reZeroHood() {
-    hoodCalibrationOffset = HoodConstants.kEncoderOffset - hoodEncoder.getPosition();
+    double newOffset = HoodConstants.kEncoderOffset - hoodEncoder.getPosition();
     hoodTarget = HoodConstants.kEncoderOffset;
     clampHoodTarget();
-    Preferences.setDouble(kCalibrationOffsetKey, hoodCalibrationOffset);
+    // Only persist if offset actually changed (avoid unnecessary flash writes)
+    if (Math.abs(newOffset - hoodCalibrationOffset) > 0.01) {
+      hoodCalibrationOffset = newOffset;
+      Preferences.setDouble(kCalibrationOffsetKey, hoodCalibrationOffset);
+    }
   }
 
   /** Enable a limit switch on the given DIO port for auto-re-zeroing the hood. */
@@ -442,6 +448,7 @@ public class ShooterSubsystem extends SubsystemBase {
     secondaryCurrentEntryHood.setDouble(getHoodSecondaryCurrent());
     calibrationOffsetEntryHood.setDouble(hoodCalibrationOffset);
     encoderValidEntryHood.setBoolean(hoodEncoderValid);
+    rawPositionEntryHood.setDouble(hoodEncoder.getPosition());
   }
 
   /** This method will be called once per scheduler run */
@@ -449,12 +456,18 @@ public class ShooterSubsystem extends SubsystemBase {
   public void periodic() {
     rampSetpoint();
 
-    // Limit switch auto-re-zero
-    if (hoodLimitSwitch != null && !hoodLimitSwitch.get()) {
-      reZeroHood();
+    // Limit switch auto-re-zero (edge-triggered: fires once per activation)
+    if (hoodLimitSwitch != null) {
+      boolean pressed = !hoodLimitSwitch.get();
+      if (pressed && !prevLimitSwitchPressed) {
+        reZeroHood();
+      }
+      prevLimitSwitchPressed = pressed;
     }
 
-    // Stall detection auto-re-zero: if targeting home, high current, no movement → stalled at hard stop
+    // Stall detection auto-re-zero: if targeting home, high current, no movement → stalled at hard stop.
+    // Only fires when shooter is off — prevents interrupting active shots.
+    // If hood stalls while shooting, rely on limit switch or manual re-zero (operator button 3).
     boolean isStalled = stallDebouncer.calculate(
         shooterVelocityTarget == 0
         && Math.abs(hoodTarget - HoodConstants.kEncoderOffset) < 0.05
