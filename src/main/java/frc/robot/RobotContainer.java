@@ -267,10 +267,23 @@ public class RobotContainer {
         }));
 
     // Scoring position buttons — operator taps to send robot, driver overrides with sticks
-    m_secondaryController.button(9).onTrue(
-        DriveToPositionCommand.driveToScoreClose(driveBase, shooterSubsystem, this::driverIsOverriding));
-    m_secondaryController.button(10).onTrue(
-        DriveToPositionCommand.driveToScoreTrench(driveBase, shooterSubsystem, this::driverIsOverriding));
+    // m_secondaryController.button(9).onTrue(
+    //     DriveToPositionCommand.driveToScoreClose(driveBase, shooterSubsystem, this::driverIsOverriding));
+    // m_secondaryController.button(10).onTrue(
+    //     DriveToPositionCommand.driveToScoreTrench(driveBase, shooterSubsystem, this::driverIsOverriding));
+    m_secondaryController.button(9).whileTrue(
+        Commands.runEnd(
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(1500),
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
+            intakeSubsystem
+        ));
+    m_secondaryController.button(10).whileTrue(
+        Commands.runEnd(
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(-1000),
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
+            intakeSubsystem
+        ));
+    
     m_secondaryController.button(11).onTrue(
         DriveToPositionCommand.driveToScoreFar(driveBase, shooterSubsystem, this::driverIsOverriding));
 
@@ -344,6 +357,10 @@ public class RobotContainer {
     NamedCommands.registerCommand("AimAndShoot",           AutoCommands.aimAndShoot(shooterSubsystem, driveBase, kickerSubsystem, conveyorSubsystem, AutoConstants.kShootTimeoutSec));
     NamedCommands.registerCommand("MeteredFeed3s",         AutoCommands.meteredFeedTimed(conveyorSubsystem, kickerSubsystem, shooterSubsystem, AutoConstants.kFeedTimeoutSec));
     NamedCommands.registerCommand("SpinUpFromDistance",    AutoCommands.spinUpFromDistance(shooterSubsystem, driveBase));
+
+    // Teleop-mirrored sequences (safe for parallel use in PathPlanner)
+    NamedCommands.registerCommand("Shoot Sequence",       AutoCommands.shootSequence(shooterSubsystem, 6.0));
+    NamedCommands.registerCommand("Feed Sequence",        AutoCommands.feedSequence(intakeSubsystem, conveyorSubsystem, kickerSubsystem, 6.0));
 
     // Drive-to-position
     NamedCommands.registerCommand("Drive To Hub",          DriveToPositionCommand.driveToHub(driveBase));

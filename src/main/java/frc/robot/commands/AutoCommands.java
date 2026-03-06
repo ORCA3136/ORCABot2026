@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FuelPathConstants;
 import frc.robot.RobotLogger;
+import frc.robot.commands.RunConveyorAndKickerCommand;
 import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.IntakeSubsystem.Setpoint;
@@ -151,6 +152,50 @@ public final class AutoCommands {
       RobotLogger.log("AimAndShoot: " + (interrupted ? "TIMED_OUT" : "COMPLETE"));
     })
     .withName("AimAndShoot");
+  }
+
+  // ── Group D: Teleop-mirrored sequences (for PathPlanner parallel use) ──
+
+  /**
+   * Shoot sequence — ShooterSubsystem only.
+   * Continuously updates shooter/hood from distance map.
+   * On end: stops shooter and resets hood.
+   * Safe to run in parallel with feedSequence (no subsystem overlap).
+   */
+  public static Command shootSequence(ShooterSubsystem shooter, double timeoutSec) {
+    return Commands.run(() -> shooter.setShooterMap(), shooter)
+        .withTimeout(timeoutSec)
+        .finallyDo(interrupted -> {
+          shooter.setShooterVelocityTarget(0);
+          shooter.setHoodTarget(0);
+        })
+        .withName("ShootSequence");
+  }
+
+  /**
+   * Feed sequence — IntakeSubsystem + ConveyorSubsystem + KickerSubsystem.
+   * Runs conveyor+kicker the entire time. After 1s starts intake pulsing for 3s,
+   * then retracts intake. finallyDo ensures all motors stop on timeout.
+   * Safe to run in parallel with shootSequence (no subsystem overlap).
+   */
+  public static Command feedSequence(IntakeSubsystem intake, ConveyorSubsystem conveyor,
+                                      KickerSubsystem kicker, double timeoutSec) {
+    return Commands.parallel(
+        new RunConveyorAndKickerCommand(conveyor, kicker, 1000, 5000),
+        Commands.sequence(
+            Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kSafe), intake),
+            Commands.waitSeconds(1),
+            FuelPathCommands.intakePulse(intake).withTimeout(2),
+            Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kUp), intake)
+        )
+    )
+    .withTimeout(timeoutSec)
+    .finallyDo(interrupted -> {
+      conveyor.setConveyorDutyCycle(0);
+      kicker.setKickerDutyCycle(0);
+      intake.setIntakeDutyCycle(0);
+    })
+    .withName("FeedSequence");
   }
 
   /** Metered feed with timeout. Wraps existing FuelPathCommands.meteredFeed. */

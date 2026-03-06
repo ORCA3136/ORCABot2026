@@ -133,11 +133,11 @@ public class IntakeSubsystem extends SubsystemBase {
       tempTargetPosition = IntakeConstants.kMaxDeployPosition;
 
     // If robotPose is close to any hub then put intake up
-    Translation2d robotPose2d = m_swerveSubsystem.getPose().getTranslation();
-    Translation2d nearestTrench = robotPose2d.nearest(FieldPositions.kTrenchPoses);
-    if (robotPose2d.getDistance(nearestTrench) < 1) {
-      tempTargetPosition = IntakeConstants.kMinDeployPosition;
-    }
+    // Translation2d robotPose2d = m_swerveSubsystem.getPose().getTranslation();
+    // Translation2d nearestTrench = robotPose2d.nearest(FieldPositions.kTrenchPoses);
+    // if (robotPose2d.getDistance(nearestTrench) < 1) {
+    //   tempTargetPosition = IntakeConstants.kSafeDeployPosition;
+    // }
 
     if (tempTargetPosition == IntakeConstants.kSafeDeployPosition && getIntakeDeployPosition() < 0.1)
       tempTargetPosition += 0.2;

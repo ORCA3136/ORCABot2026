@@ -11,19 +11,37 @@
           }
         },
         {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.2
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Left mid fuel 1"
+          }
+        },
+        {
           "type": "parallel",
           "data": {
             "commands": [
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Left mid fuel 1"
+                  "pathName": "Left mid fuel 2"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "Run Intake"
+                  "name": "RunIntake3s"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "RunConveyor3s"
                 }
               }
             ]
@@ -32,7 +50,51 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left mid fuel 2"
+            "pathName": "Left mid fuel 3"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Left mid fuel 4"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "Shoot Sequence"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Aim at Hub"
+                }
+              },
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 1.0
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "Feed Sequence"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
           }
         }
       ]

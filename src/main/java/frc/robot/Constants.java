@@ -90,7 +90,7 @@ public final class Constants {
     // public static final double kV = 0;
     // public static final double kA = 0;
 
-    public static final double intakeDeployOffset = 0.035;
+    public static final double intakeDeployOffset = 0.034;
     public static final double kMaxDeployPosition = 0.20 + intakeDeployOffset;
     public static final double kSafeDeployPosition = 0.095 + intakeDeployOffset;
     public static final double kMinDeployPosition = 0.0 + intakeDeployOffset;

@@ -66,13 +66,13 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "Aim at Hub"
+                  "name": "Shoot Sequence"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "Shoot to Hub"
+                  "name": "Aim at Hub"
                 }
               },
               {
@@ -82,45 +82,13 @@
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 1.5
+                        "waitTime": 1.0
                       }
                     },
                     {
                       "type": "named",
                       "data": {
-                        "name": "Intake Safe"
-                      }
-                    },
-                    {
-                      "type": "parallel",
-                      "data": {
-                        "commands": [
-                          {
-                            "type": "named",
-                            "data": {
-                              "name": "FeedAll5s"
-                            }
-                          },
-                          {
-                            "type": "sequential",
-                            "data": {
-                              "commands": [
-                                {
-                                  "type": "wait",
-                                  "data": {
-                                    "waitTime": 3.0
-                                  }
-                                },
-                                {
-                                  "type": "named",
-                                  "data": {
-                                    "name": "Retract Intake"
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        ]
+                        "name": "Feed Sequence"
                       }
                     }
                   ]
