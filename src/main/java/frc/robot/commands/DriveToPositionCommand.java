@@ -140,6 +140,26 @@ public final class DriveToPositionCommand {
         swerve, shooter, driverOverride);
   }
 
+  /** Drive to the custom tested scoring position while spinning up shooter. */
+  public static Command driveToScoreCustom(SwerveSubsystem swerve, ShooterSubsystem shooter,
+                                            BooleanSupplier driverOverride) {
+    return Commands.defer(() -> {
+      Pose2d target = FieldPositions.kCustomScoringPose;
+      DataLogManager.log("DriveToScore-Custom: target=" + target);
+      Command driveCmd = swerve.driveToPose(target, TELEOP_CONSTRAINTS)
+          .withName("DriveToScore-Custom-Path");
+      Command spinUpCmd = Commands.run(() -> shooter.setShooterMap(), shooter)
+          .withName("DriveToScore-Custom-SpinUp");
+      return driveCmd.deadlineFor(spinUpCmd);
+    }, Set.of(swerve, shooter))
+    .until(driverOverride)
+    .withTimeout(FieldPositions.kScoringDriveTimeoutSec)
+    .finallyDo(interrupted -> {
+      DataLogManager.log("DriveToScore-Custom: " + (interrupted ? "CANCELLED" : "ARRIVED"));
+    })
+    .withName("DriveToScore-Custom");
+  }
+
   /**
    * Shared implementation: drive to nearest left/right variant, spin up shooter in parallel.
    * Cancels on driver stick input or timeout.

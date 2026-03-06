@@ -283,18 +283,19 @@ public class RobotContainer {
             () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
             intakeSubsystem
         ));
-    
+    //known good scoring position that we like
     m_secondaryController.button(11).onTrue(
-        DriveToPositionCommand.driveToScoreFar(driveBase, shooterSubsystem, this::driverIsOverriding));
-
-    m_secondaryController.button(12).whileTrue(
-        Commands.sequence(
-            Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)),
-            Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kMaxDeployPosition) < 0.02),
-            Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)),
-            Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kSafeDeployPosition) < 0.02)
-        ).repeatedly()
-    );
+        DriveToPositionCommand.driveToScoreCustom(driveBase, shooterSubsystem, this::driverIsOverriding));
+  // m_secondaryController.button(12).whileTrue(                                                                                                                                     
+  //           Commands.sequence(                                                                                                                                                   
+  //               Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)),                                                                     
+  //              Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kMaxDeployPosition) < 0.02),                                       
+  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)),                                                                   
+  //                Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kSafeDeployPosition) < 0.02)                                       
+  //          ).repeatedly()                                                                                                                                                       
+  //      );       
+    m_secondaryController.button(12).onTrue(
+        Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown), intakeSubsystem));
   }
 
   private void configureNamedCommands() {

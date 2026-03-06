@@ -419,6 +419,9 @@ public final class Constants {
     public static final Pose2d kScoreFarLeft = new Pose2d(2.0, 6.0, Rotation2d.fromDegrees(45));     // TODO: MEASURE ON FIELD
     public static final Pose2d kScoreFarRight = new Pose2d(2.0, 2.0, Rotation2d.fromDegrees(-45));   // TODO: MEASURE ON FIELD
 
+    // Custom: tested scoring position (blue-side), heading faces hub
+    public static final Pose2d kCustomScoringPose = new Pose2d(2.153, 1.954, Rotation2d.fromDegrees(40.4));
+
     // Driver override threshold — higher than normal deadband (0.08)
     // so minor stick wobble doesn't accidentally cancel auto-drive
     public static final double kDriverOverrideDeadband = 0.15;
