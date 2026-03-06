@@ -183,7 +183,7 @@ public class RobotContainer {
 
     m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
     // Right stick held: medium speed driving (0.8x translation)
-    m_primaryController.rightStick  ().onTrue(Commands.runOnce(() -> {
+    m_primaryController.rightStick  ().whileTrue(Commands.runOnce(() -> {
                                         Command current = driveBase.getCurrentCommand();
                                         if (current != null) current.cancel();
                                         driveBase.setDefaultCommand(slowDriveCommand);
@@ -336,6 +336,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("RunConveyor3s",         AutoCommands.runConveyor(conveyorSubsystem, FuelPathConstants.kConveyorIn, 3.0));
     NamedCommands.registerCommand("RunKicker2s",           AutoCommands.runKicker(kickerSubsystem, FuelPathConstants.kKickerFeed, 2.0));
     NamedCommands.registerCommand("FeedAll3s",             AutoCommands.feedAll(conveyorSubsystem, kickerSubsystem, FuelPathConstants.kConveyorIn, FuelPathConstants.kKickerFeed, 3.0));
+    NamedCommands.registerCommand("FeedAll5s",             AutoCommands.feedAll(conveyorSubsystem, kickerSubsystem, FuelPathConstants.kConveyorIn, FuelPathConstants.kKickerFeed, 5.0));
     NamedCommands.registerCommand("IntakeWithDeploy3s",    AutoCommands.intakeWithDeploy(intakeSubsystem, FuelPathConstants.kIntakeInStandard, 3.0));
     NamedCommands.registerCommand("IntakeWithDeploy5s",    AutoCommands.intakeWithDeploy(intakeSubsystem, FuelPathConstants.kIntakeInStandard, 5.0));
 

@@ -443,7 +443,7 @@ public final class Constants {
 
   public static final class AutoConstants {
     public static final double kIntakeTimeoutSec = 3.0;
-    public static final double kShootTimeoutSec = 4.0;
+    public static final double kShootTimeoutSec = 5.0;
     public static final double kFeedTimeoutSec = 3.0;
     public static final double kAimTimeoutSec = 1.5;
   }

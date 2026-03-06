@@ -136,41 +136,41 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 20)), Double.valueOf(1685));
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 32)), Double.valueOf(1755));
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 44)), Double.valueOf(1825));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 56)), Double.valueOf(1895));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 68)), Double.valueOf(1965));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 56)), Double.valueOf(1885));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 68)), Double.valueOf(1950));
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 80)), Double.valueOf(2035));
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 92)), Double.valueOf(2105));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(104)), Double.valueOf(2175));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2300));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(128)), Double.valueOf(2350));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(2400));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(152)), Double.valueOf(2450));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(164)), Double.valueOf(2525));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(176)), Double.valueOf(2595));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(104)), Double.valueOf(2125));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2150));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(128)), Double.valueOf(2200));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(2275));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(152)), Double.valueOf(2350));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(164)), Double.valueOf(2425));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(176)), Double.valueOf(2500));
 
     // shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2250));
     // shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(134)), Double.valueOf(2300));
     shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(2850)); // 2800
 
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(  8)), Double.valueOf(0.74));
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 20)), Double.valueOf(0.82));
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 32)), Double.valueOf(0.90));
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 44)), Double.valueOf(0.97));
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 56)), Double.valueOf(1.04));
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 68)), Double.valueOf(1.12));
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 80)), Double.valueOf(1.19));
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 92)), Double.valueOf(1.26));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(  8)), Double.valueOf(0.47));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 20)), Double.valueOf(0.52));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 32)), Double.valueOf(0.54));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 44)), Double.valueOf(0.58));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 56)), Double.valueOf(0.61));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 68)), Double.valueOf(0.65));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 80)), Double.valueOf(1.11));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 92)), Double.valueOf(1.24));
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(104)), Double.valueOf(1.34));
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(1.41));
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(128)), Double.valueOf(1.48));
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(1.55));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(1.38));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(128)), Double.valueOf(1.42));
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(1.50));
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(152)), Double.valueOf(1.63));
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(164)), Double.valueOf(1.70));
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(176)), Double.valueOf(1.78));
 
     // hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(1.46));
     // hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(134)), Double.valueOf(1.48));
-    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(1.90)); // 1.78
+    hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(1.82)); // 1.78
   }
 
   public double calculateShooterFeedForward() {
