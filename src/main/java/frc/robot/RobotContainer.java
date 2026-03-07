@@ -195,19 +195,19 @@ public class RobotContainer {
                                      }));
 
     // Toggled button options (active while holding back button)
-    m_primaryController.back().and(m_primaryController.a())   .whileTrue(new ShootCommand(shooterSubsystem, driveBase)); 
-    m_primaryController.back().and(m_primaryController.b());
+    m_primaryController.back().and(m_primaryController.a())           .onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));  // Shooter - by 50
+    m_primaryController.back().and(m_primaryController.b())           .onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-2))); // Shooter + by 50
     m_primaryController.back().and(m_primaryController.x())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(2000)))
-                                                                      .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0))); // Shooter - by 50
-    m_primaryController.back().and(m_primaryController.y())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-000)))
-                                                                      .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0))); // Shooter + by 50
+                                                                      .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0)));
+    m_primaryController.back().and(m_primaryController.y())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-2000)))
+                                                                      .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0)));
 
     m_primaryController.start().onTrue(Commands.runOnce(() -> shooterSubsystem.setToggleDirection()));
 
-    m_primaryController.back().and(m_primaryController.povUp())   .whileTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4))); // Intake up
-    m_primaryController.back().and(m_primaryController.povDown()) .whileTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1))); // Intake down
-    m_primaryController.back().and(m_primaryController.povLeft()) .whileTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(3))); // Hood up
-    m_primaryController.back().and(m_primaryController.povRight()).whileTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2))); // Hood down
+    m_primaryController.back().and(m_primaryController.povUp());    // use is TBD
+    m_primaryController.back().and(m_primaryController.povDown());
+    m_primaryController.back().and(m_primaryController.povLeft());
+    m_primaryController.back().and(m_primaryController.povRight());
 
     m_primaryController.back().and(m_primaryController.leftTrigger()) .whileTrue(new RunIntakeCommand(intakeSubsystem, -6500));
     // m_primaryController.back().and(m_primaryController.rightTrigger());
@@ -251,6 +251,7 @@ public class RobotContainer {
 
     // Aim at hub (moved from button 7) — driver keeps translation, heading auto-locks
     m_secondaryController.button(8)
+
         .onTrue(Commands.runOnce(() -> {
           Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
               ? FieldPositions.kRedFieldElements.get(0)
@@ -288,8 +289,8 @@ public class RobotContainer {
         DriveToPositionCommand.driveToScoreCustom(driveBase, shooterSubsystem, this::driverIsOverriding));
   // m_secondaryController.button(12).whileTrue(                                                                                                                                     
   //           Commands.sequence(                                                                                                                                                   
-  //               Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)),                                                                     
-  //              Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kMaxDeployPosition) < 0.02),                                       
+  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)),                                                                     
+  //                Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kMaxDeployPosition) < 0.02),                                       
   //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)),                                                                   
   //                Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kSafeDeployPosition) < 0.02)                                       
   //          ).repeatedly()                                                                                                                                                       

@@ -2,9 +2,12 @@ package frc.robot;
 
 import java.util.List;
 
+import com.pathplanner.lib.path.PathConstraints;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 
 public final class Constants {
 
@@ -449,6 +452,12 @@ public final class Constants {
     public static final double kShootTimeoutSec = 5.0;
     public static final double kFeedTimeoutSec = 3.0;
     public static final double kAimTimeoutSec = 1.5;
+  }
+
+  public static final class PathPlannerConstants {
+    public static final PathConstraints slowConstraints = new PathConstraints(
+        Units.feetToMeters(3.5), 4.0,             
+        Units.degreesToRadians(100), Units.degreesToRadians(720));
   }
 
   public static final class FuelPathConstants {

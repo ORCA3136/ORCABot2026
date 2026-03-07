@@ -266,23 +266,35 @@ public class ShooterSubsystem extends SubsystemBase {
   /** Increases the speed of the shooter by ~ 100 RPM */
   public void increaseShooterVelocity(int level) {
     if (level == 1) {
-      if (!toggleDirection) shooterVelocityTarget += 5;
-      else shooterVelocityTarget -= 5;
+      shooterVelocityTarget += 5;
     }
 
     if (level == 2) {
-      if (!toggleDirection) shooterVelocityTarget += 50;
-      else shooterVelocityTarget -= 50;
+      shooterVelocityTarget += 50;
     }
 
     if (level == 3) {
-      if (!toggleDirection) shooterVelocityTarget += 100;
-      else shooterVelocityTarget -= 100;
+      shooterVelocityTarget += 100;
     }
 
     if (level == 4) {
-      if (!toggleDirection) shooterVelocityTarget += 500;
-      else shooterVelocityTarget -= 500;
+      shooterVelocityTarget += 500;
+    }
+
+    if (level == -1) {
+      shooterVelocityTarget -= 5;
+    }
+
+    if (level == -2) {
+      shooterVelocityTarget -= 50;
+    }
+
+    if (level == -3) {
+      shooterVelocityTarget -= 100;
+    }
+
+    if (level == -4) {
+      shooterVelocityTarget -= 500;
     }
 
 

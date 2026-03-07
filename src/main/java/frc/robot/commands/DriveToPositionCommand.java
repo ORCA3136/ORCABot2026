@@ -1,20 +1,32 @@
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import java.text.FieldPosition;
+import java.util.List;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 
+import com.google.flatbuffers.Constants;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.GoalEndState;
+import com.pathplanner.lib.path.IdealStartingState;
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.Waypoint;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldPositions;
+import frc.robot.Constants.PathPlannerConstants;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import swervelib.SwerveDrive;
@@ -144,10 +156,51 @@ public final class DriveToPositionCommand {
   public static Command driveToScoreCustom(SwerveSubsystem swerve, ShooterSubsystem shooter,
                                             BooleanSupplier driverOverride) {
     return Commands.defer(() -> {
+      Command driveCmd;
       Pose2d target = FieldPositions.kCustomScoringPose;
       DataLogManager.log("DriveToScore-Custom: target=" + target);
-      Command driveCmd = swerve.driveToPose(target, TELEOP_CONSTRAINTS)
-          .withName("DriveToScore-Custom-Path");
+      
+
+        // Check if target position needs to be flipped
+        var alliance = DriverStation.getAlliance();
+        boolean flip = alliance.get() == DriverStation.Alliance.Red;
+        if (flip) {
+          target = new Pose2d(new Translation2d(16.54 - target.getX(), 8.07 - target.getY()), target.getRotation());
+        }
+
+        // Get path velocity heading
+        Rotation2d pathVelocityHeading;
+        ChassisSpeeds cs = swerve.getFieldVelocity();
+        if (swerve.getVelocityMagnitude().in(MetersPerSecond) < 0.25) {
+            var diff = target.minus(swerve.getPose()).getTranslation();
+            pathVelocityHeading = (diff.getNorm() < 0.01) ? target.getRotation() : diff.getAngle();//.rotateBy(Rotation2d.k180deg);
+        } else {
+          pathVelocityHeading = new Rotation2d(cs.vxMetersPerSecond, cs.vyMetersPerSecond);
+        }
+
+        // Create the path waypoints (Start, end)
+        List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
+          new Pose2d(swerve.getPose().getTranslation(), pathVelocityHeading),
+          target
+        );
+        // When points are too close pathplanner is unreliable
+        if (waypoints.get(0).anchor().getDistance(waypoints.get(1).anchor()) < 0.01) {
+            driveCmd = Commands.print("Auto alignment too close to desired position to continue");
+        } 
+        // Create the pathplanner command to drive the robot
+        else {
+          PathPlannerPath path = new PathPlannerPath(
+            waypoints, 
+            PathPlannerConstants.slowConstraints,
+            new IdealStartingState(swerve.getVelocityMagnitude(), swerve.getHeading()), 
+            new GoalEndState(0.0, target.getRotation())
+          );
+          path.preventFlipping = true;
+          driveCmd = AutoBuilder.followPath(path);
+        }
+
+      // Command driveCmd = swerve.driveToPose(target, TELEOP_CONSTRAINTS)
+      //     .withName("DriveToScore-Custom-Path");
       Command spinUpCmd = Commands.run(() -> shooter.setShooterMap(), shooter)
           .withName("DriveToScore-Custom-SpinUp");
       return driveCmd.deadlineFor(spinUpCmd);
