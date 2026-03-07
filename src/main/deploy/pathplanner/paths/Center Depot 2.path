@@ -8,7 +8,7 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 0.42366198945171263,
+        "x": 0.4236619894517125,
         "y": 7.175514790312408
       },
       "isLocked": false,
@@ -16,12 +16,28 @@
     },
     {
       "anchor": {
-        "x": 0.5036777777777779,
-        "y": 5.7
+        "x": 0.4679885877318113,
+        "y": 5.982268188302426
       },
       "prevControl": {
-        "x": 0.6264798296963296,
-        "y": 5.917760547493327
+        "x": 0.4679885877318113,
+        "y": 6.232268188302426
+      },
+      "nextControl": {
+        "x": 0.4679885877318113,
+        "y": 5.732268188302426
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.374,
+        "y": 5.853
+      },
+      "prevControl": {
+        "x": 1.1304025770605364,
+        "y": 5.796783494085348
       },
       "nextControl": null,
       "isLocked": false,
@@ -56,7 +72,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -90.0
+    "rotation": -87.064
   },
   "reversed": false,
   "folder": "Center Depot Folder",

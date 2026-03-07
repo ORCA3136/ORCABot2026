@@ -3,37 +3,32 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 0.504,
-        "y": 5.7
+        "x": 1.374,
+        "y": 5.853
       },
       "prevControl": null,
       "nextControl": {
-        "x": 0.38119804132718593,
-        "y": 5.4822393999224825
+        "x": 1.617597422939464,
+        "y": 5.909216505914651
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.5987333333333336,
-        "y": 4.5319666666666665
+        "x": 2.266462196861626,
+        "y": 5.270641940085593
       },
       "prevControl": {
-        "x": 2.3490452486138724,
-        "y": 4.54445107090264
+        "x": 2.05208896543349,
+        "y": 5.399265878942474
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": null
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 0.23651452282157712,
-      "rotationDegrees": -46.53697640537089
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [
     {
       "name": "Constraints Zone",
@@ -61,13 +56,13 @@
   },
   "goalEndState": {
     "velocity": 0.0,
-    "rotation": -13.761000000000001
+    "rotation": -37.74680538727473
   },
   "reversed": false,
   "folder": "Center Depot Folder",
   "idealStartingState": {
     "velocity": 0.0,
-    "rotation": -90.0
+    "rotation": -87.064
   },
   "useDefaultConstraints": true
 }

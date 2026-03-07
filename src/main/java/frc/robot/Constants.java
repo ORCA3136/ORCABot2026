@@ -52,7 +52,7 @@ public final class Constants {
   }
 
   public static final class HoodConstants {
-    public static final double kEncoderOffset = 0.30; // in hood/motor rotations
+    public static final double kEncoderOffset = 0.6; // in hood/motor rotations
 
     public static final double kSetpointLow = 0.3;
     public static final double kSetpointMed = 0.9;

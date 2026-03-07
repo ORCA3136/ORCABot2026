@@ -14,6 +14,7 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
@@ -104,9 +105,12 @@ public class ShooterSubsystem extends SubsystemBase {
   private InterpolatingDoubleTreeMap shooterSpeedMap = new InterpolatingDoubleTreeMap();
   private InterpolatingDoubleTreeMap hoodAngleMap = new InterpolatingDoubleTreeMap();
 
+  private static final double additionalRPM = 65;
 
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem(SwerveSubsystem swerveSubsystem) {
+
+    
 
     m_swerveSubsystem = swerveSubsystem;
 
@@ -132,25 +136,25 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   private void addMapValues() {
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(  8)), Double.valueOf(1615));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 20)), Double.valueOf(1685));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 32)), Double.valueOf(1755));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 44)), Double.valueOf(1825));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 56)), Double.valueOf(1885));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 68)), Double.valueOf(1950));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 80)), Double.valueOf(2035));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 92)), Double.valueOf(2105));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(104)), Double.valueOf(2125));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2150));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(128)), Double.valueOf(2200));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(2275));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(152)), Double.valueOf(2350));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(164)), Double.valueOf(2425));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(176)), Double.valueOf(2500));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(  8)), Double.valueOf(1615 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 20)), Double.valueOf(1685 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 32)), Double.valueOf(1755 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 44)), Double.valueOf(1825 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 56)), Double.valueOf(1885 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 68)), Double.valueOf(1950 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 80)), Double.valueOf(2035 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters( 92)), Double.valueOf(2105 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(104)), Double.valueOf(2125 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2150 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(128)), Double.valueOf(2200 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(2275 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(152)), Double.valueOf(2350 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(164)), Double.valueOf(2425 + additionalRPM));
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(176)), Double.valueOf(2500 + additionalRPM));
 
     // shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2250));
     // shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(134)), Double.valueOf(2300));
-    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(2850)); // 2800
+    shooterSpeedMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(2850 + additionalRPM)); // 2800
 
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(  8)), Double.valueOf(0.47));
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters( 20)), Double.valueOf(0.52));
@@ -197,6 +201,10 @@ public class ShooterSubsystem extends SubsystemBase {
       hoodCalibrationOffset = newOffset;
       Preferences.setDouble(kCalibrationOffsetKey, hoodCalibrationOffset);
     }
+    // final SparkMaxConfig primaryHoodConfig = new SparkMaxConfig();
+    // primaryHoodConfig.absoluteEncoder.zeroOffset(0.3 / 32);
+    
+    // hoodPrimaryMotor.configure(primaryHoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
   /** Enable a limit switch on the given DIO port for auto-re-zeroing the hood. */

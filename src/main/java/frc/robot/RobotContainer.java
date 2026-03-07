@@ -134,7 +134,20 @@ public class RobotContainer {
 
     // Buttons
     m_primaryController.a().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
-    m_primaryController.b().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(0)));
+    m_primaryController.b().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> {
+                                        Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+                                            ? FieldPositions.kRedFieldElements.get(0)
+                                            : FieldPositions.kBlueFieldElements.get(0);
+                                        aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+                                        Command current = driveBase.getCurrentCommand();
+                                        if (current != null) current.cancel();
+                                        driveBase.setDefaultCommand(aimAtHubCommand);
+                                     }))
+                                     .onFalse(Commands.runOnce(() -> {
+                                        Command current = driveBase.getCurrentCommand();
+                                        if (current != null) current.cancel();
+                                        driveBase.setDefaultCommand(fastDriveCommand);
+                                     }));
     m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
     m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
 
@@ -153,20 +166,7 @@ public class RobotContainer {
                                         shooterSubsystem.setShooterVelocityTarget(0);
                                         shooterSubsystem.updateHoodTarget(0);
                                      }));
-    m_primaryController.rightTrigger().onTrue(Commands.runOnce(() -> {
-                                        Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
-                                            ? FieldPositions.kRedFieldElements.get(0)
-                                            : FieldPositions.kBlueFieldElements.get(0);
-                                        aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
-                                        Command current = driveBase.getCurrentCommand();
-                                        if (current != null) current.cancel();
-                                        driveBase.setDefaultCommand(aimAtHubCommand);
-                                     }))
-                                     .onFalse(Commands.runOnce(() -> {
-                                        Command current = driveBase.getCurrentCommand();
-                                        if (current != null) current.cancel();
-                                        driveBase.setDefaultCommand(fastDriveCommand);
-                                     }))
+    m_primaryController.rightTrigger()
             .whileTrue(new ShootCommand(shooterSubsystem, driveBase))
            // .whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem).onlyWhile(shooterSubsystem::isShooterReady));
             .whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
@@ -231,6 +231,8 @@ public class RobotContainer {
             () -> climberSubsystem.stopManual(),
             climberSubsystem
         ));
+
+        
     // Button 3: Re-zero hood (press when hood is physically at home position)
     m_secondaryController.button(3).onTrue(
         Commands.runOnce(() -> shooterSubsystem.reZeroHood()));
@@ -242,12 +244,12 @@ public class RobotContainer {
             () -> shooterSubsystem.stopHoodNudge()));
     m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
     // Prepare to climb — stow intake, move arm to horizontal
-    m_secondaryController.button(6).onTrue(
-        ClimberCommands.prepareToClimb(climberSubsystem, intakeSubsystem));
+    // m_secondaryController.button(6).onTrue(
+    //     ClimberCommands.prepareToClimb(climberSubsystem, intakeSubsystem));
 
-    // Execute climb — pull arm to climbed position and hold
-    m_secondaryController.button(7).onTrue(
-        ClimberCommands.executeClimb(climberSubsystem));
+    // // Execute climb — pull arm to climbed position and hold
+    // m_secondaryController.button(7).onTrue(
+    //     ClimberCommands.executeClimb(climberSubsystem));
 
     // Aim at hub (moved from button 7) — driver keeps translation, heading auto-locks
     m_secondaryController.button(8)
