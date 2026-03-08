@@ -64,7 +64,7 @@
     "rotation": 0.0
   },
   "reversed": false,
-  "folder": "Left Depot and Climb",
+  "folder": "Left Depot and Climb Folder",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 103.4103709137653

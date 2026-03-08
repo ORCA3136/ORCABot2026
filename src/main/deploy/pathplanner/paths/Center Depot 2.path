@@ -3,41 +3,41 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 0.621,
-        "y": 7.329
+        "x": 1.088,
+        "y": 6.189
       },
       "prevControl": null,
       "nextControl": {
-        "x": 0.4236619894517125,
-        "y": 7.175514790312408
+        "x": 1.3345263525844402,
+        "y": 6.147469800368739
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 0.4679885877318113,
-        "y": 5.982268188302426
+        "x": 1.5171000000000001,
+        "y": 5.944911111111111
       },
       "prevControl": {
-        "x": 0.4679885877318113,
-        "y": 6.232268188302426
+        "x": 1.5171000000000001,
+        "y": 6.194911111111111
       },
       "nextControl": {
-        "x": 0.4679885877318113,
-        "y": 5.732268188302426
+        "x": 1.5171000000000001,
+        "y": 5.694911111111111
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.374,
-        "y": 5.853
+        "x": 1.088,
+        "y": 5.682
       },
       "prevControl": {
-        "x": 1.1304025770605364,
-        "y": 5.796783494085348
+        "x": 1.3305670457313628,
+        "y": 5.742508084791695
       },
       "nextControl": null,
       "isLocked": false,
@@ -72,13 +72,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -87.064
+    "rotation": 180.0
   },
   "reversed": false,
   "folder": "Center Depot Folder",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -99.039
+    "rotation": 180.0
   },
   "useDefaultConstraints": false
 }

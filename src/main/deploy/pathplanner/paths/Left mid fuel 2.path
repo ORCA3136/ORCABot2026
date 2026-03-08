@@ -50,7 +50,7 @@
     "rotation": -81.703
   },
   "reversed": false,
-  "folder": "Left mid fuel",
+  "folder": "Left mid fuel Folder",
   "idealStartingState": {
     "velocity": 1.5,
     "rotation": -178.781

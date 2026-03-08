@@ -45,7 +45,7 @@
     "rotation": 0.0
   },
   "reversed": false,
-  "folder": "Right Human Player Pickup",
+  "folder": "Right Human Player Pickup Folder",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 37.117859920728385

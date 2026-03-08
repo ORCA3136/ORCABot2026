@@ -52,7 +52,7 @@ public final class Constants {
   }
 
   public static final class HoodConstants {
-    public static final double kEncoderOffset = 0.6; // in hood/motor rotations
+    public static final double kEncoderOffset = 0.64; // in hood/motor rotations
 
     public static final double kSetpointLow = 0.3;
     public static final double kSetpointMed = 0.9;
@@ -119,7 +119,7 @@ public final class Constants {
     public static final double kStowedDegrees = 0.0;
     public static final double kHorizontalDegrees = 90.0;   // TODO: MEASURE on robot
     public static final double kClimbedDegrees = 195.0;
-    public static final double kMaxArmDegrees = 200.0;       // TODO: MEASURE — safety limit
+    public static final double kMaxArmDegrees = 205.0;       // TODO: MEASURE — safety limit
     public static final double kMinArmDegrees = -5.0;        // slight tolerance below stowed
 
     // PID defaults — start VERY low, tune via dashboard

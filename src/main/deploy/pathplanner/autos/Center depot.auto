@@ -9,15 +9,34 @@
           "data": {
             "commands": [
               {
-                "type": "path",
-                "data": {
-                  "pathName": "Center Depot 1"
-                }
-              },
-              {
                 "type": "named",
                 "data": {
                   "name": "Deploy Intake"
+                }
+              },
+              {
+                "type": "race",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "Center Depot 1"
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "RunIntake5s"
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "RunConveyor5s"
+                      }
+                    }
+                  ]
                 }
               }
             ]

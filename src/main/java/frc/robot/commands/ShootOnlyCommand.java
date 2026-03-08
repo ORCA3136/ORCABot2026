@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 /** Sets the shooter flywheel to a target RPM. Stops the flywheel when the command ends. */
 public class ShootOnlyCommand extends Command {
   private final ShooterSubsystem m_shooterSubsystem;
-  private final SwerveSubsystem m_swerveSubsystem;
 
   private double distanceToHub;
 
@@ -20,9 +19,8 @@ public class ShootOnlyCommand extends Command {
    * @param shooterSubsystem The shooter subsystem
    * @param inputVelocity Target RPM for the flywheel (ramping is handled by ShooterSubsystem)
    */
-  public ShootOnlyCommand(ShooterSubsystem shooterSubsystem, SwerveSubsystem swerveSubsystem) {
+  public ShootOnlyCommand(ShooterSubsystem shooterSubsystem) {
     m_shooterSubsystem = shooterSubsystem;
-    m_swerveSubsystem = swerveSubsystem;
 
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(shooterSubsystem);
@@ -36,13 +34,12 @@ public class ShootOnlyCommand extends Command {
   @Override
   public void execute() {
     // set shooter and hood map
-    m_shooterSubsystem.setShooterMap();
+    m_shooterSubsystem.setShooterMapOnly();
   }
 
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    m_shooterSubsystem.setHoodTarget(0);
     m_shooterSubsystem.setShooterVelocityTarget(0);
   }
 

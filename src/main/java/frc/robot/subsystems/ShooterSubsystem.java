@@ -103,6 +103,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
 
   private InterpolatingDoubleTreeMap shooterSpeedMap = new InterpolatingDoubleTreeMap();
+  private InterpolatingDoubleTreeMap shooterSpeedOnlyMap = new InterpolatingDoubleTreeMap();
   private InterpolatingDoubleTreeMap hoodAngleMap = new InterpolatingDoubleTreeMap();
 
   private static final double additionalRPM = 65;
@@ -175,6 +176,14 @@ public class ShooterSubsystem extends SubsystemBase {
     // hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(1.46));
     // hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(134)), Double.valueOf(1.48));
     hoodAngleMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(1.82)); // 1.78
+
+
+
+
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters( 60)), Double.valueOf(1900));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters( 90)), Double.valueOf(2100));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2300));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(159)), Double.valueOf(2550));
   }
 
   public double calculateShooterFeedForward() {
@@ -372,6 +381,12 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterVelocityTarget = shooterSpeedMap.get(distanceToHub);
   }
 
+  public void setShooterMapOnly() {
+    double distanceToHub = m_swerveSubsystem.getDistanceToHub();
+    // set shooter based on distance
+    shooterVelocityTarget = shooterSpeedOnlyMap.get(distanceToHub);
+  }
+
   /** @return Velocity in RPM */
   public double getShooterVelocity() {
     return shooterEncoder.getVelocity();
@@ -493,9 +508,8 @@ public class ShooterSubsystem extends SubsystemBase {
         && Math.abs(hoodTarget - HoodConstants.kEncoderOffset) < 0.05
         && getHoodPrimaryCurrent() > kStallCurrentThreshold
         && Math.abs(getHoodVelocity()) < kStallVelocityThreshold);
-    if (isStalled) {
-      reZeroHood();
-    }
+    // if (isStalled) {
+    //   reZeroHood(); /
 
     updateNetworkTable();
 

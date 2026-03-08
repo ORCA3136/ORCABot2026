@@ -1,14 +1,14 @@
 {
-  "robotWidth": 0.8763,
-  "robotLength": 0.879475,
+  "robotWidth": 0.876,
+  "robotLength": 0.879,
   "holonomicMode": true,
   "pathFolders": [
-    "Center Climb",
-    "Left Depot and Climb",
-    "Left mid fuel",
+    "Center Climb Folder",
     "Center Depot Folder",
-    "Right Human Player Pickup",
-    "Right mid fuel"
+    "Left Depot and Climb Folder",
+    "Left mid fuel Folder",
+    "Right Human Player Pickup Folder",
+    "Right mid fuel Folder"
   ],
   "autoFolders": [
     "Center Autos",
