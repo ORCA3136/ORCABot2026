@@ -378,6 +378,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("RunIntake3s",           AutoCommands.runIntake(intakeSubsystem, FuelPathConstants.kIntakeInStandard, 3.0));
     NamedCommands.registerCommand("RunIntake5s",           AutoCommands.runIntake(intakeSubsystem, FuelPathConstants.kIntakeInStandard, 5.0));
     NamedCommands.registerCommand("RunConveyor3s",         AutoCommands.runConveyor(conveyorSubsystem, FuelPathConstants.kConveyorIn, 3.0));
+    NamedCommands.registerCommand("RunConveyor5s",         AutoCommands.runConveyor(conveyorSubsystem, FuelPathConstants.kConveyorIn, 5.0));
     NamedCommands.registerCommand("RunKicker2s",           AutoCommands.runKicker(kickerSubsystem, FuelPathConstants.kKickerFeed, 2.0));
     NamedCommands.registerCommand("FeedAll3s",             AutoCommands.feedAll(conveyorSubsystem, kickerSubsystem, FuelPathConstants.kConveyorIn, FuelPathConstants.kKickerFeed, 3.0));
     NamedCommands.registerCommand("FeedAll5s",             AutoCommands.feedAll(conveyorSubsystem, kickerSubsystem, FuelPathConstants.kConveyorIn, FuelPathConstants.kKickerFeed, 5.0));
