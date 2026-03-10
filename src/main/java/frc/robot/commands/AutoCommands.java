@@ -52,7 +52,7 @@ public final class AutoCommands {
    * Runs continuously — meant to be used in a parallel/race group.
    */
   public static Command spinUpFromDistance(ShooterSubsystem shooter, SwerveSubsystem swerve) {
-    return Commands.run(() -> shooter.setShooterMap(), shooter)
+    return Commands.run(() -> shooter.setShooterMapOnly(), shooter)
         .withName("SpinUpFromDistance");
   }
 
@@ -126,13 +126,13 @@ public final class AutoCommands {
                                      double timeoutSec) {
     return Commands.sequence(
         // Phase 1: Spin up
-        Commands.run(() -> shooter.setShooterMap(), shooter)
+        Commands.run(() -> shooter.setShooterMapOnly(), shooter)
             .until(() -> shooter.isShooterReady())
             .withTimeout(timeoutSec * 0.4)
             .withName("AimAndShoot-SpinUp"),
         // Phase 2: Feed while maintaining shooter
         Commands.run(() -> {
-              shooter.setShooterMap();
+              shooter.setShooterMapOnly();
               if (shooter.isShooterReady()) {
                 kicker.setKickerDutyCycle(FuelPathConstants.kKickerFeed);
                 conveyor.setConveyorDutyCycle(FuelPathConstants.kConveyorIn);
@@ -148,7 +148,6 @@ public final class AutoCommands {
       kicker.setKickerDutyCycle(0);
       conveyor.setConveyorDutyCycle(0);
       shooter.setShooterVelocityTarget(0);
-      shooter.setHoodTarget(0);
       RobotLogger.log("AimAndShoot: " + (interrupted ? "TIMED_OUT" : "COMPLETE"));
     })
     .withName("AimAndShoot");
@@ -158,16 +157,15 @@ public final class AutoCommands {
 
   /**
    * Shoot sequence — ShooterSubsystem only.
-   * Continuously updates shooter/hood from distance map.
-   * On end: stops shooter and resets hood.
+   * Continuously updates shooter from distance map.
+   * On end: stops shooter.
    * Safe to run in parallel with feedSequence (no subsystem overlap).
    */
   public static Command shootSequence(ShooterSubsystem shooter, double timeoutSec) {
-    return Commands.run(() -> shooter.setShooterMap(), shooter)
+    return Commands.run(() -> shooter.setShooterMapOnly(), shooter)
         .withTimeout(timeoutSec)
         .finallyDo(interrupted -> {
           shooter.setShooterVelocityTarget(0);
-          shooter.setHoodTarget(0);
         })
         .withName("ShootSequence");
   }

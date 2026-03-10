@@ -27,8 +27,6 @@ public final class RobotLogger {
   private static DoubleLogEntry shotShooterActualRPM;
   private static DoubleLogEntry shotShooterTargetRPM;
   private static DoubleLogEntry shotShooterRampedSetpoint;
-  private static DoubleLogEntry shotHoodAngleDegrees;
-  private static DoubleLogEntry shotHoodRotations;
   private static DoubleLogEntry shotKickerVelocity;
   private static DoubleLogEntry shotRobotX;
   private static DoubleLogEntry shotRobotY;
@@ -65,8 +63,6 @@ public final class RobotLogger {
     shotShooterActualRPM = new DoubleLogEntry(log, "Shots/ShooterActualRPM");
     shotShooterTargetRPM = new DoubleLogEntry(log, "Shots/ShooterTargetRPM");
     shotShooterRampedSetpoint = new DoubleLogEntry(log, "Shots/ShooterRampedSetpoint");
-    shotHoodAngleDegrees = new DoubleLogEntry(log, "Shots/HoodAngleDegrees");
-    shotHoodRotations = new DoubleLogEntry(log, "Shots/HoodRotations");
     shotKickerVelocity = new DoubleLogEntry(log, "Shots/KickerVelocityRPM");
     shotRobotX = new DoubleLogEntry(log, "Shots/RobotX");
     shotRobotY = new DoubleLogEntry(log, "Shots/RobotY");
@@ -108,8 +104,6 @@ public final class RobotLogger {
       shotShooterTargetRPM.append(shooterSubsystem.getShooterTarget());
       shotShooterRampedSetpoint.append(shooterSubsystem.getRampedSetpoint());
       // These two had their own when the hood and shooter were seperate, so this might cause a problem (I don't think it will but I'm not sure) -Josiah
-      shotHoodAngleDegrees.append(Math.toDegrees(shooterSubsystem.getHoodAngle()));
-      shotHoodRotations.append(shooterSubsystem.getHoodMotorRotations());
     }
 
     if (kickerSubsystem != null) {

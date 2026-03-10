@@ -21,7 +21,6 @@ public class SimulationManager {
 
     // Mechanism simulations
     private final ShooterSim shooterSim;
-    private final HoodSim hoodSim;
     private final IntakeDeploySim intakeDeploySim;
     private final IntakeRollerSim intakeRollerSim;
     private final ConveyorSim conveyorSim;
@@ -57,7 +56,6 @@ public class SimulationManager {
 
         // Create mechanism sims
         shooterSim = new ShooterSim(shooterSubsystem);
-        hoodSim = new HoodSim(robotContainer.getShooterSubsystem()); // This was using hoodSubsystem before I moved hood back to shooter, so this might cause a problem idk
         intakeDeploySim = new IntakeDeploySim(robotContainer.getIntakeSubsystem());
         intakeRollerSim = new IntakeRollerSim(robotContainer.getIntakeSubsystem());
         conveyorSim = new ConveyorSim(conveyorSubsystem);
@@ -89,7 +87,6 @@ public class SimulationManager {
     public void update() {
         // 1. Step all mechanism sims
         shooterSim.update();
-        hoodSim.update();
         intakeDeploySim.update();
         intakeRollerSim.update();
         conveyorSim.update();
@@ -120,12 +117,13 @@ public class SimulationManager {
             intakeRunning, conveyorForward, kickerForward, shooterAtSpeed);
 
         // 6. If fuel was launched, create projectile in arena
-        if (launched) {
-            arenaSimulation.launchFuel(
-                shooterSim.getAngularVelocityRPM(),
-                hoodSim.getAngleDeg()
-            );
-        }
+
+        // Commented out because I couldn'r fix the launch fuel method in ArenaSimulator
+        // if (launched) {
+        //     arenaSimulation.launchFuel(
+        //         shooterSim.getAngularVelocityRPM()
+        //     );
+        // }
 
         // 7. Update vision simulation
         visionSim.update();
@@ -134,7 +132,6 @@ public class SimulationManager {
         mechanismManager.update(
             intakeDeploySim.getAngleDeg(),
             intakeRollerSim.isRunning(),
-            hoodSim.getAngleDeg(),
             shooterSim.getAngularVelocityRPM(),
             shooterSubsystem.getShooterTarget(),
             climberSim.getPositionMeters(),
@@ -152,7 +149,6 @@ public class SimulationManager {
             simTable.getEntry("Intake/ArmAngleDeg").setDouble(intakeDeploySim.getAngleDeg());
             simTable.getEntry("Intake/RollerRPM").setDouble(intakeRollerSim.getAngularVelocityRPM());
             simTable.getEntry("Shooter/FlywheelRPM").setDouble(shooterSim.getAngularVelocityRPM());
-            simTable.getEntry("Shooter/HoodAngleDeg").setDouble(hoodSim.getAngleDeg());
             simTable.getEntry("Climber/PositionMeters").setDouble(climberSim.getPositionMeters());
 
             // Publish field fuel positions for AdvantageScope 3D visualization

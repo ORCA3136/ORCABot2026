@@ -18,7 +18,7 @@ public class ShooterSim {
 
     public ShooterSim(ShooterSubsystem subsystem) {
         DCMotor motor = DCMotor.getNeoVortex(2);
-        sparkSim = new SparkSim(subsystem.getPrimaryHoodMotor(), motor);
+        sparkSim = new SparkSim(subsystem.getShooterPrimaryMotor(), motor); // I'm not sure if this works as intended anymore, I changed the motor it is getting from hood primary to shooter primary when I got rid of the hood
         flywheelSim = new FlywheelSim(
             LinearSystemId.createFlywheelSystem(motor, SimConstants.kShooterMOI, SimConstants.kShooterGearRatio),
             motor

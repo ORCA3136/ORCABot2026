@@ -201,7 +201,7 @@ public final class DriveToPositionCommand {
 
       // Command driveCmd = swerve.driveToPose(target, TELEOP_CONSTRAINTS)
       //     .withName("DriveToScore-Custom-Path");
-      Command spinUpCmd = Commands.run(() -> shooter.setShooterMap(), shooter)
+      Command spinUpCmd = Commands.run(() -> shooter.setShooterMapOnly(), shooter)
           .withName("DriveToScore-Custom-SpinUp");
       return driveCmd.deadlineFor(spinUpCmd);
     }, Set.of(swerve, shooter))
@@ -233,7 +233,7 @@ public final class DriveToPositionCommand {
           .withName("DriveToScore-" + name + "-Path");
 
       // Spin up shooter from distance map — dynamically updates as robot moves
-      Command spinUpCmd = Commands.run(() -> shooter.setShooterMap(), shooter)
+      Command spinUpCmd = Commands.run(() -> shooter.setShooterMapOnly(), shooter)
           .withName("DriveToScore-" + name + "-SpinUp");
 
       // Drive is the deadline — when we arrive, stop the command group

@@ -97,29 +97,32 @@ public class ArenaSimulation {
      * @param shooterRPM  current flywheel RPM
      * @param hoodAngleDeg  hood angle in degrees (launch elevation)
      */
-    public void launchFuel(double shooterRPM, double hoodAngleDeg) {
-        Pose2d robotPose = swerveSubsystem.getPose();
-        ChassisSpeeds chassisSpeeds = swerveSubsystem.getSwerveDrive().getFieldVelocity();
 
-        // Convert flywheel RPM to linear exit velocity
-        double launchSpeedMPS = (shooterRPM / 60.0)
-            * (2.0 * Math.PI * SimConstants.kShooterWheelRadiusMeters);
+    // TODO: I wasn't sure what to do with this as I couldn' make it happy after  getting rid of the hood, so somebody else will have to fix it if we want fuel in sim
 
-        RebuiltFuelOnFly projectile = new RebuiltFuelOnFly(
-            robotPose.getTranslation(),
-            new Translation2d(SimConstants.kShooterOffsetX, SimConstants.kShooterOffsetY),
-            chassisSpeeds,
-            robotPose.getRotation(),
-            Meters.of(SimConstants.kShooterHeightMeters),
-            MetersPerSecond.of(launchSpeedMPS),
-            Degrees.of(hoodAngleDeg)
-        );
+    // public void launchFuel(double shooterRPM, double hoodAngleDeg) {
+    //     Pose2d robotPose = swerveSubsystem.getPose();
+    //     ChassisSpeeds chassisSpeeds = swerveSubsystem.getSwerveDrive().getFieldVelocity();
 
-        // Fuel lands back on the field as a field piece (recycling)
-        projectile.enableBecomesGamePieceOnFieldAfterTouchGround();
+    //     // Convert flywheel RPM to linear exit velocity
+    //     double launchSpeedMPS = (shooterRPM / 60.0)
+    //         * (2.0 * Math.PI * SimConstants.kShooterWheelRadiusMeters);
 
-        SimulatedArena.getInstance().addGamePieceProjectile(projectile);
-    }
+    //     RebuiltFuelOnFly projectile = new RebuiltFuelOnFly(
+    //         robotPose.getTranslation(),
+    //         new Translation2d(SimConstants.kShooterOffsetX, SimConstants.kShooterOffsetY),
+    //         chassisSpeeds,
+    //         robotPose.getRotation(),
+    //         Meters.of(SimConstants.kShooterHeightMeters),
+    //         MetersPerSecond.of(launchSpeedMPS),
+    //         Degrees.of(hoodAngleDeg)
+    //     );
+
+    //     // Fuel lands back on the field as a field piece (recycling)
+    //     projectile.enableBecomesGamePieceOnFieldAfterTouchGround();
+
+    //     SimulatedArena.getInstance().addGamePieceProjectile(projectile);
+    // }
 
     /**
      * Returns positions of all fuel on the field for AdvantageScope visualization.

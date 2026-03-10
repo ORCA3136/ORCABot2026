@@ -27,7 +27,6 @@ import frc.robot.commands.RunIntakeCommand;
 import frc.robot.commands.RunKickerCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.ShootOnlyCommand;
-import frc.robot.commands.SlowHoodMove;
 import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
@@ -79,9 +78,6 @@ public class RobotContainer {
   public RobotContainer() {
 
     DriverStation.silenceJoystickConnectionWarning(true);
-
-    // TODO: Uncomment once hood limit switch is physically wired to DIO 1
-    // shooterSubsystem.enableHoodLimitSwitch(DioConstants.kHoodLimitSwitchPort);
 
     // Configure the trigger bindings (set to false for test bindings)
     boolean useProductionBindings = true;
@@ -159,14 +155,6 @@ public class RobotContainer {
 		m_primaryController.povRight    ().and(m_primaryController.back().negate()).whileTrue(new RunIntakeCommand(intakeSubsystem, -4000));
 
     // Axis/Triggers/Sticks
-    // m_primaryController.rightBumper ().onTrue(Commands.runOnce(() -> {
-    //                                     shooterSubsystem.setShooterVelocityTarget(3000);
-    //                                     shooterSubsystem.updateHoodTarget(35);
-    //                                  }))
-    //                                  .onFalse(Commands.runOnce(() -> {
-    //                                     shooterSubsystem.setShooterVelocityTarget(0);
-    //                                     shooterSubsystem.updateHoodTarget(0);
-    //                                  }));
 
     // m_primaryController.rightBumper().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1950)))
     //                                  .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
@@ -208,24 +196,6 @@ public class RobotContainer {
     m_primaryController.back().and(m_primaryController.y())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-2000)))
                                                                       .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0)));
 
-    m_primaryController.start().onTrue(Commands.runOnce(() -> shooterSubsystem.setToggleDirection()));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ========================================================== G/
 
 
@@ -260,15 +230,9 @@ public class RobotContainer {
         ));
 
 
-    // Button 3: Re-zero hood (press when hood is physically at home position)
-    m_secondaryController.button(3).onTrue(
-        Commands.runOnce(() -> shooterSubsystem.reZeroHood()));
+    m_secondaryController.button(3);
+    m_secondaryController.button(4);
 
-    // Button 4: Manual hood down — bypasses PID, works even with bad encoder
-    m_secondaryController.button(4).whileTrue(
-        Commands.runEnd(
-            () -> shooterSubsystem.nudgeHoodDown(),
-            () -> shooterSubsystem.stopHoodNudge()));
     m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
     // Prepare to climb — stow intake, move arm to horizontal
     // m_secondaryController.button(6).onTrue(
@@ -348,11 +312,6 @@ public class RobotContainer {
     NamedCommands.registerCommand("Run Shooter Medium",   Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityMedium)));
     NamedCommands.registerCommand("Run Shooter High",     Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityHigh)));
     
-    // Move hood
-    NamedCommands.registerCommand("Hood Position Low",    Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(1)));
-    NamedCommands.registerCommand("Hood Position Medium", Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(10)));
-    NamedCommands.registerCommand("Hood Position High",   Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(20)));
-
     // Climb
 
     // Conveyor/kicker
@@ -455,8 +414,6 @@ public class RobotContainer {
                                      }));
 
 
-		m_primaryController.leftStick		().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(0)));
-		m_primaryController.rightStick	().onTrue(Commands.runOnce(() -> shooterSubsystem.updateHoodTarget(30)));
     
     m_primaryController.povUp       ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 500, 6500));
 		m_primaryController.povDown     ().whileTrue(new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, -1000, -1000));
@@ -465,8 +422,6 @@ public class RobotContainer {
 
     m_primaryController.leftTrigger (0.3).whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
 
-    m_primaryController.rightTrigger(0.3).onTrue (Commands.runOnce(() -> shooterSubsystem.setToggleDirection(true )))
-                                                   .onFalse(Commands.runOnce(() -> shooterSubsystem.setToggleDirection(false)));
 
   }
 

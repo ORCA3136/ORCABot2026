@@ -36,13 +36,12 @@ public class ShootCommand extends Command {
   @Override
   public void execute() {
     // set shooter and hood map
-    m_shooterSubsystem.setShooterMap();
+    m_shooterSubsystem.setShooterMapOnly();
   }
 
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    m_shooterSubsystem.setHoodTarget(0);
     m_shooterSubsystem.setShooterVelocityTarget(0);
   }
 
