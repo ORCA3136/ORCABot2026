@@ -579,11 +579,18 @@ public class SwerveSubsystem extends SubsystemBase {
     return robotTranslation.nearest(FieldPositions.kBumpPoses).getDistance(robotTranslation);
   }
 
-  public double getDistanceToHub() {
+  public double getDistanceToHubMeters() {
     Translation2d hubTranslation = getAlliance() == Alliance.Red ?
           FieldPositions.kRedFieldElements.get(0) : FieldPositions.kBlueFieldElements.get(0);
     Translation2d robotTranslation = swerveDrive.getPose().getTranslation();
     return robotTranslation.getDistance(hubTranslation);
+  }
+
+  public double getDistanceToHubInches() {
+    Translation2d hubTranslation = getAlliance() == Alliance.Red ?
+          FieldPositions.kRedFieldElements.get(0) : FieldPositions.kBlueFieldElements.get(0);
+    Translation2d robotTranslation = swerveDrive.getPose().getTranslation();
+    return (robotTranslation.getDistance(hubTranslation)) * 39.37; // Converts Meters to inches
   }
 
   // --- Vision integration methods ---
@@ -624,8 +631,8 @@ public class SwerveSubsystem extends SubsystemBase {
     batteryVoltageEntry.setDouble(RobotController.getBatteryVoltage());
     batteryBrownoutEntry.setDouble(RobotController.getBrownoutVoltage());
 
-    hubDistanceEntryMeters.setDouble(getDistanceToHub());
-    hubDistanceEntryInches.setDouble(getDistanceToHub());
+    hubDistanceEntryMeters.setDouble(getDistanceToHubMeters());
+    hubDistanceEntryInches.setDouble(getDistanceToHubInches());
     
     trenchDistanceEntry.setDouble(getDistanceToNearestTrench());
 
