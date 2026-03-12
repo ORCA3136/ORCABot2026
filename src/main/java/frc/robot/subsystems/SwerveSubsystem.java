@@ -89,7 +89,8 @@ public class SwerveSubsystem extends SubsystemBase {
   DoubleArrayPublisher robotAngularVelocity3dPublisher = odometryTable
       .getDoubleArrayTopic(NetworkTableNames.Odometry.kRobotAngularVelocity3d).publish();
 
-  private final NetworkTableEntry hubDistanceEntry = odometryTable.getEntry(NetworkTableNames.Odometry.kDistanceToHub);
+  private final NetworkTableEntry hubDistanceEntryMeters = odometryTable.getEntry(NetworkTableNames.Odometry.kDistanceToHubMeters);
+  private final NetworkTableEntry hubDistanceEntryInches = odometryTable.getEntry(NetworkTableNames.Odometry.kDistanceToHubInches);
   private final NetworkTableEntry trenchDistanceEntry = odometryTable.getEntry(NetworkTableNames.Odometry.kDistanceToTrench);
 
 
@@ -623,7 +624,9 @@ public class SwerveSubsystem extends SubsystemBase {
     batteryVoltageEntry.setDouble(RobotController.getBatteryVoltage());
     batteryBrownoutEntry.setDouble(RobotController.getBrownoutVoltage());
 
-    hubDistanceEntry.setDouble(getDistanceToHub());
+    hubDistanceEntryMeters.setDouble(getDistanceToHub());
+    hubDistanceEntryInches.setDouble(getDistanceToHub());
+    
     trenchDistanceEntry.setDouble(getDistanceToNearestTrench());
 
     try {

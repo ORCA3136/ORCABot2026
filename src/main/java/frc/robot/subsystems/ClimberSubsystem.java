@@ -43,11 +43,11 @@ public class ClimberSubsystem extends SubsystemBase {
 
   // Motors
   private final SparkFlex climberPrimaryMotor = new SparkFlex(CanIdConstants.kClimberPrimaryCanId, MotorType.kBrushless);
-  private final SparkFlex climberSecondaryMotor = new SparkFlex(CanIdConstants.kClimberSecondaryCanId, MotorType.kBrushless);
 
   // Encoders
   private final RelativeEncoder climberEncoder = climberPrimaryMotor.getEncoder();
-  private final AbsoluteEncoder absoluteEncoder = climberSecondaryMotor.getAbsoluteEncoder();
+    private final AbsoluteEncoder absoluteEncoder = climberPrimaryMotor.getAbsoluteEncoder();
+
 
   // PID controller on primary motor
   private final SparkClosedLoopController pidController = climberPrimaryMotor.getClosedLoopController();
@@ -82,10 +82,8 @@ public class ClimberSubsystem extends SubsystemBase {
   private final NetworkTableEntry targetDegreesEntry = climberTable.getEntry(NetworkTableNames.Climber.kTargetDegrees);
   private final NetworkTableEntry errorEntry = climberTable.getEntry(NetworkTableNames.Climber.kError);
   private final NetworkTableEntry motorRotationsEntry = climberTable.getEntry(NetworkTableNames.Climber.kMotorRotations);
-  private final NetworkTableEntry leftOutputEntry = climberTable.getEntry(NetworkTableNames.Climber.kLeftMotorOutput);
-  private final NetworkTableEntry rightOutputEntry = climberTable.getEntry(NetworkTableNames.Climber.kRightMotorOutput);
+  private final NetworkTableEntry ClimberOutputEntry = climberTable.getEntry(NetworkTableNames.Climber.kClimberMotorOutput);
   private final NetworkTableEntry primaryCurrentEntry = climberTable.getEntry(NetworkTableNames.Climber.kPrimaryCurrent);
-  private final NetworkTableEntry secondaryCurrentEntry = climberTable.getEntry(NetworkTableNames.Climber.kSecondaryCurrent);
   private final NetworkTableEntry absEncoderEntry = climberTable.getEntry(NetworkTableNames.Climber.kAbsEncoderRaw);
   private final NetworkTableEntry isZeroedEntry = climberTable.getEntry(NetworkTableNames.Climber.kIsZeroed);
   private final NetworkTableEntry atSetpointEntry = climberTable.getEntry(NetworkTableNames.Climber.kAtSetpoint);
@@ -94,7 +92,6 @@ public class ClimberSubsystem extends SubsystemBase {
   /** Creates a new ClimberSubsystem. */
   public ClimberSubsystem() {
     climberPrimaryMotor.configure(ClimberConfigs.climberPrimaryMotor, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    climberSecondaryMotor.configure(ClimberConfigs.climberSecondaryMotor, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     // Zero the relative encoder — arm must start in stowed position
     zeroClimber();
@@ -291,17 +288,14 @@ public class ClimberSubsystem extends SubsystemBase {
     errorEntry.setDouble(targetDegrees - armDeg);
     motorRotationsEntry.setDouble(climberEncoder.getPosition()
         * ClimberConstants.kTotalReduction / 360.0); // convert back to raw motor rotations
-    leftOutputEntry.setDouble(climberPrimaryMotor.getAppliedOutput());
-    rightOutputEntry.setDouble(climberSecondaryMotor.getAppliedOutput());
+    ClimberOutputEntry.setDouble(climberPrimaryMotor.getAppliedOutput());
     primaryCurrentEntry.setDouble(climberPrimaryMotor.getOutputCurrent());
-    secondaryCurrentEntry.setDouble(climberSecondaryMotor.getOutputCurrent());
     absEncoderEntry.setDouble(absoluteEncoder.getPosition());
     isZeroedEntry.setBoolean(isZeroed);
     atSetpointEntry.setBoolean(atSetpoint());
     stateEntry.setString(getStateString());
     // Motor temperatures and extra state
     climberTable.getEntry("Primary Temp C").setDouble(climberPrimaryMotor.getMotorTemperature());
-    climberTable.getEntry("Secondary Temp C").setDouble(climberSecondaryMotor.getMotorTemperature());
     climberTable.getEntry("FeedForward").setDouble(calculateFeedForward());
     climberTable.getEntry("Manual Override").setBoolean(manualOverride);
     climberTable.getEntry("Safety Tripped").setBoolean(safetyTripped);

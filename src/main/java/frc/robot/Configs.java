@@ -32,35 +32,6 @@ public class Configs {
         }
     }
 
-    public static final class HoodConfigs {
-        public static final SparkMaxConfig primaryHoodConfig = new SparkMaxConfig();
-        public static final SparkMaxConfig secondaryHoodConfig = new SparkMaxConfig();
-
-                static {
-            primaryHoodConfig
-                .inverted(false)
-                .idleMode(IdleMode.kBrake)
-                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
-            secondaryHoodConfig
-                .idleMode(IdleMode.kBrake)
-                .follow(CanIdConstants.kHoodPrimaryCanId, true)
-                .smartCurrentLimit(CurrentConstants.AMP20, CurrentConstants.AMP15);
-            primaryHoodConfig.absoluteEncoder
-                .positionConversionFactor(HoodConstants.kMotorGearRatio)
-                .velocityConversionFactor(HoodConstants.kMotorGearRatio);
-            // TODO: TUNE ON ROBOT — verify encoder conversion factor (12x) matches target calculation (26.67x) in HoodSubsystem
-            // Position wrapping must stay enabled — the SparkMax PID with absolute encoder
-            // requires it for correct error calculation. Disabling it breaks hood position control.
-            primaryHoodConfig.closedLoop
-                .positionWrappingEnabled(true)
-                .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-                .pid(HoodConstants.kP, HoodConstants.kI, HoodConstants.kD)
-                .outputRange(-0.4, 0.4); // Old was +-0.8
-            // primaryHoodConfig.closedLoop.feedForward
-            //     .kG(HoodConstants.kG);
-        }
-    }
-
     public static final class ConveyorConfigs {
         public static final SparkFlexConfig conveyorMotorConfig = new SparkFlexConfig();
         static {
@@ -113,7 +84,6 @@ public class Configs {
 
     public static final class ClimberConfigs {
         public static final SparkFlexConfig climberPrimaryMotor = new SparkFlexConfig();
-        public static final SparkFlexConfig climberSecondaryMotor = new SparkFlexConfig();
 
         static {
             // Primary: PID leader with relative encoder
@@ -135,12 +105,6 @@ public class Configs {
                 .forwardSoftLimit((float)(ClimberConstants.kMaxArmDegrees - 2.0))
                 .reverseSoftLimitEnabled(true)
                 .reverseSoftLimit((float)(ClimberConstants.kMinArmDegrees + 2.0));
-
-            // Secondary: pure follower — no PID
-            climberSecondaryMotor
-                .idleMode(IdleMode.kBrake)
-                .follow(CanIdConstants.kClimberPrimaryCanId, false)
-                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
         }
     }
 

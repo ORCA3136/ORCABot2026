@@ -208,10 +208,6 @@ public final class Constants {
     // Conveyor Vortex
     public static final int kConveyorCanId = 14;
 
-    // Hood 550s
-    public static final int kHoodPrimaryCanId = 15;
-    public static final int kHoodSecondaryCanId = 16;
-
     // Intake Vortex
     public static final int kIntakeCanId = 17;
 
@@ -219,8 +215,7 @@ public final class Constants {
     public static final int kIntakeDeployCanId = 18;
 
     // Climber Vortexes
-    public static final int kClimberPrimaryCanId = 19;
-    public static final int kClimberSecondaryCanId = 20;
+    public static final int kClimberPrimaryCanId = 20;
 
     // PDH
     public static final int kPDHCanId = 63;
@@ -246,7 +241,8 @@ public final class Constants {
       public static final String kRobotRotation3d = "Robot Pitch, Roll, Yaw Rotations";
       public static final String kRobotAngularVelocity3d = "Robot Pitch, Roll, Yaw Velocities";
       public static final String kRobotVelocity = "Robot X, Y, Z Velocities";
-      public static final String kDistanceToHub = "Distance to Hub";
+      public static final String kDistanceToHubMeters = "Distance to Hub meters";
+      public static final String kDistanceToHubInches = "Distance to Hub Inches";
       public static final String kDistanceToTrench = "Distance to Nearest Trench";
     }
 
@@ -337,7 +333,7 @@ public final class Constants {
       public static final String kError = "Error";
       public static final String kMotorRotations = "Motor Rotations";
       public static final String kLeftMotorOutput = "Left Motor Output";
-      public static final String kRightMotorOutput = "Right Motor Output";
+      public static final String kClimberMotorOutput = "Right Motor Output";
       public static final String kPrimaryCurrent = "Primary Current Amps";
       public static final String kSecondaryCurrent = "Secondary Current Amps";
       public static final String kAbsEncoderRaw = "Abs Encoder Raw";

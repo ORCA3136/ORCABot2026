@@ -9,14 +9,7 @@ import java.io.File;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
-import frc.robot.Constants.AutoConstants;
-import frc.robot.Constants.ClimberConstants;
-import frc.robot.Constants.FuelPathConstants;
-import frc.robot.Constants.IntakeConstants;
-import frc.robot.Constants.FieldPositions;
-import frc.robot.Constants.DioConstants;
-import frc.robot.Constants.OperatorConstants;
-import frc.robot.Constants.ShooterConstants;
+import frc.robot.Constants.*;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.commands.AutoCommands;
 import frc.robot.commands.FuelPathCommands;
