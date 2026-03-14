@@ -183,7 +183,7 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void setShooterMapOnly() {
-    double distanceToHub = m_swerveSubsystem.getDistanceToHub();
+    double distanceToHub = m_swerveSubsystem.getDistanceToHubMeters();
     // set shooter based on distance
     shooterVelocityTarget = shooterSpeedOnlyMap.get(distanceToHub);
   }
