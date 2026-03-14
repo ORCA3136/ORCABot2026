@@ -19,8 +19,10 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Configs.*;
-import frc.robot.Constants.*;
+import frc.robot.Configs.ShooterConfigs;
+import frc.robot.Constants.ShooterConstants;
+import frc.robot.Constants.CanIdConstants;
+import frc.robot.Constants.NetworkTableNames;
 
 
 /*
@@ -39,6 +41,9 @@ public class ShooterSubsystem extends SubsystemBase {
 
   double shooterVelocityTarget = 0;  // Where we want to be (set by commands)
   double shooterVelocity = 0;        // Current ramped setpoint (fed to PID each cycle)
+  boolean toggleDirection = false;
+  double hoodTarget; // Position of the Hood in Rotations
+  boolean hoodMovingForward = true; // true is positive
   
   final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
   final SparkFlex shooterSecondaryMotor = new SparkFlex(CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
@@ -124,41 +129,39 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** Increases the speed of the shooter by ~ 100 RPM */
   public void increaseShooterVelocity(int level) {
-    if (level == 1) {
-      shooterVelocityTarget += 5;
+    switch (level) {
+      case 1:
+        shooterVelocityTarget += 5;
+        break;
+      case 2:
+        shooterVelocityTarget += 50;
+        break;
+      case 3:
+        shooterVelocityTarget += 100;
+        break;
+      case 4:
+        shooterVelocityTarget += 500;
+        break;
+      case -1:
+        shooterVelocityTarget -= 5;
+        break;
+      case -2:
+        shooterVelocityTarget -= 50;
+        break;
+      case -3:
+        shooterVelocityTarget -= 100;
+        break;
+      case -4:
+        shooterVelocityTarget -= 500;
+        break;
+      default:
+        break;
     }
 
-    if (level == 2) {
-      shooterVelocityTarget += 50;
-    }
-
-    if (level == 3) {
-      shooterVelocityTarget += 100;
-    }
-
-    if (level == 4) {
-      shooterVelocityTarget += 500;
-    }
-
-    if (level == -1) {
-      shooterVelocityTarget -= 5;
-    }
-
-    if (level == -2) {
-      shooterVelocityTarget -= 50;
-    }
-
-    if (level == -3) {
-      shooterVelocityTarget -= 100;
-    }
-
-    if (level == -4) {
-      shooterVelocityTarget -= 500;
-    }
-
-
-    if (shooterVelocityTarget > ShooterConstants.kVelocityMax) shooterVelocityTarget = ShooterConstants.kVelocityMax;
-    if (shooterVelocityTarget < 0) shooterVelocityTarget = 0;
+    if (shooterVelocityTarget > ShooterConstants.kVelocityMax) 
+        shooterVelocityTarget = ShooterConstants.kVelocityMax;
+    else if (shooterVelocityTarget < 0) 
+        shooterVelocityTarget = 0;
   }
 
   /** Decreases the speed of the shooter by ~ 100 RPM */

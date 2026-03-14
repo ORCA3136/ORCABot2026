@@ -2,12 +2,10 @@ package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
-import java.text.FieldPosition;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 
-import com.google.flatbuffers.Constants;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.IdealStartingState;
@@ -29,7 +27,6 @@ import frc.robot.Constants.FieldPositions;
 import frc.robot.Constants.PathPlannerConstants;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
-import swervelib.SwerveDrive;
 
 /**
  * Factory class for drive-to-position commands using PathPlanner pathfinding.

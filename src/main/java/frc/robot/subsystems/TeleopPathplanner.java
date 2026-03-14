@@ -4,35 +4,24 @@
 
 package frc.robot.subsystems;
 
-import java.text.FieldPosition;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-
-import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.path.Waypoint;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation2d;
+// import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.networktables.DoubleArrayPublisher;
-import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.PubSubOption;
-import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldPositions;
 import frc.robot.Constants.NetworkTableNames;
-import swervelib.SwerveInputStream;
 
 
 /*
@@ -92,12 +81,12 @@ public class TeleopPathplanner extends SubsystemBase {
     // );
 
     // Find end goal pose
-    Translation2d endGoal = FieldPositions.kBlueShootingPoses.get(listPosition);
-    Translation2d hubTranslation2d = startingSide == FieldSide.BlueSide ? 
-                FieldPositions.kBlueFieldElements.get(0) : FieldPositions.kRedFieldElements.get(0);
+    // Translation2d endGoal = FieldPositions.kBlueShootingPoses.get(listPosition);
+    // Translation2d hubTranslation2d = startingSide == FieldSide.BlueSide ? 
+    //             FieldPositions.kBlueFieldElements.get(0) : FieldPositions.kRedFieldElements.get(0);
 
     // Find angle to hub at end
-    double targetAngleToHub = Math.atan2(hubTranslation2d.getY() - endGoal.getY(), hubTranslation2d.getX() - endGoal.getX());
+    // double targetAngleToHub = Math.atan2(hubTranslation2d.getY() - endGoal.getY(), hubTranslation2d.getX() - endGoal.getX());
 
     // Check if in different section
     FieldSide endState = startingSide;
@@ -118,12 +107,12 @@ public class TeleopPathplanner extends SubsystemBase {
 
 
 
-    if (true) {
+    // if (true) {
       
-      // Add waypoints
-      // Subtract/Add 1 to
-      return null;
-    }
+    //   // Add waypoints
+    //   // Subtract/Add 1 to
+    //   return null;
+    // }
       
       
 

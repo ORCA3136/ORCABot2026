@@ -15,8 +15,6 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
@@ -46,7 +44,7 @@ import frc.robot.Constants.*;
 
 public class IntakeSubsystem extends SubsystemBase {
 
-  private final SwerveSubsystem m_swerveSubsystem;
+  // private final SwerveSubsystem m_swerveSubsystem;
 
   final DCMotor intakeDCMotor = DCMotor.getNeoVortex(1);
   final DCMotor deployDCMotor = DCMotor.getNeo550(1);
@@ -107,7 +105,7 @@ public class IntakeSubsystem extends SubsystemBase {
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem(SwerveSubsystem swerveSubsystem) {
 
-    m_swerveSubsystem = swerveSubsystem;
+    // m_swerveSubsystem = swerveSubsystem;
 
     intakeMotor.configure(IntakeConfigs.intakeMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     intakeDeployMotor.configure(IntakeConfigs.intakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);

@@ -9,13 +9,15 @@ import java.io.File;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
-import frc.robot.Constants.*;
+import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.FuelPathConstants;
+import frc.robot.Constants.FieldPositions;
+import frc.robot.Constants.OperatorConstants;
+import frc.robot.Constants.ShooterConstants;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.commands.AutoCommands;
 import frc.robot.commands.FuelPathCommands;
-import frc.robot.commands.ClimberCommands;
 import frc.robot.commands.RunConveyorAndKickerCommand;
-import frc.robot.commands.RunConveyorCommand;
 import frc.robot.commands.RunIntakeCommand;
 import frc.robot.commands.RunKickerCommand;
 import frc.robot.commands.ShootCommand;
@@ -26,7 +28,7 @@ import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
-import frc.robot.subsystems.TeleopPathplanner;
+// import frc.robot.subsystems.TeleopPathplanner;
 import frc.robot.subsystems.VisionSubsystem;
 import swervelib.SwerveInputStream;
 import edu.wpi.first.wpilibj.Filesystem;
@@ -50,21 +52,21 @@ import edu.wpi.first.wpilibj.DriverStation;
  * subsystems, commands, and trigger mappings) should be declared here.
  */
 public class RobotContainer {
+  @SuppressWarnings("unused") // periodic() runs vision fusion automatically — no commands needed
+
   // The robot's subsystems and commands are defined here...
   private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
-  private final TeleopPathplanner teleopPathplanner = new TeleopPathplanner(driveBase);
-  @SuppressWarnings("unused") // periodic() runs vision fusion automatically — no commands needed
+  // private final TeleopPathplanner teleopPathplanner = new TeleopPathplanner(driveBase);
   private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveBase);
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem(driveBase);
   private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem(driveBase);
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   private final KickerSubsystem kickerSubsystem = new KickerSubsystem();
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
-  
+
   private final SendableChooser<Command> autoChooser;
 
   private final CommandXboxController m_primaryController = new CommandXboxController(Constants.OperatorConstants.kDriverControler);
-
   private final CommandJoystick m_secondaryController = new CommandJoystick(OperatorConstants.kSecondaryDriverControler);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */

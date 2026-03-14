@@ -42,7 +42,7 @@ public final class RobotLogger {
    */
   public static void init(boolean useUSB) {
     if (useUSB) {
-      DataLogManager.start("/U", "", 0.1);
+      DataLogManager.start("/U/logs", "", 0.1);
     } else {
       DataLogManager.start("", "", 0.1);
     }

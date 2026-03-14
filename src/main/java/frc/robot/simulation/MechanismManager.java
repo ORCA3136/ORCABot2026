@@ -46,9 +46,6 @@ public class MechanismManager {
         MechanismRoot2d intakeRoot = mechanism.getRoot("Intake", 0.8, 0.15);
         intakeArm = intakeRoot.append(
             new MechanismLigament2d("IntakeArm", 0.2, 0, 6, new Color8Bit(Color.kGray)));
-
-        // Hood: from rear of robot, pivots up
-        MechanismRoot2d hoodRoot = mechanism.getRoot("Hood", 0.2, 0.25);
         
 
         // Climber: extends upward from center

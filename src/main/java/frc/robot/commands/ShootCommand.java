@@ -4,7 +4,6 @@
 
 package frc.robot.commands;
 
-import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -12,9 +11,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 /** Sets the shooter flywheel to a target RPM. Stops the flywheel when the command ends. */
 public class ShootCommand extends Command {
   private final ShooterSubsystem m_shooterSubsystem;
-  private final SwerveSubsystem m_swerveSubsystem;
+  // private final SwerveSubsystem m_swerveSubsystem;
 
-  private double distanceToHub;
+  // private double distanceToHub;
 
   /**
    * @param shooterSubsystem The shooter subsystem
@@ -22,7 +21,7 @@ public class ShootCommand extends Command {
    */
   public ShootCommand(ShooterSubsystem shooterSubsystem, SwerveSubsystem swerveSubsystem) {
     m_shooterSubsystem = shooterSubsystem;
-    m_swerveSubsystem = swerveSubsystem;
+    // m_swerveSubsystem = swerveSubsystem;
 
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(shooterSubsystem);

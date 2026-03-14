@@ -330,14 +330,14 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     // 4. Odometry cross-check (skip if we've never had a fix — odometry is at 0,0)
-    if (hasEverHadFix) {
-      double odometryJump = visionPose.getTranslation()
-          .getDistance(swerveSubsystem.getPose().getTranslation());
-      double odometryLimit = VisionConstants.kMaxOdometryJumpM;
-      if (odometryJump > odometryLimit) {
-        return "odometry_jump";
-      }
-    }
+    // if (hasEverHadFix) {
+    //   double odometryJump = visionPose.getTranslation()
+    //       .getDistance(swerveSubsystem.getPose().getTranslation());
+    //   double odometryLimit = VisionConstants.kMaxOdometryJumpM;
+    //   if (odometryJump > odometryLimit) {
+    //     return "odometry_jump";
+    //   }
+    // }
 
     return "";
   }
