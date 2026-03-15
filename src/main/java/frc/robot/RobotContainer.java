@@ -144,10 +144,15 @@ public class RobotContainer {
     m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
 
     // D pad
-    m_primaryController.povUp       ().and(m_primaryController.back().negate()).whileTrue(new RunKickerCommand(kickerSubsystem, 5000));
-		m_primaryController.povDown     ().and(m_primaryController.back().negate()).whileTrue(new RunKickerCommand(kickerSubsystem, -2500));
-    m_primaryController.povLeft     ().and(m_primaryController.back().negate()).whileTrue(new RunIntakeCommand(intakeSubsystem, 4000));
-		m_primaryController.povRight    ().and(m_primaryController.back().negate()).whileTrue(new RunIntakeCommand(intakeSubsystem, -4000));
+    m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
+    m_primaryController.povLeft  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(3)));
+		m_primaryController.povRight ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
+    m_primaryController.povDown  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
+
+    m_primaryController.back     ().and(m_primaryController.povUp        ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-4)));
+    m_primaryController.back     ().and(m_primaryController.povLeft      ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-3)));
+    m_primaryController.back     ().and(m_primaryController.povRight     ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-2)));
+    m_primaryController.back     ().and(m_primaryController.povDown      ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-1)));
 
     // Axis/Triggers/Sticks
 
@@ -196,10 +201,10 @@ public class RobotContainer {
 
     // Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))
 
-    m_primaryController.back().and(m_primaryController.povUp());    // use is TBD
-    m_primaryController.back().and(m_primaryController.povDown());
-    m_primaryController.back().and(m_primaryController.povLeft());
-    m_primaryController.back().and(m_primaryController.povRight());
+    // m_primaryController.back().and(m_primaryController.povUp());    // use is TBD
+    // m_primaryController.back().and(m_primaryController.povDown());
+    // m_primaryController.back().and(m_primaryController.povLeft());
+    // m_primaryController.back().and(m_primaryController.povRight());
 
     m_primaryController.back().and(m_primaryController.leftTrigger()) .whileTrue(new RunIntakeCommand(intakeSubsystem, -6500));
     // m_primaryController.back().and(m_primaryController.rightTrigger());

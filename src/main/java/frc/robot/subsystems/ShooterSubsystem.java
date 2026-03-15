@@ -81,11 +81,11 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private void addMapValues() {
     
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters( 60)), Double.valueOf(1950));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters( 90)), Double.valueOf(2100));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2300));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(159)), Double.valueOf(2550));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(233)), Double.valueOf(3450));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters( 60)), Double.valueOf(1950)); // 1950
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters( 90)), Double.valueOf(2100)); // 2100
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2300)); // 2300
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(159)), Double.valueOf(2550)); // 2550
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(233)), Double.valueOf(3450)); // 3450
   }
 
   public double calculateShooterFeedForward() {

@@ -33,13 +33,12 @@ public final class Constants {
     public static final double kVelocityHigh = 5000;
     public static final double kVelocityMax = 6500;
 
-    public static final double kP = 0.003;
-    public static final double kI = 0.;
-    public static final double kD = 0.25;
-    public static final double kG = 0.;
+    public static final double kP = 0.0003;
+    public static final double kI = 0.0;
+    public static final double kD = 0.01;
     // TODO: TUNE ON ROBOT — characterize with SysId. Typical kS = 0.05–0.2
-    public static final double kS = 0.15;
-    public static final double kVelocityModifier = .0033;
+    public static final double kS = 0.21;
+    public static final double kVelocityModifier = .00181; // .00181
 
     // Setpoint ramp rates (RPM per 20ms cycle)
     // At 200 RPM/cycle spin-up: 0 → 5000 RPM takes ~0.5 seconds
@@ -49,30 +48,6 @@ public final class Constants {
 
     // Flywheel is "ready" when within this tolerance of target RPM
     public static final double kReadyToleranceRPM = 200;
-  }
-
-  public static final class HoodConstants {
-    public static final double kEncoderOffset = 0.64; // in hood/motor rotations
-
-    public static final double kSetpointLow = 0.3;
-    public static final double kSetpointMed = 0.9;
-    public static final double kSetpointHigh = 1.8;
-
-    public static final double kP = 0.3;
-    public static final double kI = 0.;
-    public static final double kD = 5.;
-    public static final double kG = 0.6; // 0.4
-    public static final double kS = 0.2; // 0.2
-    // public static final double kV = 0;
-    // public static final double kA = 0;
-
-    public static final double kEncoderGearRatio = 40. / 18;
-    public static final double kMotorGearRatio = 12;
-
-    public static final double kMaxAngleDegrees = 55.0;
-    public static final double kMinEncoderPosition = kEncoderOffset; // 0.30
-    public static final double kMaxEncoderPosition = kEncoderOffset
-        + (kMaxAngleDegrees / 360.0) * kEncoderGearRatio * kMotorGearRatio; // ~4.37
   }
 
   public static final class IntakeConstants {

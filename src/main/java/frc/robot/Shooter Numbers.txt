@@ -1,0 +1,31 @@
+Distance: 60 in
+RPM: 1930
+Trial 1: 7/10
+Trial 2: 8/10
+Trial 3: 4/10
+
+Distance: 90
+RPM: 2055
+Trial 1: 6/10
+Trial 2: 7/10
+Trial 3: 8/10
+
+Distance: 120
+RPM: 2040
+Trial 1: 4/10
+Trial 2: 8/10
+Trial 3: 9/10
+Trial 3: 6/10
+Trial 3: 7/10
+
+Distance: 150
+RPM: 
+Trial 1: 
+Trial 2: 
+Trial 3: 
+
+Distance: 180
+RPM: 
+Trial 1: 
+Trial 2: 
+Trial 3: 
