@@ -27,8 +27,6 @@ public class MechanismManager {
 
     // Intake arm ligament
     private final MechanismLigament2d intakeArm;
-    // Climber ligament
-    private final MechanismLigament2d climberLigament;
     // Shooter RPM bar
     private final MechanismLigament2d shooterBar;
     // Fuel staging indicator
@@ -37,7 +35,6 @@ public class MechanismManager {
     // Component Pose3d publishers for AdvantageScope 3D
     private final NetworkTable componentTable;
     private final StructPublisher<Pose3d> intakeArmPosePublisher;
-    private final StructPublisher<Pose3d> climberPosePublisher;
 
     public MechanismManager() {
         mechanism = new Mechanism2d(CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -46,12 +43,6 @@ public class MechanismManager {
         MechanismRoot2d intakeRoot = mechanism.getRoot("Intake", 0.8, 0.15);
         intakeArm = intakeRoot.append(
             new MechanismLigament2d("IntakeArm", 0.2, 0, 6, new Color8Bit(Color.kGray)));
-        
-
-        // Climber: extends upward from center
-        MechanismRoot2d climberRoot = mechanism.getRoot("Climber", 0.5, 0.15);
-        climberLigament = climberRoot.append(
-            new MechanismLigament2d("ClimberArm", 0.0, 90, 8, new Color8Bit(Color.kBlue)));
 
         // Shooter RPM bar: horizontal indicator
         MechanismRoot2d shooterRoot = mechanism.getRoot("Shooter", 0.1, 0.35);
@@ -69,8 +60,6 @@ public class MechanismManager {
         componentTable = NetworkTableInstance.getDefault().getTable("Simulation/Components");
         intakeArmPosePublisher = componentTable
             .getStructTopic("IntakeArm", Pose3d.struct).publish();
-        climberPosePublisher = componentTable
-            .getStructTopic("Climber", Pose3d.struct).publish();
     }
 
     /**
@@ -85,7 +74,7 @@ public class MechanismManager {
      * @param fuelMoving whether fuel is being conveyed
      */
     public void update(double intakeAngleDeg, boolean intakeRunning, double shooterRPM, double shooterTargetRPM,
-                       double climberHeightMeters, boolean fuelStaged, boolean fuelMoving) {
+                       boolean fuelStaged, boolean fuelMoving) {
 
         // Intake arm: angle and color
         intakeArm.setAngle(-intakeAngleDeg); // negative = deploy downward
@@ -93,9 +82,6 @@ public class MechanismManager {
 
         // Hood: angle and color
         boolean shooterAtSpeed = shooterTargetRPM > 0 && Math.abs(shooterRPM - shooterTargetRPM) < 200;
-
-        // Climber: length proportional to extension
-        climberLigament.setLength(climberHeightMeters);
 
         // Shooter RPM bar: length proportional to RPM/max
         double maxRPM = 6500.0;
@@ -115,10 +101,6 @@ public class MechanismManager {
         intakeArmPosePublisher.set(new Pose3d(
             0.3, 0, 0.15, // robot-relative position
             new Rotation3d(0, Units.degreesToRadians(-intakeAngleDeg), 0)
-        ));
-        climberPosePublisher.set(new Pose3d(
-            0, 0, 0.15 + climberHeightMeters,
-            new Rotation3d()
         ));
     }
 }

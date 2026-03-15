@@ -22,7 +22,6 @@ import frc.robot.commands.RunIntakeCommand;
 import frc.robot.commands.RunKickerCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.ShootOnlyCommand;
-import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
@@ -62,7 +61,6 @@ public class RobotContainer {
   private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem(driveBase);
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   private final KickerSubsystem kickerSubsystem = new KickerSubsystem();
-  private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
 
   private final SendableChooser<Command> autoChooser;
 
@@ -216,20 +214,8 @@ public class RobotContainer {
   /** Operator button board bindings for drive-to-position commands. */
   private void configureOperatorBindings() {
     // Manual climber jog with software limits
-    m_secondaryController.button(1).whileTrue(
-        Commands.runEnd(
-            () -> climberSubsystem.setManualDutyCycle(1500),
-            () -> climberSubsystem.stopManual(),
-            climberSubsystem
-        ));
-    m_secondaryController.button(2).whileTrue(
-        Commands.runEnd(
-            () -> climberSubsystem.setManualDutyCycle(-1500),
-            () -> climberSubsystem.stopManual(),
-            climberSubsystem
-        ));
-
-
+    m_secondaryController.button(1);
+    m_secondaryController.button(2);
     m_secondaryController.button(3);
     m_secondaryController.button(4);
 
@@ -376,7 +362,6 @@ public class RobotContainer {
   public ConveyorSubsystem getConveyorSubsystem() { return conveyorSubsystem; }
   public KickerSubsystem getKickerSubsystem() { return kickerSubsystem; }
   public IntakeSubsystem getIntakeSubsystem() { return intakeSubsystem; }
-  public ClimberSubsystem getClimberSubsystem() { return climberSubsystem; }
   public VisionSubsystem getVisionSubsystem() { return visionSubsystem; }
 
   /**

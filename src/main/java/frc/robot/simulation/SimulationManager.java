@@ -25,7 +25,6 @@ public class SimulationManager {
     private final IntakeRollerSim intakeRollerSim;
     private final ConveyorSim conveyorSim;
     private final KickerSim kickerSim;
-    private final ClimberSim climberSim;
 
     // Arena simulation (maple-sim bridge)
     private final ArenaSimulation arenaSimulation;
@@ -60,7 +59,6 @@ public class SimulationManager {
         intakeRollerSim = new IntakeRollerSim(robotContainer.getIntakeSubsystem());
         conveyorSim = new ConveyorSim(conveyorSubsystem);
         kickerSim = new KickerSim(kickerSubsystem);
-        climberSim = new ClimberSim(robotContainer.getClimberSubsystem());
 
         // Arena simulation (maple-sim game piece physics)
         arenaSimulation = new ArenaSimulation(robotContainer.getSwerveSubsystem());
@@ -91,7 +89,6 @@ public class SimulationManager {
         intakeRollerSim.update();
         conveyorSim.update();
         kickerSim.update();
-        climberSim.update();
 
         // 2. Step arena physics (maple-sim)
         arenaSimulation.update();
@@ -134,7 +131,6 @@ public class SimulationManager {
             intakeRollerSim.isRunning(),
             shooterSim.getAngularVelocityRPM(),
             shooterSubsystem.getShooterTarget(),
-            climberSim.getPositionMeters(),
             gamePieceTracker.isBeamBreakTripped(),
             gamePieceTracker.getState() == GamePieceTracker.FuelState.IN_CONVEYOR
                 || gamePieceTracker.getState() == GamePieceTracker.FuelState.IN_INTAKE
@@ -149,7 +145,6 @@ public class SimulationManager {
             simTable.getEntry("Intake/ArmAngleDeg").setDouble(intakeDeploySim.getAngleDeg());
             simTable.getEntry("Intake/RollerRPM").setDouble(intakeRollerSim.getAngularVelocityRPM());
             simTable.getEntry("Shooter/FlywheelRPM").setDouble(shooterSim.getAngularVelocityRPM());
-            simTable.getEntry("Climber/PositionMeters").setDouble(climberSim.getPositionMeters());
 
             // Publish field fuel positions for AdvantageScope 3D visualization
             fieldFuelPublisher.set(arenaSimulation.getFieldFuelPoses());
