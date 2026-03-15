@@ -81,11 +81,21 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private void addMapValues() {
     
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters( 60)), Double.valueOf(1950)); // 1950
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters( 90)), Double.valueOf(2100)); // 2100
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(116)), Double.valueOf(2300)); // 2300
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(159)), Double.valueOf(2550)); // 2550
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(233)), Double.valueOf(3450)); // 3450
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(60 )), Double.valueOf(1905));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(70 )), Double.valueOf(1940));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(80 )), Double.valueOf(2005));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(90 )), Double.valueOf(2100));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(100)), Double.valueOf(2150));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(110)), Double.valueOf(2205));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(120)), Double.valueOf(2260));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(130)), Double.valueOf(2305));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(2370));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(150)), Double.valueOf(2445));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(160)), Double.valueOf(2500));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(170)), Double.valueOf(2570));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(180)), Double.valueOf(2625));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(2785));
+
   }
 
   public double calculateShooterFeedForward() {

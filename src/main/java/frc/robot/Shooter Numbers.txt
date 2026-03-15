@@ -1,31 +1,82 @@
-Distance: 60 in
-RPM: 1930
-Trial 1: 7/10
-Trial 2: 8/10
-Trial 3: 4/10
+Distance: 60 Meh (too close)
+RPM: 1905
+Not much data
+
+Distance: 70
+RPM: 1940
+Trial 1: 10/10
+Trial 2: 10/10
+Trial 3: 9/10
+
+Distance: 80
+RPM: 2005
+Trial 1: 10/10
+Trial 2: 10/10
+Trial 3: 10/10
 
 Distance: 90
-RPM: 2055
-Trial 1: 6/10
-Trial 2: 7/10
-Trial 3: 8/10
+RPM: 2100
+Trial 1: 10/10
+Trial 2: 10/10
+Trial 3: 10/10
 
-Distance: 120
-RPM: 2040
-Trial 1: 4/10
-Trial 2: 8/10
-Trial 3: 9/10
-Trial 3: 6/10
-Trial 3: 7/10
+Distance: 100
+RPM: 2150
+Trial 1: 10/10
+Trial 2: 9/10
+Trial 3: 10/10
+
+Distance: 110
+RPM: 2205
+Trial 1: 10/10
+Trial 2: 10/10
+Trial 3: 10/10
+
+Distance: 120 in
+RPM: 2260
+Trial 1: 10/10
+Trial 2: 10/10
+Trial 3: 10/10
+
+Distance: 130
+RPM: 2305
+Trial 1: 10/10
+Trial 2: 10/10
+Trial 3: 10/10
+
+Distance: 140
+RPM: 2370
+Trial 1: 10/10
+Trial 2: 9/10
+Trial 3: 10/10
 
 Distance: 150
-RPM: 
-Trial 1: 
-Trial 2: 
-Trial 3: 
+RPM: 2445
+Trial 1: 10/10
+Trial 2: 10/10
+Trial 3: 8/10
+Trial 4: 10/10
+
+Distance: 160
+RPM: 2500
+Trial 1: 10/10
+Trial 2: 10/10
+Trial 3: 10/10
+
+Distance: 170
+RPM: 2570
+Trial 1: 9/10
+Trial 2: 10/10
+Trial 3: 10/10
 
 Distance: 180
-RPM: 
-Trial 1: 
-Trial 2: 
-Trial 3: 
+RPM: 2625
+Trial 1: 9/10
+Trial 2: 9/10
+Trial 3: 10/10
+
+Distance: 200
+RPM: 2785
+Trial 1: 10/10
+Trial 2: 10/10
+Trial 3: 7/10
