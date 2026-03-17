@@ -65,6 +65,7 @@ public class ShooterSubsystem extends SubsystemBase {
   private final NetworkTableEntry readyEntryShooter = shooterTable.getEntry("Ready");
 
   private InterpolatingDoubleTreeMap shooterSpeedOnlyMap = new InterpolatingDoubleTreeMap();
+  private InterpolatingDoubleTreeMap fuelAirTimeMap = new InterpolatingDoubleTreeMap();
 
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem(SwerveSubsystem swerveSubsystem) {
@@ -81,7 +82,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private void addMapValues() {
     
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(60 )), Double.valueOf(1905));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(60 )), Double.valueOf(1905)); // Value is in RPM
     shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(70 )), Double.valueOf(1940));
     shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(80 )), Double.valueOf(2005));
     shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(90 )), Double.valueOf(2100));
@@ -96,6 +97,10 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(180)), Double.valueOf(2625));
     shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(2785));
 
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(70 )), Double.valueOf(0.0029)); // Value is in seconds
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(90 )), Double.valueOf(0.00365));
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(120)), Double.valueOf(0.0044));
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(150)), Double.valueOf(0.00485));
   }
 
   public double calculateShooterFeedForward() {
