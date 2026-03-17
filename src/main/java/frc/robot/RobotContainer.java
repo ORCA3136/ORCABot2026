@@ -54,7 +54,7 @@ public class RobotContainer {
   @SuppressWarnings("unused") // periodic() runs vision fusion automatically — no commands needed
 
   // The robot's subsystems and commands are defined here...
-  private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/ORCA2026"));
+  private final SwerveSubsystem driveBase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve/DEUCE"));
   // private final TeleopPathplanner teleopPathplanner = new TeleopPathplanner(driveBase);
   private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveBase);
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem(driveBase);
@@ -92,8 +92,11 @@ public class RobotContainer {
                     () -> driveBase.getAllianceFlip() * -m_primaryController.getLeftX())
                     .deadband(OperatorConstants.kStickDeadband);
 
+  // Deuce: rear-facing shooter — add 180° heading offset so robot aims rear toward hub
   SwerveInputStream aimAtHubStream = controllerInput.copy()
-                    .aimWhile(true);
+                    .aimWhile(true)
+                    .aimHeadingOffset(Rotation2d.fromDegrees(180))
+                    .aimHeadingOffset(true);
 
   // Transformations for different driving commands
   SwerveInputStream slowSpeedDrive   = controllerInput.copy().scaleTranslation(0.4);
@@ -123,7 +126,7 @@ public class RobotContainer {
     driveBase.setDefaultCommand(fastDriveCommand);
 
     // Buttons
-    m_primaryController.a().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
+    m_primaryController.a().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended)));
     m_primaryController.b().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> {
                                         Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
                                             ? FieldPositions.kRedFieldElements.get(0)
@@ -138,8 +141,8 @@ public class RobotContainer {
                                         if (current != null) current.cancel();
                                         driveBase.setDefaultCommand(fastDriveCommand);
                                      }));
-    m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
-    m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
+    m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)));
+    m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted)));
 
     // D pad
     m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
@@ -157,18 +160,18 @@ public class RobotContainer {
     // m_primaryController.rightBumper().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1950)))
     //                                  .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     m_primaryController.rightBumper().whileTrue(new ShootOnlyCommand(shooterSubsystem))
-                                  .whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
+                                  .whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)));
     m_primaryController.rightTrigger()
             .whileTrue(new ShootCommand(shooterSubsystem, driveBase))
            // .whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem).onlyWhile(shooterSubsystem::isShooterReady));
-            .whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
+            .whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)));
          
     m_primaryController.leftBumper  ().whileTrue(Commands.parallel(
         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 1000, 5000),
         Commands.sequence(
             Commands.waitSeconds(1),
             FuelPathCommands.intakePulse(intakeSubsystem).withTimeout(3),
-            Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp))
+            Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted))
         )
     ));
     m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
@@ -220,6 +223,11 @@ public class RobotContainer {
     m_secondaryController.button(4);
 
     m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
+    // Clear intake fault and re-home
+    m_secondaryController.button(6).onTrue(Commands.runOnce(() -> {
+      intakeSubsystem.clearFault();
+      intakeSubsystem.requestHoming();
+    }));
     // Prepare to climb — stow intake, move arm to horizontal
     // m_secondaryController.button(6).onTrue(
     //     ClimberCommands.prepareToClimb(climberSubsystem, intakeSubsystem));
@@ -268,14 +276,14 @@ public class RobotContainer {
         DriveToPositionCommand.driveToScoreCustom(driveBase, shooterSubsystem, this::driverIsOverriding));
   // m_secondaryController.button(12).whileTrue(                                                                                                                                     
   //           Commands.sequence(                                                                                                                                                   
-  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)),                                                                     
+  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted)),                                                                     
   //                Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kMaxDeployPosition) < 0.02),                                       
-  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)),                                                                   
+  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)),                                                                   
   //                Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kSafeDeployPosition) < 0.02)                                       
   //          ).repeatedly()                                                                                                                                                       
   //      );       
     m_secondaryController.button(12).onTrue(
-        Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown), intakeSubsystem));
+        Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended), intakeSubsystem));
   }
 
   private void configureNamedCommands() {
@@ -287,9 +295,9 @@ public class RobotContainer {
     NamedCommands.registerCommand("Stop Intake",          Commands.runOnce(() -> intakeSubsystem.setIntakeDutyCycle(0), intakeSubsystem));
 
     // Deploy Intake (with subsystem requirement to prevent conflicts)
-    NamedCommands.registerCommand("Deploy Intake" ,       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown), intakeSubsystem));
-    NamedCommands.registerCommand("Intake Safe" ,         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe), intakeSubsystem));
-    NamedCommands.registerCommand("Retract Intake",       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp), intakeSubsystem));
+    NamedCommands.registerCommand("Deploy Intake" ,       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended), intakeSubsystem));
+    NamedCommands.registerCommand("Intake Safe" ,         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial), intakeSubsystem));
+    NamedCommands.registerCommand("Retract Intake",       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted), intakeSubsystem));
 
     // Shoot
     NamedCommands.registerCommand("Shoot to Hub",         FuelPathCommands.shootToHub(shooterSubsystem, driveBase));

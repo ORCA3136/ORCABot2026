@@ -103,12 +103,12 @@ public final class FuelPathCommands {
         new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed)
     )
     .beforeStarting(() -> {
-      intake.setIntakeDeployTarget(Setpoint.kDown);
+      intake.setIntakeDeployTarget(Setpoint.kExtended);
       intake.ocillateIntake(true);
     })
     .finallyDo(interrupted -> {
      intake.ocillateIntake(false);
-      intake.setIntakeDeployTarget(Setpoint.kSafe);
+      intake.setIntakeDeployTarget(Setpoint.kPartial);
     })
     .withName("FullFuelPath");
   }
@@ -125,12 +125,12 @@ public final class FuelPathCommands {
         new KickerJamProtectionCommand(kicker, FuelPathConstants.kKickerFeed)
     )
     .beforeStarting(() -> {
-      intake.setIntakeDeployTarget(Setpoint.kDown);
+      intake.setIntakeDeployTarget(Setpoint.kExtended);
       intake.ocillateIntake(true);
     })
     .finallyDo(interrupted -> {
       intake.ocillateIntake(false);
-      intake.setIntakeDeployTarget(Setpoint.kUp);
+      intake.setIntakeDeployTarget(Setpoint.kRetracted);
     })
     .withName("FullFuelPathJamProtected");
   }
@@ -212,7 +212,7 @@ public final class FuelPathCommands {
         Commands.runOnce(() -> {
             intake.setIntakeDutyCycle(0);
             intake.ocillateIntake(false);
-            intake.setIntakeDeployTarget(Setpoint.kUp);
+            intake.setIntakeDeployTarget(Setpoint.kRetracted);
         }, intake),
         Commands.runOnce(() -> conveyor.setConveyorDutyCycle(0), conveyor),
         Commands.runOnce(() -> kicker.setKickerDutyCycle(0), kicker)

@@ -30,19 +30,19 @@ public final class AutoCommands {
 
   /** Deploy intake to kDown position. Finishes instantly. */
   public static Command intakeDown(IntakeSubsystem intake) {
-    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kDown), intake)
+    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kExtended), intake)
         .withName("IntakeDown");
   }
 
   /** Move intake to kSafe position. Finishes instantly. */
   public static Command intakeSafe(IntakeSubsystem intake) {
-    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kSafe), intake)
+    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kPartial), intake)
         .withName("IntakeSafe");
   }
 
   /** Retract intake to kUp position. Finishes instantly. */
   public static Command intakeUp(IntakeSubsystem intake) {
-    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kUp), intake)
+    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kRetracted), intake)
         .withName("IntakeUp");
   }
 
@@ -102,11 +102,11 @@ public final class AutoCommands {
    */
   public static Command intakeWithDeploy(IntakeSubsystem intake, double speed, double timeoutSec) {
     return Commands.run(() -> intake.setIntakeDutyCycle(speed), intake)
-        .beforeStarting(() -> intake.setIntakeDeployTarget(Setpoint.kDown))
+        .beforeStarting(() -> intake.setIntakeDeployTarget(Setpoint.kExtended))
         .withTimeout(timeoutSec)
         .finallyDo(interrupted -> {
           intake.setIntakeDutyCycle(0);
-          intake.setIntakeDeployTarget(Setpoint.kSafe);
+          intake.setIntakeDeployTarget(Setpoint.kPartial);
         })
         .withName("IntakeWithDeploy" + (int) timeoutSec + "s");
   }
@@ -180,10 +180,10 @@ public final class AutoCommands {
     return Commands.parallel(
         new RunConveyorAndKickerCommand(conveyor, kicker, 1000, 5000),
         Commands.sequence(
-            Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kSafe), intake),
+            Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kPartial), intake),
             Commands.waitSeconds(1),
             FuelPathCommands.intakePulse(intake).withTimeout(2),
-            Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kUp), intake)
+            Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kRetracted), intake)
         )
     )
     .withTimeout(timeoutSec)

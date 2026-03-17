@@ -95,9 +95,10 @@ public final class DriveToPositionCommand {
       Translation2d hubPos = swerve.getAlliance() == Alliance.Red
           ? FieldPositions.kRedFieldElements.get(0)
           : FieldPositions.kBlueFieldElements.get(0);
+      // Deuce: rear-facing shooter — aim robot rear toward hub (add π)
       double targetRad = Math.atan2(
           hubPos.getY() - robotPos.getY(),
-          hubPos.getX() - robotPos.getX());
+          hubPos.getX() - robotPos.getX()) + Math.PI;
 
       pid.reset();
 

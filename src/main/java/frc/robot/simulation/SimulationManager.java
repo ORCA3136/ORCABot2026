@@ -126,8 +126,12 @@ public class SimulationManager {
         visionSim.update();
 
         // 8. Update Mechanism2d visualization
+        // Deuce: rack & pinion — convert motor rotations to a pseudo-angle for Mechanism2d
+        // (0 motor rot = 0°, max extension ≈ 90° for visualization)
+        double intakeDeployAngleDeg = (intakeDeploySim.getPositionMotorRotations()
+            / frc.robot.Constants.IntakeConstants.kMaxExtension) * 90.0;
         mechanismManager.update(
-            intakeDeploySim.getAngleDeg(),
+            intakeDeployAngleDeg,
             intakeRollerSim.isRunning(),
             shooterSim.getAngularVelocityRPM(),
             shooterSubsystem.getShooterTarget(),
@@ -142,7 +146,7 @@ public class SimulationManager {
 
     private void publishTelemetry() {
         try {
-            simTable.getEntry("Intake/ArmAngleDeg").setDouble(intakeDeploySim.getAngleDeg());
+            simTable.getEntry("Intake/PositionMotorRot").setDouble(intakeDeploySim.getPositionMotorRotations());
             simTable.getEntry("Intake/RollerRPM").setDouble(intakeRollerSim.getAngularVelocityRPM());
             simTable.getEntry("Shooter/FlywheelRPM").setDouble(shooterSim.getAngularVelocityRPM());
 

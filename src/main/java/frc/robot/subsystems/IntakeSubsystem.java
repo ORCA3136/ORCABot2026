@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems;
 
-import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -12,186 +11,283 @@ import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
-import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkFlexConfig;
 
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.*;
 
-/*
- * This subsystem is for fuel interactions
- * Including:
- *    Intaking/outaking fuel from the floor
- *    Transporting fuel to the shooter
+/**
+ * Rack & pinion intake subsystem for Deuce (Robot 2).
  *
- * === INTAKE DEPLOY PID TUNING STEPS ===
- * 1. Deploy with kG = 0 (current state) — verify both up and down move symmetrically
- * 2. Hold arm perfectly horizontal, read "IntakeDeploy/Position" from NetworkTables
- * 3. Put that value in Constants.java IntakeConstants.kEncoderHorizontalOffset
- * 4. Set kG = 0.05, deploy, and slowly increase until the arm holds position with low current
+ * Deploys linearly via a 25:1 gearbox + 18t→22t sprocket + 12t→32t rack.
+ * Full travel: 66.75 motor rotations.
+ * Position control uses the SparkFlex relative encoder (motor rotations from home).
  *
- * If the arm is too slow in both directions: increase kP (try 1.5, then 3.0)
- * If the arm overshoots and bounces: increase kD (try 3.0) or reduce kP
- * If the arm drifts slowly: add small kI (try 0.001) — use sparingly
+ * Homing uses a limit switch at the retracted position (DIO 2) as the
+ * authoritative zero reference. Falls back to stall detection when
+ * {@code kLimitSwitchInstalled} is false.
  */
-
-
 public class IntakeSubsystem extends SubsystemBase {
 
-  // private final SwerveSubsystem m_swerveSubsystem;
+  // ── Deploy state machine ────────────────────────────────────────────
+  public enum DeployState {
+    UNHOMED,
+    HOMING,
+    HOMED,
+    FAULT
+  }
 
-  final DCMotor intakeDCMotor = DCMotor.getNeoVortex(1);
-  final DCMotor deployDCMotor = DCMotor.getNeo550(1);
+  public enum Setpoint {
+    kRetracted,
+    kPartial,
+    kExtended;
+  }
 
+  // ── Hardware ─────────────────────────────────────────────────────────
   final SparkFlex intakeMotor = new SparkFlex(CanIdConstants.kIntakeCanId, MotorType.kBrushless);
-
-  final SparkMax intakeDeployMotor = new SparkMax(CanIdConstants.kIntakeDeployCanId, MotorType.kBrushless);
-
-  // final SparkSim deployMotorSim = new SparkSim(intakeDeployMotor, deployDCMotor);
-  // final SparkSim intakeMotorSim = new SparkSim(intakeMotor, intakeDCMotor);
-
-  // final SingleJointedArmSim intakeDeploySim = new SingleJointedArmSim(
-  //     deployDCMotor, // Motor type
-  //     IntakeConstants.kDeployGearRatio,
-  //     0.01, // Arm moment of inertia - Small value since there are no arm parameters
-  //     0.1, // Arm length (m) - Small value since there are no arm parameters
-  //     Units.degreesToRadians(-90), // Min angle (rad)
-  //     Units.degreesToRadians(90), // Max angle (rad)
-  //     false, // Simulate gravity - Disable gravity for pivot
-  //     Units.degreesToRadians(0) // Starting position (rad)
-  //   );
-
-  // final LinearSystem linearIntake = new LinearSystem<>(null, null, null, null);
-  // final FlywheelSim intakeFlywheelSim = new FlywheelSim(linearIntake, intakeDCMotor, null);
+  final SparkFlex intakeDeployMotor = new SparkFlex(CanIdConstants.kIntakeDeployCanId, MotorType.kBrushless);
 
   final RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
-  final AbsoluteEncoder intakeDeployEncoder = intakeDeployMotor.getAbsoluteEncoder();
+  final RelativeEncoder intakeDeployEncoder = intakeDeployMotor.getEncoder();
 
-  final SparkClosedLoopController IntakePIDController = intakeDeployMotor.getClosedLoopController();
+  final SparkClosedLoopController deployPIDController = intakeDeployMotor.getClosedLoopController();
 
+  private final DigitalInput homeLimitSwitch = new DigitalInput(DioConstants.kIntakeHomeLimitSwitchPort);
+
+  // ── NetworkTables ───────────────────────────────────────────────────
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable intakeTable = networkTable.getTable(NetworkTableNames.Intake.kTable);
   final NetworkTable intakeDeployTable = networkTable.getTable(NetworkTableNames.IntakeDeploy.kTable);
 
-  // Cached NetworkTable entries — avoids hash lookups every cycle (50Hz)
   private final NetworkTableEntry intakeVelocityEntry = intakeTable.getEntry(NetworkTableNames.Intake.kVelocityRPM);
   private final NetworkTableEntry intakeCurrentEntry = intakeTable.getEntry(NetworkTableNames.Intake.kCurrentAmps);
   private final NetworkTableEntry deployVelocityEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVelocityRPM);
   private final NetworkTableEntry deployPositionEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kPositionRotations);
-  private final NetworkTableEntry deployVoltageEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kVoltageRotations);
-  private final NetworkTableEntry intakeDeployCurrentEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kCurrentAmps);
-  private final NetworkTableEntry _intakeDeployTarget = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kTarget);
+  private final NetworkTableEntry deployCurrentEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kCurrentAmps);
+  private final NetworkTableEntry deployTargetEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kTarget);
   private final NetworkTableEntry rampedPositionEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kRampedPosition);
+  private final NetworkTableEntry stateEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kState);
+  private final NetworkTableEntry faultReasonEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kFaultReason);
+  private final NetworkTableEntry limitSwitchEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kLimitSwitch);
 
-  private boolean ocillateIntake = false;
-  private double ocillationMagnitude = 1;
-  private double ocillationFrequency = 1;
-  private Setpoint intakeDeployTarget = Setpoint.kDown;
-  private double rampedPosition = IntakeConstants.kMinDeployPosition;
+  // ── State ───────────────────────────────────────────────────────────
+  private DeployState state = DeployState.UNHOMED;
+  private String faultReason = "";
+  private int homingStallCounter = 0;
+  private final Timer homingTimer = new Timer();
 
-  public enum Setpoint{
-    kDown,
-    kSafe,
-    kUp;
-  }
-
+  private boolean pulseActive = false;
+  private Setpoint intakeDeployTarget = Setpoint.kRetracted;
+  private double rampedPosition = IntakeConstants.kRetractedPosition;
 
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem(SwerveSubsystem swerveSubsystem) {
-
-    // m_swerveSubsystem = swerveSubsystem;
-
     intakeMotor.configure(IntakeConfigs.intakeMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     intakeDeployMotor.configure(IntakeConfigs.intakeDeployMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+    if (!IntakeConstants.kLimitSwitchInstalled) {
+      DriverStation.reportWarning("IntakeSubsystem: Limit switch NOT installed — using stall-detection fallback for homing", false);
+    }
   }
 
-  /** Calculates the current intake feedforward
-   * {@summary intake feedforward includes gravitational force, static loss, air resistance, and robot acceleration} */
-  public double calculateFeedForward() {
-    // FF pivot = Ksta + Kvel * TarVel + Kgrav * cos(angle) + Kaccel * RobAccel * sin(angle)
-    return IntakeConstants.kS + IntakeConstants.kG * Math.cos(getIntakeAngle());
+  // ── State machine ───────────────────────────────────────────────────
+
+  /** @return Current deploy state. */
+  public DeployState getDeployState() {
+    return state;
   }
 
-  public double calculatePosition() {
+  /** @return True if the intake is homed and ready for position commands. */
+  public boolean isHomed() {
+    return state == DeployState.HOMED;
+  }
 
-    double tempTargetPosition;
+  /** @return True if the limit switch is pressed (NO switch with pull-up: pressed = get() returns false). */
+  public boolean isLimitSwitchPressed() {
+    return !homeLimitSwitch.get();
+  }
 
-    if (intakeDeployTarget == Setpoint.kDown)
-      tempTargetPosition = IntakeConstants.kMinDeployPosition;
-    else if (intakeDeployTarget == Setpoint.kSafe)
-      tempTargetPosition = IntakeConstants.kSafeDeployPosition;
-    else
-      tempTargetPosition = IntakeConstants.kMaxDeployPosition;
+  /**
+   * Requests the homing sequence. Transitions from UNHOMED → HOMING.
+   * No-op if already HOMED or currently HOMING.
+   */
+  public void requestHoming() {
+    if (state == DeployState.HOMED || state == DeployState.HOMING) return;
+    state = DeployState.HOMING;
+    homingStallCounter = 0;
+    homingTimer.restart();
+    DriverStation.reportWarning("IntakeSubsystem: Homing requested", false);
+  }
 
-    // If robotPose is close to any hub then put intake up
-    // Translation2d robotPose2d = m_swerveSubsystem.getPose().getTranslation();
-    // Translation2d nearestTrench = robotPose2d.nearest(FieldPositions.kTrenchPoses);
-    // if (robotPose2d.getDistance(nearestTrench) < 1) {
-    //   tempTargetPosition = IntakeConstants.kSafeDeployPosition;
-    // }
+  /**
+   * Clears a fault and returns to UNHOMED. Call {@link #requestHoming()} after
+   * to re-attempt homing.
+   */
+  public void clearFault() {
+    if (state != DeployState.FAULT) return;
+    faultReason = "";
+    state = DeployState.UNHOMED;
+    DriverStation.reportWarning("IntakeSubsystem: Fault cleared → UNHOMED", false);
+  }
 
-    if (tempTargetPosition == IntakeConstants.kSafeDeployPosition && getIntakeDeployPosition() < 0.1)
-      tempTargetPosition += 0.2;
+  /** Runs each cycle during HOMING state. */
+  private void updateHoming() {
+    // Drive slowly toward retracted (inward)
+    intakeDeployMotor.set(IntakeConstants.kHomingDutyCycle);
 
-    // This was adding rotations which would be way too big a change, so I changed it to degrees for the time being
-    if (intakeDeployTarget == Setpoint.kUp && ocillateIntake) {
-      tempTargetPosition += (ocillationMagnitude * (1 + Math.sin(Timer.getTimestamp() * ocillationFrequency)) / 360);
+    // Primary: limit switch
+    if (IntakeConstants.kLimitSwitchInstalled && isLimitSwitchPressed()) {
+      completeHoming();
+      return;
     }
 
-    if (tempTargetPosition > IntakeConstants.kMaxDeployPosition)
-        tempTargetPosition = IntakeConstants.kMaxDeployPosition;
-    if (tempTargetPosition < IntakeConstants.kMinDeployPosition)
-        tempTargetPosition = IntakeConstants.kMinDeployPosition;
+    // Stall detection (current spike)
+    if (intakeDeployMotor.getOutputCurrent() > IntakeConstants.kHomingCurrentThreshold) {
+      homingStallCounter++;
+    } else {
+      homingStallCounter = 0;
+    }
 
-    return tempTargetPosition;
+    if (homingStallCounter >= IntakeConstants.kHomingStallCycles) {
+      if (IntakeConstants.kLimitSwitchInstalled) {
+        // Switch is installed but didn't trigger — stall is a fault
+        enterFault("Stall detected during homing but limit switch never triggered");
+      } else {
+        // Fallback mode: stall = homed
+        DriverStation.reportWarning("IntakeSubsystem: Homed via stall detection (fallback mode)", false);
+        completeHoming();
+      }
+      return;
+    }
+
+    // Timeout
+    if (homingTimer.hasElapsed(IntakeConstants.kHomingTimeoutSec)) {
+      enterFault("Homing timed out after " + IntakeConstants.kHomingTimeoutSec + "s");
+    }
   }
 
-  /** Ramps the position setpoint toward the target for smoother motion */
+  /** Called when homing succeeds — zeros encoder, applies soft limits, transitions to HOMED. */
+  private void completeHoming() {
+    intakeDeployMotor.set(0);
+    intakeDeployEncoder.setPosition(0);
+    rampedPosition = 0;
+    intakeDeployTarget = Setpoint.kRetracted;
+    homingTimer.stop();
+
+    // Apply hardware soft limits now that we have a known zero
+    setHardwareSoftLimits();
+
+    state = DeployState.HOMED;
+    DriverStation.reportWarning("IntakeSubsystem: Homing complete → HOMED", false);
+  }
+
+  /** Enters the FAULT state — stops motor, logs reason. */
+  private void enterFault(String reason) {
+    intakeDeployMotor.set(0);
+    homingTimer.stop();
+    faultReason = reason;
+    state = DeployState.FAULT;
+    DriverStation.reportError("IntakeSubsystem FAULT: " + reason, false);
+  }
+
+  /** Applies forward/reverse hardware soft limits on the deploy motor. */
+  private void setHardwareSoftLimits() {
+    SparkFlexConfig limitConfig = new SparkFlexConfig();
+    limitConfig.softLimit
+        .forwardSoftLimitEnabled(true)
+        .forwardSoftLimit((float) IntakeConstants.kMaxExtension)
+        .reverseSoftLimitEnabled(true)
+        .reverseSoftLimit(-1.0f);
+    intakeDeployMotor.configure(limitConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+  }
+
+  // ── Position control ───────────────────────────────────────────────
+
+  /** Calculates the target position in motor rotations from the current setpoint. */
+  public double calculatePosition() {
+    double targetPosition;
+
+    switch (intakeDeployTarget) {
+      case kExtended:
+        targetPosition = IntakeConstants.kExtendedPosition;
+        break;
+      case kPartial:
+        targetPosition = IntakeConstants.kPartialPosition;
+        break;
+      case kRetracted:
+      default:
+        targetPosition = IntakeConstants.kRetractedPosition;
+        break;
+    }
+
+    // Add oscillation offset when pulsing
+    if (pulseActive) {
+      targetPosition += IntakeConstants.kPulseAmplitude
+          * Math.sin(Timer.getTimestamp() * 2 * Math.PI * IntakeConstants.kPulseFrequencyHz);
+    }
+
+    // Enforce soft limits
+    targetPosition = Math.max(IntakeConstants.kRetractedPosition, Math.min(targetPosition, IntakeConstants.kMaxExtension));
+
+    return targetPosition;
+  }
+
+  /** Ramps the position setpoint toward the target for smoother motion. */
   private void rampPosition() {
     double target = calculatePosition();
     if (rampedPosition < target) {
-      rampedPosition = Math.min(rampedPosition + IntakeConstants.kRetractRampRate, target);
+      rampedPosition = Math.min(rampedPosition + IntakeConstants.kExtendRampRate, target);
     } else if (rampedPosition > target) {
-      rampedPosition = Math.max(rampedPosition - IntakeConstants.kDeployRampRate, target);
+      rampedPosition = Math.max(rampedPosition - IntakeConstants.kRetractRampRate, target);
     }
   }
 
-  /** Sets the intake setpoint angle */
-  public void setPIDAngle() {
-    IntakePIDController.setSetpoint(rampedPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, calculateFeedForward());
+  /** Sends the ramped position setpoint to the SparkFlex PID controller. */
+  public void setPIDPosition() {
+    if (state != DeployState.HOMED) return;
+    deployPIDController.setSetpoint(rampedPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }
 
-  /** Sets the intakeDeployTarget variable */
+  /** Sets the deploy target setpoint. Rejected if not HOMED. */
   public void setIntakeDeployTarget(Setpoint position) {
+    if (state != DeployState.HOMED) {
+      DriverStation.reportWarning("IntakeSubsystem: setIntakeDeployTarget rejected — state is " + state, false);
+      return;
+    }
     intakeDeployTarget = position;
   }
 
-  /** @return Intake roller motor for simulation access */
-  public SparkFlex getIntakeMotor() {
-    return intakeMotor;
+  /** @return Current deploy position in motor rotations from home. */
+  public double getIntakePosition() {
+    return intakeDeployEncoder.getPosition();
   }
 
-  /** @return Deploy motor for simulation access */
-  public SparkMax getDeployMotor() {
-    return intakeDeployMotor;
+  /** @return Deploy position (alias for compatibility). */
+  public double getIntakeDeployPosition() {
+    return getIntakePosition();
   }
 
-  /** @return Angle in radians relative to horizontal (0 = horizontal, positive = above, negative = below) */
-  public double getIntakeAngle() {
-    return 2 * Math.PI * (intakeDeployEncoder.getPosition() - IntakeConstants.intakeDeployOffset);
+  // ── Pulse / Oscillate ──────────────────────────────────────────────
+
+  /** Enable/disable position pulsing for shooting agitation. */
+  public void pulse(boolean enable) {
+    pulseActive = enable;
   }
 
-  /** True makes the intake ocillate if it's down, false stops it */
-  public void ocillateIntake(boolean ocillate) {
-    ocillateIntake = ocillate;
+  /** Alias for backwards compatibility with oscillate calls. */
+  public void ocillateIntake(boolean oscillate) {
+    pulse(oscillate);
   }
+
+  // ── Intake roller ──────────────────────────────────────────────────
 
   /**
    * Sets intake roller motor output. Takes an RPM-scale value and normalizes it to [-1, 1]
@@ -202,105 +298,90 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeMotor.set(speed / RobotConstants.kNeoVortexFreeSpeedRPM);
   }
 
-  /**
-   * @return Velocity in RPM
-   */
+  /** @return Intake roller velocity in RPM. */
   public double getIntakeVelocity() {
     return intakeEncoder.getVelocity();
   }
 
   /**
-   * Sets intake deploy motor output. Takes an RPM-scale value and normalizes it to [-1, 1]
-   * duty cycle by dividing by the NEO 550 free speed (11000 RPM).
-   * @param speed RPM-scale value (e.g. 3000 to deploy, -3000 to retract)
+   * Sets intake deploy motor output directly (duty cycle scale).
+   * Rejected in FAULT or HOMING states. Allowed in UNHOMED for manual jog.
+   * @param speed RPM-scale value normalized by Vortex free speed
    */
   public void setIntakeDeployDutyCycle(double speed) {
-    intakeDeployMotor.set(speed / RobotConstants.kNeo550FreeSpeedRPM);
+    if (state == DeployState.FAULT || state == DeployState.HOMING) {
+      DriverStation.reportWarning("IntakeSubsystem: setIntakeDeployDutyCycle rejected — state is " + state, false);
+      return;
+    }
+    intakeDeployMotor.set(speed / RobotConstants.kNeoVortexFreeSpeedRPM);
   }
 
-  /**
-   * @return Velocity in RPM
-   */
+  /** @return Deploy motor velocity in RPM. */
   public double getIntakeDeployVelocity() {
     return intakeDeployEncoder.getVelocity();
   }
 
-  /**
-   * @return Velocity in RPM
-   */
-  public double getIntakeDeployPosition() {
-    return intakeDeployEncoder.getPosition();
+  // ── Motor accessors ────────────────────────────────────────────────
+
+  /** @return Intake roller motor for simulation access. */
+  public SparkFlex getIntakeMotor() {
+    return intakeMotor;
   }
 
-  /**
-   * Get the current applied voltage.
-   * @return Applied voltage
-   */
+  /** @return Deploy motor for simulation access. */
+  public SparkFlex getDeployMotor() {
+    return intakeDeployMotor;
+  }
+
+  /** Get the current applied voltage (both motors combined). */
   public double getVoltage() {
-    return intakeDeployMotor.getAppliedOutput() * intakeDeployMotor.getBusVoltage() + 
-           intakeMotor.getAppliedOutput() * intakeMotor.getBusVoltage();
+    return intakeDeployMotor.getAppliedOutput() * intakeDeployMotor.getBusVoltage()
+        + intakeMotor.getAppliedOutput() * intakeMotor.getBusVoltage();
   }
 
   public double getDeployVoltage() {
     return intakeDeployMotor.getAppliedOutput() * intakeDeployMotor.getBusVoltage();
   }
 
+  // ── NetworkTables ──────────────────────────────────────────────────
+
   public void updateNetworkTable() {
     intakeVelocityEntry.setDouble(getIntakeVelocity());
     intakeCurrentEntry.setDouble(intakeMotor.getOutputCurrent());
-    intakeDeployCurrentEntry.setDouble(intakeDeployMotor.getOutputCurrent());
+    deployCurrentEntry.setDouble(intakeDeployMotor.getOutputCurrent());
     deployVelocityEntry.setDouble(getIntakeDeployVelocity());
-    deployPositionEntry.setDouble(getIntakeDeployPosition());
-    deployVoltageEntry.setDouble(calculateFeedForward());
-    _intakeDeployTarget.setDouble(calculatePosition());
+    deployPositionEntry.setDouble(getIntakePosition());
+    deployTargetEntry.setDouble(calculatePosition());
     rampedPositionEntry.setDouble(rampedPosition);
+    stateEntry.setString(state.name());
+    faultReasonEntry.setString(faultReason);
+    limitSwitchEntry.setBoolean(isLimitSwitchPressed());
   }
 
-  /** This method will be called once per scheduler run */
+  // ── Periodic ───────────────────────────────────────────────────────
+
   @Override
   public void periodic() {
-    rampPosition();
-    setPIDAngle();
+    switch (state) {
+      case UNHOMED:
+        // Idle — motor stopped, waiting for requestHoming()
+        break;
+      case HOMING:
+        updateHoming();
+        break;
+      case HOMED:
+        rampPosition();
+        setPIDPosition();
+        break;
+      case FAULT:
+        intakeDeployMotor.set(0);
+        break;
+    }
     updateNetworkTable();
   }
 
-  /** This method will be called once per scheduler run during simulation */
   @Override
-  public void simulationPeriodic() { // Tempotrarily commented out becasue it may be causing problems with the code
-
-    // // Set input voltage from motor controller to simulation
-    // // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input
-    // //pivotSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(pivotSim.getCurrentDrawAmps()), pivotSim.getVelocityRadPerSec()));
-    // // pivotSim.setInput(getVoltage());
-    // // Set input voltage from motor controller to simulation
-    // // Use getVoltage() for other controllers
-    // intakeFlywheelSim.setInput(getVoltage());
-    // intakeDeploySim.setInput(getVoltage());
-
-    // // Update simulation by 20ms
-    // intakeFlywheelSim.update(0.020);
-    // intakeDeploySim.update(0.020);
-    // RoboRioSim.setVInVoltage(
-    //   BatterySim.calculateDefaultBatteryLoadedVoltage(
-    //     intakeFlywheelSim.getCurrentDrawAmps() + 
-    //     intakeDeploySim.getCurrentDrawAmps()
-    //   )
-    // );
-
-    // // double motorDeployPosition = Radians.of(intakeDeploySim.getAngleRads() * IntakeConstants.kDeployGearRatio).in(
-    // //   Rotations
-    // // );
-    // double motorDeployVelocity = RadiansPerSecond.of(
-    //   intakeDeploySim.getVelocityRadPerSec() * IntakeConstants.kDeployGearRatio
-    // ).in(RotationsPerSecond);
-    // deployMotorSim.iterate(motorDeployVelocity * 60, RoboRioSim.getVInVoltage(), 0.02);
-
-    // // double motorIntakePosition = Radians.of(intakeDeploySim.getAngleRads() * IntakeConstants.kDeployGearRatio).in(
-    // //   Rotations
-    // // );
-    // double motorIntakeVelocity = RadiansPerSecond.of(
-    //   intakeDeploySim.getVelocityRadPerSec() * IntakeConstants.kDeployGearRatio
-    // ).in(RotationsPerSecond);
-    // deployMotorSim.iterate(motorIntakeVelocity * 60, RoboRioSim.getVInVoltage(), 0.02);
+  public void simulationPeriodic() {
+    // Simulation not yet implemented for rack & pinion
   }
 }

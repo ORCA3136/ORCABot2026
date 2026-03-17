@@ -3,65 +3,59 @@ package frc.robot.simulation;
 import com.revrobotics.spark.SparkSim;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.Constants.IntakeConstants;
 import frc.robot.subsystems.IntakeSubsystem;
 
 /**
- * Simulates the intake deployment arm (NEO 550 + SparkMax, 87.5:1 reduction).
- * Updates the absolute encoder position via SparkSim.
+ * Simulates the intake deployment rack & pinion (Vortex + SparkFlex, ~30.56:1 reduction).
+ * Updates the relative encoder position via SparkSim.
+ *
+ * Since WPILib doesn't have a built-in linear mechanism sim that maps well to a
+ * rack & pinion, we use a simple velocity integration model.
  */
 public class IntakeDeploySim {
 
     private final SparkSim sparkSim;
-    private final SingleJointedArmSim armSim;
+    private double positionMotorRotations = 0; // Motor rotations from home
 
     public IntakeDeploySim(IntakeSubsystem subsystem) {
-        DCMotor motor = DCMotor.getNeo550(1);
+        DCMotor motor = DCMotor.getNeoVortex(1);
         sparkSim = new SparkSim(subsystem.getDeployMotor(), motor);
-        armSim = new SingleJointedArmSim(
-            motor,
-            SimConstants.kIntakeDeployGearRatio,
-            SimConstants.kIntakeDeployMOI,
-            SimConstants.kIntakeDeployLengthMeters,
-            SimConstants.kIntakeDeployMinAngleRad,
-            SimConstants.kIntakeDeployMaxAngleRad,
-            true, // simulate gravity
-            SimConstants.kIntakeDeployStartingAngleRad
-        );
     }
 
     public void update() {
         double vbus = sparkSim.getBusVoltage();
         double appliedOutput = sparkSim.getAppliedOutput();
+
+        // Simple model: compute motor velocity from applied voltage
+        DCMotor motor = DCMotor.getNeoVortex(1);
         double voltage = appliedOutput * vbus;
+        // Approximate: free speed proportional to voltage, no load
+        double freeSpeedRadPerSec = motor.freeSpeedRadPerSec * (voltage / 12.0);
+        double motorRPM = Units.radiansPerSecondToRotationsPerMinute(freeSpeedRadPerSec);
 
-        armSim.setInputVoltage(voltage);
-        armSim.update(SimConstants.kSimTimestepSeconds);
+        // Integrate position
+        double dt = SimConstants.kSimTimestepSeconds;
+        positionMotorRotations += (motorRPM / 60.0) * dt;
 
-        // Convert arm velocity to motor RPM
-        double motorVelocityRPM = Units.radiansPerSecondToRotationsPerMinute(
-            armSim.getVelocityRadPerSec() * SimConstants.kIntakeDeployGearRatio
-        );
-        sparkSim.iterate(motorVelocityRPM, vbus, SimConstants.kSimTimestepSeconds);
+        // Clamp to physical limits
+        if (positionMotorRotations < 0) {
+            positionMotorRotations = 0;
+            motorRPM = 0;
+        } else if (positionMotorRotations > IntakeConstants.kMaxExtension) {
+            positionMotorRotations = IntakeConstants.kMaxExtension;
+            motorRPM = 0;
+        }
 
-        // Override absolute encoder position
-        // Subsystem formula: angle_rad = 2*PI * (encoderPos / kDeployGearRatio)
-        // So: encoderPos = (angle_rad / (2*PI)) * kDeployGearRatio
-        double armAngleRad = armSim.getAngleRads();
-        double encoderPosition = (armAngleRad / (2.0 * Math.PI)) * IntakeConstants.kDeployGearRatio;
-        sparkSim.getAbsoluteEncoderSim().setPosition(encoderPosition);
+        sparkSim.iterate(motorRPM, vbus, dt);
     }
 
     public double getCurrentDrawAmps() {
-        return armSim.getCurrentDrawAmps();
+        // Simplified — return a small value for now
+        return 2.0;
     }
 
-    public double getAngleRad() {
-        return armSim.getAngleRads();
-    }
-
-    public double getAngleDeg() {
-        return Units.radiansToDegrees(armSim.getAngleRads());
+    public double getPositionMotorRotations() {
+        return positionMotorRotations;
     }
 }

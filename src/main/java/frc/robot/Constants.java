@@ -51,38 +51,51 @@ public final class Constants {
   }
 
   public static final class IntakeConstants {
-    // Shooter speeds, RPM
+    // Intake roller speeds, RPM
     public static final double kVelocityLow = 500;
     public static final double kVelocityMedium = 1000;
     public static final double kVelocityHigh = 1500;
     public static final double kVelocityMax = 2500;
 
-    public static final double kP = 2.8; // 2
-    public static final double kI = 0.001;
-    public static final double kD = 5.0; // 8
-    // TODO: TUNE ON ROBOT — kG gravity FF disabled because getIntakeAngle() doesn't return
-    // the true physical angle. To re-enable: measure encoder position when arm is horizontal,
-    // subtract that offset in getIntakeAngle(), then tune kG starting at ~0.1
-    public static final double kG = 0.6;
-    public static final double kS = 0.0;
-    // public static final double kV = 0;
-    // public static final double kA = 0;
+    // Rack & pinion deploy PID (on SparkFlex relative encoder, position control)
+    // TODO: TUNE ON ROBOT — start here, adjust based on response
+    public static final double kP = 1.0;
+    public static final double kI = 0.0;
+    public static final double kD = 0.0;
 
-    public static final double intakeDeployOffset = 0.034;
-    public static final double kMaxDeployPosition = 0.20 + intakeDeployOffset;
-    public static final double kSafeDeployPosition = 0.095 + intakeDeployOffset;
-    public static final double kMinDeployPosition = 0.0 + intakeDeployOffset;
-
-    // TODO: MEASURE ON ROBOT — hold arm perfectly horizontal, read IntakeDeploy/Position from NT
-    public static final double kEncoderHorizontalOffset = 0.0;
-
-    public static final double kDeployGearRatio = 18. / 22;
+    // Rack & pinion gear ratio: 25:1 gearbox * 18T→22T sprocket * 12T lantern→32T rack
+    public static final double kRackGearRatio = 25.0 * (22.0 / 18.0); // ≈30.56:1
     public static final double kIntakeGearRatio = 1;
 
-    // Deploy position ramp rates (rotations per 20ms cycle)
-    // Full travel ~0.175 rot → at 0.003/cycle ≈ 1.2s to deploy fully
-    public static final double kDeployRampRate = 0.007;
-    public static final double kRetractRampRate = 0.006;
+    // Full travel in motor rotations: (32T/12T) × 25:1 gearbox = 66.75
+    public static final double kFullTravelMotorRotations = (32.0 / 12.0) * 25.0; // 66.75
+
+    // Linear positions in motor rotations from home (0 = fully retracted)
+    public static final double kRetractedPosition = 0.0;
+    public static final double kPartialPosition = 33.0;
+    public static final double kExtendedPosition = 63.0;
+    public static final double kMaxExtension = 66.75;
+
+    // Deploy position ramp rates (motor rotations per 20ms cycle)
+    // Bumped for longer travel distance
+    public static final double kExtendRampRate = 0.8;
+    public static final double kRetractRampRate = 0.6;
+
+    // Homing
+    public static final double kHomingDutyCycle = -0.1;    // Slow inward (negative = retract)
+    public static final double kHomingCurrentThreshold = 15.0; // Amps — stall detection
+    public static final int kHomingStallCycles = 5;        // Consecutive cycles above threshold (~100ms)
+    public static final double kHomingTimeoutSec = 5.0;    // Max time before FAULT
+
+    // Set to true when the limit switch is physically wired on the robot
+    public static final boolean kLimitSwitchInstalled = false;
+
+    // Oscillation for shooting
+    public static final double kPulseAmplitude = 2.0;      // Motor rotations peak-to-peak
+    public static final double kPulseFrequencyHz = 2.5;    // Oscillation frequency
+
+    // PID output clamp to prevent slamming into hard stops
+    public static final double kMaxOutputDutyCycle = 0.6;
   }
 
   public static final class ClimberConstants {
@@ -199,6 +212,7 @@ public final class Constants {
   public static final class DioConstants {
     public static final int kBeamBreakPort = 0;
     public static final int kHoodLimitSwitchPort = 1;
+    public static final int kIntakeHomeLimitSwitchPort = 2;
   }
 
   public static final class NetworkTableNames {
@@ -299,6 +313,9 @@ public final class Constants {
       public static final String kCurrentAmps = "Current Amps";
       public static final String kTarget = "Intake Deploy Target";
       public static final String kRampedPosition = "Ramped Position";
+      public static final String kState = "State";
+      public static final String kFaultReason = "Fault Reason";
+      public static final String kLimitSwitch = "Limit Switch";
     }
 
     public static final class Climber {
