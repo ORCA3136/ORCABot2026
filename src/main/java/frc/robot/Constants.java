@@ -72,7 +72,7 @@ public final class Constants {
 
     // Linear positions in motor rotations from home (0 = fully retracted)
     public static final double kRetractedPosition = 0.0;
-    public static final double kPartialPosition = 33.0;
+    public static final double kShuttleCenter = 35.0;      // Center point for shuttle pulse (halfway)
     public static final double kExtendedPosition = 70.0;
     public static final double kMaxExtension = 72.0;
 
@@ -80,6 +80,10 @@ public final class Constants {
     // Bumped for longer travel distance
     public static final double kExtendRampRate = 0.8;
     public static final double kRetractRampRate = 0.6;
+
+    // Slow retract for feeding: motor rotations per 20ms cycle
+    // Gradually pulls intake in to feed fuel toward conveyor
+    public static final double kFeedRetractRate = 0.15;
 
     // Homing
     public static final double kHomingDutyCycle = -0.1;    // Slow inward (negative = retract)
@@ -90,9 +94,9 @@ public final class Constants {
     // Set to true when the limit switch is physically wired on the robot
     public static final boolean kLimitSwitchInstalled = true;
 
-    // Oscillation for shooting
-    public static final double kPulseAmplitude = 2.0;      // Motor rotations peak-to-peak
-    public static final double kPulseFrequencyHz = 2.5;    // Oscillation frequency
+    // Shuttle pulse for feeding — in/out motion between shuttle center and near-retracted
+    public static final double kPulseAmplitude = 15.0;     // Motor rotations peak-to-peak (shuttle travel)
+    public static final double kPulseFrequencyHz = 1.0;    // Slow deliberate in/out motion
 
     // PID output clamp to prevent slamming into hard stops
     public static final double kMaxOutputDutyCycle = 0.6;

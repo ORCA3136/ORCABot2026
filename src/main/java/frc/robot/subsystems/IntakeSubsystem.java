@@ -49,7 +49,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public enum Setpoint {
     kRetracted,
-    kPartial,
+    kShuttle,   // Center point for shuttle pulse feeding (was kPartial)
     kExtended;
   }
 
@@ -247,8 +247,8 @@ public class IntakeSubsystem extends SubsystemBase {
       case kExtended:
         targetPosition = IntakeConstants.kExtendedPosition;
         break;
-      case kPartial:
-        targetPosition = IntakeConstants.kPartialPosition;
+      case kShuttle:
+        targetPosition = IntakeConstants.kShuttleCenter;
         break;
       case kRetracted:
       default:
@@ -270,6 +270,14 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Ramps the position setpoint toward the target for smoother motion. */
   private void rampPosition() {
+    // Slow retract: gradually decrease position toward retracted
+    if (slowRetractActive && !pulseActive) {
+      rampedPosition = Math.max(
+          rampedPosition - IntakeConstants.kFeedRetractRate,
+          IntakeConstants.kRetractedPosition);
+      return;
+    }
+
     double target = calculatePosition();
     if (rampedPosition < target) {
       rampedPosition = Math.min(rampedPosition + IntakeConstants.kExtendRampRate, target);
@@ -303,9 +311,27 @@ public class IntakeSubsystem extends SubsystemBase {
     return getIntakePosition();
   }
 
-  // ── Pulse / Oscillate ──────────────────────────────────────────────
+  // ── Slow retract for feeding ──────────────────────────────────────
 
-  /** Enable/disable position pulsing for shooting agitation. */
+  private boolean slowRetractActive = false;
+
+  /**
+   * Enable/disable slow retraction. When active, the ramped position target
+   * gradually decreases each cycle, pulling fuel toward the conveyor.
+   * Stops at kRetracted (0). Disable to hold current position.
+   */
+  public void slowRetract(boolean enable) {
+    slowRetractActive = enable;
+  }
+
+  /** @return true if slow retract is currently active. */
+  public boolean isSlowRetractActive() {
+    return slowRetractActive;
+  }
+
+  // ── Shuttle pulse for feeding ───────────────────────────────────────
+
+  /** Enable/disable shuttle pulse (in/out motion for fuel agitation). */
   public void pulse(boolean enable) {
     pulseActive = enable;
   }
