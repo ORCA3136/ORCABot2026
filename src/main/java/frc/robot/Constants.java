@@ -63,27 +63,27 @@ public final class Constants {
     public static final double kI = 0.0;
     public static final double kD = 0.0;
 
-    // Rack & pinion gear ratio: 25:1 gearbox * 18T→22T sprocket * 12T lantern→32T rack
-    public static final double kRackGearRatio = 25.0 * (22.0 / 18.0); // ≈30.56:1
+    // Rack & pinion gear ratio: 9:1 gearbox * 18T→22T sprocket * 12T lantern→32T rack
+    public static final double kRackGearRatio = 9.0 * (22.0 / 18.0); // ≈11.0:1
     public static final double kIntakeGearRatio = 1;
 
-    // Full travel in motor rotations: (32T/12T) × 25:1 gearbox = 66.75
-    public static final double kFullTravelMotorRotations = (32.0 / 12.0) * 25.0; // 66.75
+    // Full travel in motor rotations: (32T/12T) × 9:1 gearbox = 24.0
+    public static final double kFullTravelMotorRotations = (32.0 / 12.0) * 9.0; // 24.0
 
     // Linear positions in motor rotations from home (0 = fully retracted)
     public static final double kRetractedPosition = 0.0;
-    public static final double kShuttleCenter = 35.0;      // Center point for shuttle pulse (halfway)
-    public static final double kExtendedPosition = 70.0;
-    public static final double kMaxExtension = 72.0;
+    public static final double kShuttleCenter = 12.5;      // Center point for shuttle pulse (halfway)
+    public static final double kExtendedPosition = 25.0;
+    public static final double kMaxExtension = 26.0;
 
     // Deploy position ramp rates (motor rotations per 20ms cycle)
     // Bumped for longer travel distance
-    public static final double kExtendRampRate = 0.8;
-    public static final double kRetractRampRate = 0.6;
+    public static final double kExtendRampRate = 0.29;
+    public static final double kRetractRampRate = 0.22;
 
     // Slow retract for feeding: motor rotations per 20ms cycle
     // Gradually pulls intake in to feed fuel toward conveyor
-    public static final double kFeedRetractRate = 0.15;
+    public static final double kFeedRetractRate = 0.054;
 
     // Homing
     public static final double kHomingDutyCycle = -0.1;    // Slow inward (negative = retract)
@@ -95,7 +95,7 @@ public final class Constants {
     public static final boolean kLimitSwitchInstalled = true;
 
     // Shuttle pulse for feeding — in/out motion between shuttle center and near-retracted
-    public static final double kPulseAmplitude = 15.0;     // Motor rotations peak-to-peak (shuttle travel)
+    public static final double kPulseAmplitude = 5.4;      // Motor rotations peak-to-peak (shuttle travel)
     public static final double kPulseFrequencyHz = 1.0;    // Slow deliberate in/out motion
 
     // PID output clamp to prevent slamming into hard stops
