@@ -99,8 +99,6 @@ public class Robot extends LoggedRobot {
   @Override
   public void disabledInit() {
     RobotLogger.log("MODE: Disabled");
-    // Request intake homing on disable — safe no-op if already HOMED
-    m_robotContainer.getIntakeSubsystem().requestHoming();
   }
 
   @Override

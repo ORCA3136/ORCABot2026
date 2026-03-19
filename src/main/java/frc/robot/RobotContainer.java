@@ -126,7 +126,12 @@ public class RobotContainer {
     driveBase.setDefaultCommand(fastDriveCommand);
 
     // Buttons
-    m_primaryController.a().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended)));
+    m_primaryController.a().and(m_primaryController.back().negate()).whileTrue(
+        Commands.runEnd(
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(650),
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
+            intakeSubsystem
+        ));
     m_primaryController.b().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> {
                                         Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
                                             ? FieldPositions.kRedFieldElements.get(0)
@@ -141,8 +146,13 @@ public class RobotContainer {
                                         if (current != null) current.cancel();
                                         driveBase.setDefaultCommand(fastDriveCommand);
                                      }));
-    m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)));
-    m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted)));
+    // m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)));
+    m_primaryController.y().and(m_primaryController.back().negate()).whileTrue(
+        Commands.runEnd(
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(-650),
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
+            intakeSubsystem
+        ));
 
     // D pad
     m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));

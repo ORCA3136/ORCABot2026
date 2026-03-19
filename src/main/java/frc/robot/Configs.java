@@ -14,11 +14,11 @@ public class Configs {
 
                static {
             primaryShooterConfig
-                .inverted(false)
+                .inverted(true)
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             secondaryShooterConfig
-                .inverted(true)
+                .inverted(false)
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             primaryShooterConfig.closedLoop

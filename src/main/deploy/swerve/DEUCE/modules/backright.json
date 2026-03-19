@@ -15,7 +15,7 @@
     "canbus": null
   },
   "encoder": {
-    "type": "sparkmax_attached",
+    "type": "attached",
     "id": 0,
     "canbus": null
   },

@@ -20,6 +20,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.*;
@@ -112,7 +113,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** @return True if the limit switch is pressed (NO switch with pull-up: pressed = get() returns false). */
   public boolean isLimitSwitchPressed() {
-    return !homeLimitSwitch.get();
+    return homeLimitSwitch.get();
   }
 
   /**
@@ -120,6 +121,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * No-op if already HOMED or currently HOMING.
    */
   public void requestHoming() {
+    if (DriverStation.isDisabled()) return;
     if (state == DeployState.HOMED || state == DeployState.HOMING) return;
     state = DeployState.HOMING;
     homingStallCounter = 0;
@@ -313,6 +315,11 @@ public class IntakeSubsystem extends SubsystemBase {
       DriverStation.reportWarning("IntakeSubsystem: setIntakeDeployDutyCycle rejected — state is " + state, false);
       return;
     }
+    // Block inward motion (negative speed) when limit switch is pressed
+    if (speed < 0 && isLimitSwitchPressed()) {
+      intakeDeployMotor.set(0);
+      return;
+    }
     intakeDeployMotor.set(speed / RobotConstants.kNeoVortexFreeSpeedRPM);
   }
 
@@ -356,6 +363,7 @@ public class IntakeSubsystem extends SubsystemBase {
     stateEntry.setString(state.name());
     faultReasonEntry.setString(faultReason);
     limitSwitchEntry.setBoolean(isLimitSwitchPressed());
+    SmartDashboard.putBoolean("Intake Limit Switch", isLimitSwitchPressed());
   }
 
   // ── Periodic ───────────────────────────────────────────────────────

@@ -88,7 +88,7 @@ public final class Constants {
     public static final double kHomingTimeoutSec = 5.0;    // Max time before FAULT
 
     // Set to true when the limit switch is physically wired on the robot
-    public static final boolean kLimitSwitchInstalled = false;
+    public static final boolean kLimitSwitchInstalled = true;
 
     // Oscillation for shooting
     public static final double kPulseAmplitude = 2.0;      // Motor rotations peak-to-peak
