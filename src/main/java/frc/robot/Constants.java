@@ -73,8 +73,8 @@ public final class Constants {
     // Linear positions in motor rotations from home (0 = fully retracted)
     public static final double kRetractedPosition = 0.0;
     public static final double kPartialPosition = 33.0;
-    public static final double kExtendedPosition = 63.0;
-    public static final double kMaxExtension = 66.75;
+    public static final double kExtendedPosition = 70.0;
+    public static final double kMaxExtension = 72.0;
 
     // Deploy position ramp rates (motor rotations per 20ms cycle)
     // Bumped for longer travel distance
@@ -316,6 +316,7 @@ public final class Constants {
       public static final String kState = "State";
       public static final String kFaultReason = "Fault Reason";
       public static final String kLimitSwitch = "Limit Switch";
+      public static final String kAbsEncoderRaw = "Abs Encoder Raw";
     }
 
     public static final class Climber {

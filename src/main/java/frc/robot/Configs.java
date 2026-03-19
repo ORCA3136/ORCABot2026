@@ -72,6 +72,9 @@ public class Configs {
             intakeDeployMotorConfig.softLimit
                 .forwardSoftLimitEnabled(false)
                 .reverseSoftLimitEnabled(false);
+            // Absolute encoder (through-bore on data port) — display only
+            intakeDeployMotorConfig.absoluteEncoder
+                .inverted(false);
             // Relative encoder — raw motor rotations (no conversion factor needed,
             // PID setpoints are in motor rotations from home)
             intakeDeployMotorConfig.closedLoop

@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -58,6 +59,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   final RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
   final RelativeEncoder intakeDeployEncoder = intakeDeployMotor.getEncoder();
+  final AbsoluteEncoder intakeDeployAbsEncoder = intakeDeployMotor.getAbsoluteEncoder();
 
   final SparkClosedLoopController deployPIDController = intakeDeployMotor.getClosedLoopController();
 
@@ -78,6 +80,7 @@ public class IntakeSubsystem extends SubsystemBase {
   private final NetworkTableEntry stateEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kState);
   private final NetworkTableEntry faultReasonEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kFaultReason);
   private final NetworkTableEntry limitSwitchEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kLimitSwitch);
+  private final NetworkTableEntry absEncoderRawEntry = intakeDeployTable.getEntry(NetworkTableNames.IntakeDeploy.kAbsEncoderRaw);
 
   // ── State ───────────────────────────────────────────────────────────
   private DeployState state = DeployState.UNHOMED;
@@ -96,6 +99,18 @@ public class IntakeSubsystem extends SubsystemBase {
 
     if (!IntakeConstants.kLimitSwitchInstalled) {
       DriverStation.reportWarning("IntakeSubsystem: Limit switch NOT installed — using stall-detection fallback for homing", false);
+    }
+
+    // Boot-time limit switch check — if retracted at boot, home immediately (no motors move)
+    if (IntakeConstants.kLimitSwitchInstalled && isLimitSwitchPressed()) {
+      intakeDeployEncoder.setPosition(0);
+      setHardwareSoftLimits();
+      state = DeployState.HOMED;
+      DriverStation.reportWarning("IntakeSubsystem: Limit switch detected at boot — auto-homed", false);
+    } else {
+      // Apply conservative soft limits for hard-stop protection even while unhomed
+      setConservativeSoftLimits();
+      DriverStation.reportWarning("IntakeSubsystem: Limit switch NOT detected at boot — manual homing required", false);
     }
   }
 
@@ -198,6 +213,17 @@ public class IntakeSubsystem extends SubsystemBase {
     faultReason = reason;
     state = DeployState.FAULT;
     DriverStation.reportError("IntakeSubsystem FAULT: " + reason, false);
+  }
+
+  /** Applies conservative soft limits (0 to kMaxExtension) before homing — protects hard stops. */
+  private void setConservativeSoftLimits() {
+    SparkFlexConfig limitConfig = new SparkFlexConfig();
+    limitConfig.softLimit
+        .forwardSoftLimitEnabled(true)
+        .forwardSoftLimit((float) IntakeConstants.kMaxExtension)
+        .reverseSoftLimitEnabled(true)
+        .reverseSoftLimit(0.0f);
+    intakeDeployMotor.configure(limitConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
   /** Applies forward/reverse hardware soft limits on the deploy motor. */
@@ -363,6 +389,7 @@ public class IntakeSubsystem extends SubsystemBase {
     stateEntry.setString(state.name());
     faultReasonEntry.setString(faultReason);
     limitSwitchEntry.setBoolean(isLimitSwitchPressed());
+    absEncoderRawEntry.setDouble(intakeDeployAbsEncoder.getPosition());
     SmartDashboard.putBoolean("Intake Limit Switch", isLimitSwitchPressed());
   }
 
