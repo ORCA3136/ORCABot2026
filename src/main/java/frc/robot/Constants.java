@@ -36,9 +36,8 @@ public final class Constants {
     public static final double kP = 0.0003;
     public static final double kI = 0.0;
     public static final double kD = 0.01;
-    // TODO: TUNE ON ROBOT — characterize with SysId. Typical kS = 0.05–0.2
-    public static final double kS = 0.21;
-    public static final double kVelocityModifier = .00181; // .00181
+    public static final double kS = 0.06;
+    public static final double kVelocityModifier = .00181;
 
     // Setpoint ramp rates (RPM per 20ms cycle)
     // At 200 RPM/cycle spin-up: 0 → 5000 RPM takes ~0.5 seconds
@@ -100,32 +99,6 @@ public final class Constants {
 
     // PID output clamp to prevent slamming into hard stops
     public static final double kMaxOutputDutyCycle = 0.6;
-  }
-
-  public static final class ClimberConstants {
-    // Gear ratios
-    public static final double kTotalReduction = (28. / 11.) * 125.; // ≈318.18:1 motor rot → arm rot
-    public static final double kSprocketRatio = 28. / 11.; // 11T drives 28T
-
-    // Position defaults (arm degrees) — tune via SmartDashboard
-    public static final double kStowedDegrees = 0.0;
-    public static final double kHorizontalDegrees = 90.0;   // TODO: MEASURE on robot
-    public static final double kClimbedDegrees = 195.0;
-    public static final double kMaxArmDegrees = 205.0;       // TODO: MEASURE — safety limit
-    public static final double kMinArmDegrees = -5.0;        // slight tolerance below stowed
-
-    // PID defaults — start VERY low, tune via dashboard
-    public static final double kP = 0.03;
-    public static final double kI = 0.0;
-    public static final double kD = 0.0;
-    public static final double kG = 0.0; // gravity FF — add after basic PID works
-    public static final double kS = 0.0; // static FF — add after basic PID works
-
-    // Absolute encoder expected reading at stowed position (raw 0-1 rotations)
-    public static final double kAbsEncoderStowedReading = 0.5; // TODO: MEASURE on robot
-
-    // Tolerance for atSetpoint check
-    public static final double kSetpointToleranceDeg = 5.0;
   }
 
   public static final class VisionConstants {
@@ -205,9 +178,6 @@ public final class Constants {
 
     // Intake Deployment 550
     public static final int kIntakeDeployCanId = 18;
-
-    // Climber Vortexes
-    public static final int kClimberPrimaryCanId = 20;
 
     // PDH
     public static final int kPDHCanId = 63;
@@ -426,8 +396,7 @@ public final class Constants {
     public static final double kScoringDriveTimeoutSec = 5.0;
   }
 
-   public final static class CurrentConstants
-  {
+   public final static class CurrentConstants {
   
     public static final int AMP80 = 80;
     public static final int AMP60 = 60;

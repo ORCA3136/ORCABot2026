@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.088,
-        "y": 5.682
+        "x": 5.757,
+        "y": 1.4329999999999998
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.3311727182071975,
-        "y": 5.623973892774693
+        "x": 5.757,
+        "y": 1.6830000000000007
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.5658222222222222,
-        "y": 5.496666666666666
+        "x": 5.75,
+        "y": 5.877
       },
       "prevControl": {
-        "x": 1.3514489907940859,
-        "y": 5.625290605523547
+        "x": 5.75,
+        "y": 5.627
       },
       "nextControl": null,
       "isLocked": false,
@@ -29,21 +29,7 @@
     }
   ],
   "rotationTargets": [],
-  "constraintZones": [
-    {
-      "name": "Constraints Zone",
-      "minWaypointRelativePos": 0.5,
-      "maxWaypointRelativePos": 1.0,
-      "constraints": {
-        "maxVelocity": 1.0,
-        "maxAcceleration": 4.0,
-        "maxAngularVelocity": 360.0,
-        "maxAngularAcceleration": 360.0,
-        "nominalVoltage": 12.0,
-        "unlimited": false
-      }
-    }
-  ],
+  "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
@@ -56,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0.0,
-    "rotation": 155.0
+    "rotation": 90.0
   },
   "reversed": false,
-  "folder": "Center Depot Folder",
+  "folder": "Right Mid Fuel v2 Folder",
   "idealStartingState": {
-    "velocity": 0.0,
-    "rotation": 180.0
+    "velocity": 0.5,
+    "rotation": 90.0
   },
   "useDefaultConstraints": true
 }

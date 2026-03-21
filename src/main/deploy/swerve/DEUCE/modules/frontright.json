@@ -5,12 +5,12 @@
   },
   "absoluteEncoderOffset": 0,
   "drive": {
-    "type": "sparkmax_neo",
+    "type": "sparkflex_vortex",
     "id": 1,
     "canbus": null
   },
   "angle": {
-    "type": "sparkmax_neo550",
+    "type": "sparkflex_neo550",
     "id": 2,
     "canbus": null
   },
