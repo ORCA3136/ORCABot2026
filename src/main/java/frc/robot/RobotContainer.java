@@ -172,7 +172,7 @@ public class RobotContainer {
     // Shooting: no intake position change — intake stays where it is (driver controls retraction)
     m_primaryController.rightBumper().whileTrue(new ShootOnlyCommand(shooterSubsystem));
     m_primaryController.rightTrigger()
-            .whileTrue(new ShootCommand(shooterSubsystem, driveBase));
+            .whileTrue(new ShootCommand(shooterSubsystem));
 
     // Feed: slow retract to pull fuel in, then shuttle pulse for remaining fuel
     m_primaryController.leftBumper  ().whileTrue(Commands.parallel(
@@ -212,16 +212,6 @@ public class RobotContainer {
                                                                       .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0)));
     m_primaryController.back().and(m_primaryController.y())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-2000)))
                                                                       .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0)));
-
-// ========================================================== G/
-
-
-    // Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))
-
-    // m_primaryController.back().and(m_primaryController.povUp());    // use is TBD
-    // m_primaryController.back().and(m_primaryController.povDown());
-    // m_primaryController.back().and(m_primaryController.povLeft());
-    // m_primaryController.back().and(m_primaryController.povRight());
 
     m_primaryController.back().and(m_primaryController.leftTrigger()) .whileTrue(new RunIntakeCommand(intakeSubsystem, -6500));
     // m_primaryController.back().and(m_primaryController.rightTrigger());
@@ -316,7 +306,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("Retract Intake",       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted), intakeSubsystem));
 
     // Shoot
-    NamedCommands.registerCommand("Shoot to Hub",         FuelPathCommands.shootToHub(shooterSubsystem, driveBase));
+    NamedCommands.registerCommand("Shoot to Hub",         FuelPathCommands.shootToHub(shooterSubsystem));
     NamedCommands.registerCommand("Stop Shooter",         Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     NamedCommands.registerCommand("Run Shooter Low",      Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityLow)));
     NamedCommands.registerCommand("Run Shooter Medium",   Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityMedium)));

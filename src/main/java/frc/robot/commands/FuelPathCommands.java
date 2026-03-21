@@ -8,7 +8,6 @@ import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
-import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.IntakeSubsystem.Setpoint;
 
 /**
@@ -24,8 +23,8 @@ public final class FuelPathCommands {
 
   // Temporary Command for Shooter
 
-  public static Command shootToHub(ShooterSubsystem shooter, SwerveSubsystem driveBase) {
-    return new ShootCommand(shooter, driveBase);
+  public static Command shootToHub(ShooterSubsystem shooter) {
+    return new ShootCommand(shooter);
   }
 
   // ── Individual: Intake ──────────────────────────────────────────────
@@ -243,13 +242,14 @@ public final class FuelPathCommands {
   }
 
   /**
-   * Feed until loaded. Currently runs conveyor + kicker continuously.
-   * TODO: Stop when beam break sensor triggers (sensor not yet wired).
+   * Feed until the beam break detects fuel staged at the kicker.
+   * Runs conveyor + kicker until KickerSubsystem.hasFuel() returns true.
    */
   public static Command feedUntilLoaded(ConveyorSubsystem conveyor, KickerSubsystem kicker) {
     return Commands.parallel(
         new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn),
         new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed)
-    ).withName("FeedUntilLoaded");
+    ).until(() -> kicker.hasFuel())
+     .withName("FeedUntilLoaded");
   }
 }

@@ -15,7 +15,7 @@ public final class Constants {
 
   // Robot max speed
   public static final class RobotConstants {
-    public static final double kDriveMaxSpeedMps = 3.05; // Meters per second
+    public static final double kDriveMaxSpeedMps = 5.33; // Meters per second (Vortex @ 5.08:1 medium pinion)
     public static final double kDriveMaxSpeedFps = 10; // Feet per second
 
     /** NEO Vortex free speed in RPM. Used to normalize duty cycle values (value / kNeoVortexFreeSpeedRPM). */
