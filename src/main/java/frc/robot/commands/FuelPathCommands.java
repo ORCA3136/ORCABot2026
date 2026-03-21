@@ -8,7 +8,6 @@ import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
-import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.IntakeSubsystem.Setpoint;
 
 /**
@@ -24,8 +23,8 @@ public final class FuelPathCommands {
 
   // Temporary Command for Shooter
 
-  public static Command shootToHub(ShooterSubsystem shooter, SwerveSubsystem driveBase) {
-    return new ShootCommand(shooter, driveBase);
+  public static Command shootToHub(ShooterSubsystem shooter) {
+    return new ShootCommand(shooter);
   }
 
   // ── Individual: Intake ──────────────────────────────────────────────
@@ -93,8 +92,9 @@ public final class FuelPathCommands {
   }
 
   /**
-   * Full fuel path: deploy intake, enable oscillation, run intake + conveyor + kicker.
-   * Stops oscillation and retracts on end.
+   * Full fuel path: run intake + conveyor + kicker while slowly retracting.
+   * Pulls fuel inward by gradually retracting the linear intake.
+   * On end: disables slow retract and retracts fully.
    */
   public static Command fullFuelPath(IntakeSubsystem intake, ConveyorSubsystem conveyor, KickerSubsystem kicker) {
     return Commands.parallel(
@@ -103,19 +103,19 @@ public final class FuelPathCommands {
         new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed)
     )
     .beforeStarting(() -> {
-      intake.setIntakeDeployTarget(Setpoint.kDown);
-      intake.ocillateIntake(true);
+      intake.slowRetract(true);
     })
     .finallyDo(interrupted -> {
-     intake.ocillateIntake(false);
-      intake.setIntakeDeployTarget(Setpoint.kSafe);
+      intake.slowRetract(false);
+      intake.pulse(false);
+      intake.setIntakeDeployTarget(Setpoint.kRetracted);
     })
     .withName("FullFuelPath");
   }
 
   /**
    * Full fuel path with jam-protected kicker.
-   * Deploy intake, enable oscillation, run intake + conveyor + kicker (jam detection).
+   * Slowly retracts intake while running intake + conveyor + kicker (jam detection).
    */
   public static Command fullFuelPathWithJamProtection(
       IntakeSubsystem intake, ConveyorSubsystem conveyor, KickerSubsystem kicker) {
@@ -125,12 +125,12 @@ public final class FuelPathCommands {
         new KickerJamProtectionCommand(kicker, FuelPathConstants.kKickerFeed)
     )
     .beforeStarting(() -> {
-      intake.setIntakeDeployTarget(Setpoint.kDown);
-      intake.ocillateIntake(true);
+      intake.slowRetract(true);
     })
     .finallyDo(interrupted -> {
-      intake.ocillateIntake(false);
-      intake.setIntakeDeployTarget(Setpoint.kUp);
+      intake.slowRetract(false);
+      intake.pulse(false);
+      intake.setIntakeDeployTarget(Setpoint.kRetracted);
     })
     .withName("FullFuelPathJamProtected");
   }
@@ -150,16 +150,22 @@ public final class FuelPathCommands {
      .withName("ConveyorJog");
   }
 
-  /** Pulse intake on/off to free jammed fuel. Loops while held. */
-  public static Command intakePulse(IntakeSubsystem intake) {
-    return Commands.sequence(
-        Commands.runOnce(() -> intake.setIntakeDutyCycle(FuelPathConstants.kIntakePulseSpeed), intake),
-        Commands.waitSeconds(FuelPathConstants.kIntakePulseDurationSec),
-        Commands.runOnce(() -> intake.setIntakeDutyCycle(0), intake),
-        Commands.waitSeconds(FuelPathConstants.kIntakePulsePauseSec)
-    ).repeatedly()
-     .finallyDo(interrupted -> intake.setIntakeDutyCycle(0))
-     .withName("IntakePulse");
+  /**
+   * Shuttle pulse: moves intake to shuttle center and enables in/out oscillation.
+   * Runs intake roller while shuttling to agitate remaining fuel into conveyor.
+   * Runs while held.
+   */
+  public static Command intakeShuttlePulse(IntakeSubsystem intake) {
+    return Commands.run(() -> intake.setIntakeDutyCycle(FuelPathConstants.kIntakeInStandard), intake)
+        .beforeStarting(() -> {
+          intake.setIntakeDeployTarget(Setpoint.kShuttle);
+          intake.pulse(true);
+        })
+        .finallyDo(interrupted -> {
+          intake.setIntakeDutyCycle(0);
+          intake.pulse(false);
+        })
+        .withName("IntakeShuttlePulse");
   }
 
   /** Brief kicker burst for single-ball feeding. Runs once. */
@@ -211,8 +217,9 @@ public final class FuelPathCommands {
     return Commands.parallel(
         Commands.runOnce(() -> {
             intake.setIntakeDutyCycle(0);
-            intake.ocillateIntake(false);
-            intake.setIntakeDeployTarget(Setpoint.kUp);
+            intake.pulse(false);
+            intake.slowRetract(false);
+            intake.setIntakeDeployTarget(Setpoint.kRetracted);
         }, intake),
         Commands.runOnce(() -> conveyor.setConveyorDutyCycle(0), conveyor),
         Commands.runOnce(() -> kicker.setKickerDutyCycle(0), kicker)
@@ -235,13 +242,14 @@ public final class FuelPathCommands {
   }
 
   /**
-   * Feed until loaded. Currently runs conveyor + kicker continuously.
-   * TODO: Stop when beam break sensor triggers (sensor not yet wired).
+   * Feed until the beam break detects fuel staged at the kicker.
+   * Runs conveyor + kicker until KickerSubsystem.hasFuel() returns true.
    */
   public static Command feedUntilLoaded(ConveyorSubsystem conveyor, KickerSubsystem kicker) {
     return Commands.parallel(
         new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn),
         new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed)
-    ).withName("FeedUntilLoaded");
+    ).until(() -> kicker.hasFuel())
+     .withName("FeedUntilLoaded");
   }
 }

@@ -40,7 +40,7 @@ public class Robot extends LoggedRobot {
    * initialization code.
    */
   public Robot() {
-    Logger.recordMetadata("ORCABot-Deuce", "Deuce-MetaData"); // Set a metadata value
+    Logger.recordMetadata("ORCABot-Deuce-v2", "Deuce-v2-MetaData"); // Set a metadata value
 
     if (isReal()) {
         Logger.addDataReceiver(new WPILOGWriter()); // Log to a USB stick ("/U/logs")

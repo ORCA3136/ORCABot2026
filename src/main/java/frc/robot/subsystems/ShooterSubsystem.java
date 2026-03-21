@@ -44,6 +44,8 @@ public class ShooterSubsystem extends SubsystemBase {
   boolean toggleDirection = false;
   double hoodTarget; // Position of the Hood in Rotations
   boolean hoodMovingForward = true; // true is positive
+
+  double RPMOffset = 575;
   
   final SparkFlex shooterPrimaryMotor = new SparkFlex(CanIdConstants.kShooterPrimaryCanId, MotorType.kBrushless);
   final SparkFlex shooterSecondaryMotor = new SparkFlex(CanIdConstants.kShooterSecondaryCanId, MotorType.kBrushless);
@@ -82,20 +84,20 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private void addMapValues() {
     
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(60 )), Double.valueOf(1905)); // Value is in RPM
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(70 )), Double.valueOf(1940));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(80 )), Double.valueOf(2005));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(90 )), Double.valueOf(2100));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(100)), Double.valueOf(2150));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(110)), Double.valueOf(2205));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(120)), Double.valueOf(2260));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(130)), Double.valueOf(2305));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(2370));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(150)), Double.valueOf(2445));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(160)), Double.valueOf(2500));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(170)), Double.valueOf(2570));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(180)), Double.valueOf(2625));
-    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(2785));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(60 )), Double.valueOf(1905 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(70 )), Double.valueOf(1940 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(80 )), Double.valueOf(2005 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(90 )), Double.valueOf(2100 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(100)), Double.valueOf(2150 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(110)), Double.valueOf(2205 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(120)), Double.valueOf(2260 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(130)), Double.valueOf(2305 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(2370 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(150)), Double.valueOf(2445 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(160)), Double.valueOf(2500 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(170)), Double.valueOf(2570 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(180)), Double.valueOf(2625 + RPMOffset));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(2785 + RPMOffset));
 
     fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(70 )), Double.valueOf(0.0029)); // Value is in seconds
     fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(90 )), Double.valueOf(0.00365));
@@ -173,7 +175,7 @@ public class ShooterSubsystem extends SubsystemBase {
         break;
     }
 
-    if (shooterVelocityTarget > ShooterConstants.kVelocityMax) 
+    if (shooterVelocityTarget > ShooterConstants.kVelocityMax)
         shooterVelocityTarget = ShooterConstants.kVelocityMax;
     else if (shooterVelocityTarget < 0) 
         shooterVelocityTarget = 0;

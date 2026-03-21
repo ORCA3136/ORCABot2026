@@ -92,8 +92,11 @@ public class RobotContainer {
                     () -> driveBase.getAllianceFlip() * -m_primaryController.getLeftX())
                     .deadband(OperatorConstants.kStickDeadband);
 
+  // Deuce: rear-facing shooter — add 180° heading offset so robot aims rear toward hub
   SwerveInputStream aimAtHubStream = controllerInput.copy()
-                    .aimWhile(true);
+                    .aimWhile(true)
+                    .aimHeadingOffset(Rotation2d.fromDegrees(180))
+                    .aimHeadingOffset(true);
 
   // Transformations for different driving commands
   SwerveInputStream slowSpeedDrive   = controllerInput.copy().scaleTranslation(0.4);
@@ -123,7 +126,12 @@ public class RobotContainer {
     driveBase.setDefaultCommand(fastDriveCommand);
 
     // Buttons
-    m_primaryController.a().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown)));
+    m_primaryController.a().and(m_primaryController.back().negate()).whileTrue(
+        Commands.runEnd(
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(650),
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
+            intakeSubsystem
+        ));
     m_primaryController.b().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> {
                                         Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
                                             ? FieldPositions.kRedFieldElements.get(0)
@@ -138,8 +146,13 @@ public class RobotContainer {
                                         if (current != null) current.cancel();
                                         driveBase.setDefaultCommand(fastDriveCommand);
                                      }));
-    m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
-    m_primaryController.y().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)));
+    // m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)));
+    m_primaryController.y().and(m_primaryController.back().negate()).whileTrue(
+        Commands.runEnd(
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(-650),
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
+            intakeSubsystem
+        ));
 
     // D pad
     m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
@@ -156,21 +169,27 @@ public class RobotContainer {
 
     // m_primaryController.rightBumper().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1950)))
     //                                  .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
-    m_primaryController.rightBumper().whileTrue(new ShootOnlyCommand(shooterSubsystem))
-                                  .whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
+    // Shooting: no intake position change — intake stays where it is (driver controls retraction)
+    m_primaryController.rightBumper().whileTrue(new ShootOnlyCommand(shooterSubsystem));
     m_primaryController.rightTrigger()
-            .whileTrue(new ShootCommand(shooterSubsystem, driveBase))
-           // .whileTrue(FuelPathCommands.fullFuelPath(intakeSubsystem, conveyorSubsystem, kickerSubsystem).onlyWhile(shooterSubsystem::isShooterReady));
-            .whileTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)));
-         
+            .whileTrue(new ShootCommand(shooterSubsystem));
+
+    // Feed: slow retract to pull fuel in, then shuttle pulse for remaining fuel
     m_primaryController.leftBumper  ().whileTrue(Commands.parallel(
         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 1000, 5000),
         Commands.sequence(
-            Commands.waitSeconds(1),
-            FuelPathCommands.intakePulse(intakeSubsystem).withTimeout(3),
-            Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp))
+            // Phase 1: slow retract with intake roller running
+            Commands.runOnce(() -> intakeSubsystem.slowRetract(true)),
+            new RunIntakeCommand(intakeSubsystem, 4000).withTimeout(2),
+            // Phase 2: shuttle pulse to clear remaining fuel
+            Commands.runOnce(() -> intakeSubsystem.slowRetract(false)),
+            FuelPathCommands.intakeShuttlePulse(intakeSubsystem).withTimeout(3),
+            Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted))
         )
-    ));
+    ).finallyDo(interrupted -> {
+        intakeSubsystem.slowRetract(false);
+        intakeSubsystem.pulse(false);
+    }));
     m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
 
     m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
@@ -194,16 +213,6 @@ public class RobotContainer {
     m_primaryController.back().and(m_primaryController.y())           .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(-2000)))
                                                                       .onFalse(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployDutyCycle(0)));
 
-// ========================================================== G/
-
-
-    // Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0))
-
-    // m_primaryController.back().and(m_primaryController.povUp());    // use is TBD
-    // m_primaryController.back().and(m_primaryController.povDown());
-    // m_primaryController.back().and(m_primaryController.povLeft());
-    // m_primaryController.back().and(m_primaryController.povRight());
-
     m_primaryController.back().and(m_primaryController.leftTrigger()) .whileTrue(new RunIntakeCommand(intakeSubsystem, -6500));
     // m_primaryController.back().and(m_primaryController.rightTrigger());
 
@@ -220,6 +229,11 @@ public class RobotContainer {
     m_secondaryController.button(4);
 
     m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
+    // Clear intake fault and re-home
+    m_secondaryController.button(6).onTrue(Commands.runOnce(() -> {
+      intakeSubsystem.clearFault();
+      intakeSubsystem.requestHoming();
+    }));
     // Prepare to climb — stow intake, move arm to horizontal
     // m_secondaryController.button(6).onTrue(
     //     ClimberCommands.prepareToClimb(climberSubsystem, intakeSubsystem));
@@ -268,14 +282,14 @@ public class RobotContainer {
         DriveToPositionCommand.driveToScoreCustom(driveBase, shooterSubsystem, this::driverIsOverriding));
   // m_secondaryController.button(12).whileTrue(                                                                                                                                     
   //           Commands.sequence(                                                                                                                                                   
-  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp)),                                                                     
+  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted)),                                                                     
   //                Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kMaxDeployPosition) < 0.02),                                       
-  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe)),                                                                   
+  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)),                                                                   
   //                Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kSafeDeployPosition) < 0.02)                                       
   //          ).repeatedly()                                                                                                                                                       
   //      );       
     m_secondaryController.button(12).onTrue(
-        Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown), intakeSubsystem));
+        Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended), intakeSubsystem));
   }
 
   private void configureNamedCommands() {
@@ -287,19 +301,17 @@ public class RobotContainer {
     NamedCommands.registerCommand("Stop Intake",          Commands.runOnce(() -> intakeSubsystem.setIntakeDutyCycle(0), intakeSubsystem));
 
     // Deploy Intake (with subsystem requirement to prevent conflicts)
-    NamedCommands.registerCommand("Deploy Intake" ,       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kDown), intakeSubsystem));
-    NamedCommands.registerCommand("Intake Safe" ,         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kSafe), intakeSubsystem));
-    NamedCommands.registerCommand("Retract Intake",       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kUp), intakeSubsystem));
+    NamedCommands.registerCommand("Deploy Intake" ,       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended), intakeSubsystem));
+    NamedCommands.registerCommand("Intake Safe" ,         Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted), intakeSubsystem));
+    NamedCommands.registerCommand("Retract Intake",       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted), intakeSubsystem));
 
     // Shoot
-    NamedCommands.registerCommand("Shoot to Hub",         FuelPathCommands.shootToHub(shooterSubsystem, driveBase));
+    NamedCommands.registerCommand("Shoot to Hub",         FuelPathCommands.shootToHub(shooterSubsystem));
     NamedCommands.registerCommand("Stop Shooter",         Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     NamedCommands.registerCommand("Run Shooter Low",      Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityLow)));
     NamedCommands.registerCommand("Run Shooter Medium",   Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityMedium)));
     NamedCommands.registerCommand("Run Shooter High",     Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityHigh)));
     
-    // Climb
-
     // Conveyor/kicker
     NamedCommands.registerCommand("Run Conveyor",         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 500, 4000));
     NamedCommands.registerCommand("Stop Conveyor",        Commands.runOnce(() -> { conveyorSubsystem.setConveyorDutyCycle(0); kickerSubsystem.setKickerDutyCycle(0); }, conveyorSubsystem, kickerSubsystem));
@@ -316,7 +328,7 @@ public class RobotContainer {
 
     // Instant deploy position commands
     NamedCommands.registerCommand("IntakeDown",            AutoCommands.intakeDown(intakeSubsystem));
-    NamedCommands.registerCommand("IntakeSafe",            AutoCommands.intakeSafe(intakeSubsystem));
+    NamedCommands.registerCommand("IntakeSafe",            AutoCommands.intakeUp(intakeSubsystem));
     NamedCommands.registerCommand("IntakeUp",              AutoCommands.intakeUp(intakeSubsystem));
 
     // Timeout-safe motor commands

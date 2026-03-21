@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 5.707,
-        "y": 6.567
+        "x": 5.824,
+        "y": 0.8
       },
       "prevControl": null,
       "nextControl": {
-        "x": 5.707,
-        "y": 6.316999999999999
+        "x": 5.804733234871848,
+        "y": 0.5507435221273145
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 5.590277777777779,
-        "y": 2.123
+        "x": 3.485,
+        "y": 0.78
       },
       "prevControl": {
-        "x": 5.706279621668727,
-        "y": 2.344457833941137
+        "x": 3.8163111111111108,
+        "y": 0.7117888888888899
       },
       "nextControl": null,
       "isLocked": false,
@@ -41,14 +41,14 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0.0,
-    "rotation": -90.0
+    "velocity": 0,
+    "rotation": 175.67291000827288
   },
   "reversed": false,
-  "folder": "Left Mid Fuel v2 Folder",
+  "folder": "Right Mid Fuel v3 Folder",
   "idealStartingState": {
-    "velocity": 0.5,
-    "rotation": -90.0
+    "velocity": 1.5,
+    "rotation": -157.286
   },
   "useDefaultConstraints": true
 }

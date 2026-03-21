@@ -1,0 +1,44 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Right mid fuel 1 (v3)"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right mid fuel 2 (v3)"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right mid fuel 3 (v3)"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right mid fuel 4 (v3)"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": "Right Side Autos",
+  "choreoAuto": false
+}

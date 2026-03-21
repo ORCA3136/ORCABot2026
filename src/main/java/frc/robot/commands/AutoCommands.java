@@ -30,19 +30,19 @@ public final class AutoCommands {
 
   /** Deploy intake to kDown position. Finishes instantly. */
   public static Command intakeDown(IntakeSubsystem intake) {
-    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kDown), intake)
+    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kExtended), intake)
         .withName("IntakeDown");
   }
 
-  /** Move intake to kSafe position. Finishes instantly. */
-  public static Command intakeSafe(IntakeSubsystem intake) {
-    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kSafe), intake)
-        .withName("IntakeSafe");
+  /** Move intake to shuttle center position. Finishes instantly. */
+  public static Command intakeShuttle(IntakeSubsystem intake) {
+    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kShuttle), intake)
+        .withName("IntakeShuttle");
   }
 
   /** Retract intake to kUp position. Finishes instantly. */
   public static Command intakeUp(IntakeSubsystem intake) {
-    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kUp), intake)
+    return Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kRetracted), intake)
         .withName("IntakeUp");
   }
 
@@ -97,16 +97,16 @@ public final class AutoCommands {
   }
 
   /**
-   * Full intake sequence: deploy intake to kDown, run rollers, then retract to kSafe on end.
+   * Full intake sequence: deploy intake to extended, run rollers, then retract fully on end.
    * Stops rollers and retracts when timeout expires or command is interrupted.
    */
   public static Command intakeWithDeploy(IntakeSubsystem intake, double speed, double timeoutSec) {
     return Commands.run(() -> intake.setIntakeDutyCycle(speed), intake)
-        .beforeStarting(() -> intake.setIntakeDeployTarget(Setpoint.kDown))
+        .beforeStarting(() -> intake.setIntakeDeployTarget(Setpoint.kExtended))
         .withTimeout(timeoutSec)
         .finallyDo(interrupted -> {
           intake.setIntakeDutyCycle(0);
-          intake.setIntakeDeployTarget(Setpoint.kSafe);
+          intake.setIntakeDeployTarget(Setpoint.kRetracted);
         })
         .withName("IntakeWithDeploy" + (int) timeoutSec + "s");
   }
@@ -171,8 +171,8 @@ public final class AutoCommands {
 
   /**
    * Feed sequence — IntakeSubsystem + ConveyorSubsystem + KickerSubsystem.
-   * Runs conveyor+kicker the entire time. After 1s starts intake pulsing for 3s,
-   * then retracts intake. finallyDo ensures all motors stop on timeout.
+   * Runs conveyor+kicker the entire time. Slowly retracts intake to feed fuel,
+   * then switches to shuttle pulse to clear remaining fuel.
    * Safe to run in parallel with shootSequence (no subsystem overlap).
    */
   public static Command feedSequence(IntakeSubsystem intake, ConveyorSubsystem conveyor,
@@ -180,10 +180,13 @@ public final class AutoCommands {
     return Commands.parallel(
         new RunConveyorAndKickerCommand(conveyor, kicker, 1000, 5000),
         Commands.sequence(
-            Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kSafe), intake),
-            Commands.waitSeconds(1),
-            FuelPathCommands.intakePulse(intake).withTimeout(2),
-            Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kUp), intake)
+            // Phase 1: Slow retract to pull fuel in
+            Commands.runOnce(() -> intake.slowRetract(true), intake),
+            Commands.waitSeconds(timeoutSec * 0.5),
+            // Phase 2: Switch to shuttle pulse for remaining fuel
+            Commands.runOnce(() -> intake.slowRetract(false)),
+            FuelPathCommands.intakeShuttlePulse(intake).withTimeout(timeoutSec * 0.4),
+            Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kRetracted), intake)
         )
     )
     .withTimeout(timeoutSec)
@@ -191,6 +194,8 @@ public final class AutoCommands {
       conveyor.setConveyorDutyCycle(0);
       kicker.setKickerDutyCycle(0);
       intake.setIntakeDutyCycle(0);
+      intake.slowRetract(false);
+      intake.pulse(false);
     })
     .withName("FeedSequence");
   }

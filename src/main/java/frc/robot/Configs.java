@@ -1,7 +1,6 @@
 package frc.robot;
 
 import com.revrobotics.spark.config.SparkFlexConfig;
-import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
@@ -15,11 +14,11 @@ public class Configs {
 
                static {
             primaryShooterConfig
-                .inverted(false)
+                .inverted(true)
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             secondaryShooterConfig
-                .inverted(true)
+                .inverted(false)
                 .idleMode(IdleMode.kCoast)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
             primaryShooterConfig.closedLoop
@@ -56,8 +55,8 @@ public class Configs {
 
     public static final class IntakeConfigs {
         public static final SparkFlexConfig intakeMotorConfig = new SparkFlexConfig();
-        public static final SparkMaxConfig intakeDeployMotorConfig = new SparkMaxConfig();        
-        
+        public static final SparkFlexConfig intakeDeployMotorConfig = new SparkFlexConfig();
+
         static {
             intakeMotorConfig
                 .inverted(true)
@@ -69,42 +68,20 @@ public class Configs {
                 .idleMode(IdleMode.kBrake)
                 .voltageCompensation(12)
                 .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
+            // Disable soft limits at boot — they are applied dynamically after homing
+            intakeDeployMotorConfig.softLimit
+                .forwardSoftLimitEnabled(false)
+                .reverseSoftLimitEnabled(false);
+            // Absolute encoder (through-bore on data port) — display only
             intakeDeployMotorConfig.absoluteEncoder
-                .positionConversionFactor(IntakeConstants.kDeployGearRatio)
-                .velocityConversionFactor(IntakeConstants.kDeployGearRatio);
+                .inverted(false);
+            // Relative encoder — raw motor rotations (no conversion factor needed,
+            // PID setpoints are in motor rotations from home)
             intakeDeployMotorConfig.closedLoop
                 .positionWrappingEnabled(false)
-                .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-                .pid(IntakeConstants.kP, IntakeConstants.kI, IntakeConstants.kD)
-                .outputRange(-0.8, 0.8); // Old was +-0.8
-            // primaryHoodConfig.closedLoop.feedForward
-            //     .kG(HoodConstants.kG);
-        }
-    }
-
-    public static final class ClimberConfigs {
-        public static final SparkFlexConfig climberPrimaryMotor = new SparkFlexConfig();
-
-        static {
-            // Primary: PID leader with relative encoder
-            climberPrimaryMotor
-                .inverted(true)
-                .idleMode(IdleMode.kBrake)
-                .voltageCompensation(12)
-                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP30);
-            climberPrimaryMotor.encoder
-                .positionConversionFactor(360.0 / ClimberConstants.kTotalReduction)   // motor rot → arm degrees
-                .velocityConversionFactor(360.0 / ClimberConstants.kTotalReduction / 60.0); // RPM → deg/s
-            climberPrimaryMotor.closedLoop
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-                .pid(ClimberConstants.kP, ClimberConstants.kI, ClimberConstants.kD)
-                .outputRange(-0.8, 0.8);
-            // Hardware soft limits — backup safety layer on motor controller
-            climberPrimaryMotor.softLimit
-                .forwardSoftLimitEnabled(true)
-                .forwardSoftLimit((float)(ClimberConstants.kMaxArmDegrees - 2.0))
-                .reverseSoftLimitEnabled(true)
-                .reverseSoftLimit((float)(ClimberConstants.kMinArmDegrees + 2.0));
+                .pid(IntakeConstants.kP, IntakeConstants.kI, IntakeConstants.kD)
+                .outputRange(-IntakeConstants.kMaxOutputDutyCycle, IntakeConstants.kMaxOutputDutyCycle);
         }
     }
 
