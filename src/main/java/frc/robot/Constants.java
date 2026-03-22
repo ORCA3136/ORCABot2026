@@ -188,7 +188,7 @@ public final class Constants {
     public static final int kIntakeDeployCanId = 18;
 
     // PDH
-    public static final int kPDHCanId = 50;
+    public static final int kPDHCanId = 63;
   }
 
   public static final class DioConstants {

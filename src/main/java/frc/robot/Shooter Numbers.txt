@@ -82,18 +82,6 @@ Trial 2: 10/10
 Trial 3: 7/10
 
 Air Time from different locations
-70 in
-0.031
-0.027
-
-90 in
-0.037
-0.036
-
-120 in
-0.045
-0.043
-
-150 in
-0.048
-0.049
+160
+4.6
+4.7

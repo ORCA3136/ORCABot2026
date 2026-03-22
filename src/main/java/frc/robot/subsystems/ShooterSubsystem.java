@@ -96,10 +96,15 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(180)), Double.valueOf(3500));
     shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(3875));
 
-    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(70 )), Double.valueOf(0.0029)); // Value is in seconds
-    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(90 )), Double.valueOf(0.00365));
-    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(120)), Double.valueOf(0.0044));
-    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(150)), Double.valueOf(0.00485));
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(70 )), Double.valueOf(0.78)); // Value is in seconds
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(90 )), Double.valueOf(0.83));
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(110)), Double.valueOf(1.0));
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(120)), Double.valueOf(1.02));
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(130)), Double.valueOf(1.08));
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(140)), Double.valueOf(1.1));
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(160)), Double.valueOf(1.14));
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(180)), Double.valueOf(1.18));
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(1.3));
   }
 
   public double calculateShooterFeedForward() {
