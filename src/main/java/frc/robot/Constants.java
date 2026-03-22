@@ -57,10 +57,13 @@ public final class Constants {
     public static final double kVelocityMax = 2500;
 
     // Rack & pinion deploy PID (on SparkFlex relative encoder, position control)
-    // TODO: TUNE ON ROBOT — start here, adjust based on response
-    public static final double kP = 1.0;
+    public static final double kP = 0.15;
     public static final double kI = 0.0;
-    public static final double kD = 0.0;
+    public static final double kD = 0.005;
+
+    // Gravity feedforward for extending (mechanism angles slightly downward)
+    public static final double kExtendArbFF = 0.05;     // duty cycle offset for extending against gravity
+    public static final double kArbFFDeadband = 0.05;    // rotations — prevents toggling at setpoint
 
     // Rack & pinion gear ratio: 9:1 gearbox * 18T→22T sprocket * 12T lantern→32T rack
     public static final double kRackGearRatio = 9.0 * (22.0 / 18.0); // ≈11.0:1

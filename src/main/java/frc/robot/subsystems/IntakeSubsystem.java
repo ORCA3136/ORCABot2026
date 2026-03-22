@@ -288,6 +288,19 @@ public class IntakeSubsystem extends SubsystemBase {
     }
   }
 
+  /**
+   * Computes an arbitrary feedforward value to counteract gravity during extend.
+   * Only applies a positive offset when extending (positive error beyond deadband).
+   * Retracting needs no FF because gravity assists.
+   */
+  private double computeArbFF() {
+    double error = rampedPosition - getIntakeDeployPosition();
+    if (error > IntakeConstants.kArbFFDeadband) {
+      return IntakeConstants.kExtendArbFF;
+    }
+    return 0.0;
+  }
+
   /** Sends the ramped position setpoint to the SparkFlex PID controller. */
   public void setPIDPosition() {
     if (state != DeployState.TARGETING) return;
@@ -295,7 +308,7 @@ public class IntakeSubsystem extends SubsystemBase {
       state = DeployState.SET;
       return;
     }
-    deployPIDController.setSetpoint(rampedPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0);
+    deployPIDController.setSetpoint(rampedPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, computeArbFF());
   }
 
   /** Check if PID position reached */
