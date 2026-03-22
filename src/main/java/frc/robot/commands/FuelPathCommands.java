@@ -245,11 +245,11 @@ public final class FuelPathCommands {
    * Feed until the beam break detects fuel staged at the kicker.
    * Runs conveyor + kicker until KickerSubsystem.hasFuel() returns true.
    */
-  public static Command feedUntilLoaded(ConveyorSubsystem conveyor, KickerSubsystem kicker) {
-    return Commands.parallel(
-        new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn),
-        new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed)
-    ).until(() -> kicker.hasFuel())
-     .withName("FeedUntilLoaded");
-  }
+  // public static Command feedUntilLoaded(ConveyorSubsystem conveyor, KickerSubsystem kicker) {
+  //   return Commands.parallel(
+  //       new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn),
+  //       new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed)
+  //   ).until(() -> kicker.hasFuel())
+  //    .withName("FeedUntilLoaded");
+  // }
 }

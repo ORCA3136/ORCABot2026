@@ -1,0 +1,77 @@
+Distance: 70
+RPM: 2515
+Trial 1: 11/12
+Trial 2: 9/12
+Trial 3: 9/12
+
+Distance: 80
+RPM: 2575
+Trial 1: 12/12
+Trial 2: 12/12
+Trial 3: moved on
+
+Distance: 90
+RPM: 2625
+Trial 1: 12/12
+Trial 2: 11 + 1/12
+Trial 3: 12/12
+
+Distance: 100
+RPM: 2700
+Trial 1: 12/12
+Trial 2: 12/12
+Trial 3: 12/12
+
+Distance: 110
+RPM: 2750
+Trial 1: 12/12
+Trial 2: 12/12
+Trial 3: 12/12
+
+Distance: 120
+RPM: 2825
+Trial 1: 11/12
+Trial 2: 12/12
+Trial 3: 11/12
+
+Distance: 130
+RPM: 2910
+Trial 1: 12/12
+Trial 2: 11/12
+Trial 3: 12/12
+
+Distance: 140
+RPM: 3000
+Trial 1: 11/12
+Trial 2: 12/12
+Trial 3: /12
+
+Distance: 150
+RPM: 3125
+Trial 1: 11/12
+Trial 2: 11/12
+Trial 3: 12/12
+
+Distance: 160
+RPM: 3250
+Trial 1: 11/12
+Trial 2: 9/12 (Mid air collision)
+Trial 3: 12/12
+
+Distance: 170
+RPM: 3350
+Trial 1: 11/12
+Trial 2: 12/12
+Trial 3: 12/12
+
+Distance: 180
+RPM: 3500
+Trial 1: 9/12
+Trial 2: 10/12
+Trial 3: 10/12
+
+Distance: 200
+RPM: 3875
+Trial 1: 5/12
+Trial 2: 4/12
+Trial 3: 5/12

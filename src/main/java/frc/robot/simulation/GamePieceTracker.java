@@ -31,8 +31,9 @@ public class GamePieceTracker {
 
     private final NetworkTable simTable;
 
+    // TODO: fix null value
     public GamePieceTracker() {
-        this.beamBreakSim = new DIOSim(SimConstants.kBeamBreakDIOPort);
+        this.beamBreakSim = null; // new DIOSim(SimConstants.kBeamBreakDIOPort);
         beamBreakSim.setValue(true); // beam not broken = no fuel
 
         simTable = NetworkTableInstance.getDefault().getTable("Simulation");

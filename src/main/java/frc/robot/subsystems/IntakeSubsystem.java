@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems;
 
+import java.io.ObjectInputStream.GetField;
+
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -61,7 +63,7 @@ public class IntakeSubsystem extends SubsystemBase {
   final RelativeEncoder intakeDeployEncoder = intakeDeployMotor.getEncoder();
   final AbsoluteEncoder intakeDeployAbsEncoder = intakeDeployMotor.getAbsoluteEncoder();
 
-  final SparkClosedLoopController deployPIDController = intakeDeployMotor.getClosedLoopController();
+  private final SparkClosedLoopController deployPIDController = intakeDeployMotor.getClosedLoopController();
 
   private final DigitalInput homeLimitSwitch = new DigitalInput(DioConstants.kIntakeHomeLimitSwitchPort);
 
@@ -128,7 +130,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** @return True if the limit switch is pressed (NO switch with pull-up: pressed = get() returns false). */
   public boolean isLimitSwitchPressed() {
-    return homeLimitSwitch.get();
+    return !homeLimitSwitch.get();
   }
 
   /**
@@ -292,6 +294,10 @@ public class IntakeSubsystem extends SubsystemBase {
     deployPIDController.setSetpoint(rampedPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0);
   }
 
+  public SparkClosedLoopController getDeployClosedLoopController() {
+    return deployPIDController;
+  }
+
   /** Sets the deploy target setpoint. Rejected if not HOMED. */
   public void setIntakeDeployTarget(Setpoint position) {
     if (state != DeployState.HOMED) {
@@ -373,6 +379,10 @@ public class IntakeSubsystem extends SubsystemBase {
       return;
     }
     intakeDeployMotor.set(speed / RobotConstants.kNeoVortexFreeSpeedRPM);
+  }
+
+  public void stopMotor() {
+    setIntakeDeployDutyCycle(0);
   }
 
   /** @return Deploy motor velocity in RPM. */
