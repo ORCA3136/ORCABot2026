@@ -93,6 +93,7 @@ public class IntakeSubsystem extends SubsystemBase {
   private int stallCounter = 0;
 
   private boolean pulseActive = false;
+  private boolean hardwareSoftLimitsActive = false;
   private Setpoint intakeDeployTarget = Setpoint.kRetracted;
   private double rampedPosition = IntakeConstants.kRetractedPosition;
 
@@ -219,17 +220,20 @@ public class IntakeSubsystem extends SubsystemBase {
     DriverStation.reportError("IntakeSubsystem FAULT: " + reason, false);
   }
 
-  /** Applies conservative soft limits (0 to kMaxExtension) before homing — protects hard stops. */
+  /** Disables soft limits on the deploy motor. Skips if already disabled. */
   private void disableSoftLimits() {
+    if (!hardwareSoftLimitsActive) return;
     SparkFlexConfig limitConfig = new SparkFlexConfig();
     limitConfig.softLimit
         .forwardSoftLimitEnabled(false)
         .reverseSoftLimitEnabled(false);
     intakeDeployMotor.configure(limitConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+    hardwareSoftLimitsActive = false;
   }
 
-  /** Applies forward/reverse hardware soft limits on the deploy motor. */
+  /** Applies forward/reverse hardware soft limits on the deploy motor. Skips if already active. */
   private void setHardwareSoftLimits() {
+    if (hardwareSoftLimitsActive) return;
     SparkFlexConfig limitConfig = new SparkFlexConfig();
     limitConfig.softLimit
         .forwardSoftLimitEnabled(true)
@@ -237,6 +241,7 @@ public class IntakeSubsystem extends SubsystemBase {
         .reverseSoftLimitEnabled(true)
         .reverseSoftLimit(-0.25f);
     intakeDeployMotor.configure(limitConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+    hardwareSoftLimitsActive = true;
   }
 
   // ── Position control ───────────────────────────────────────────────

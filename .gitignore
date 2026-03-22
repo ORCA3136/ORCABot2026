@@ -189,3 +189,4 @@ compile_commands.json
 # Claude Code
 .claude/
 CLAUDE.md
+src/main/java/frc/robot/BuildConstants.java
