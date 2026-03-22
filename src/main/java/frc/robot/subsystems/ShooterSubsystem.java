@@ -70,6 +70,10 @@ public class ShooterSubsystem extends SubsystemBase {
   private final NetworkTableEntry leadCompYEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kLeadCompY);
   private final NetworkTableEntry leadCompDistEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kLeadCompDistance);
   private final NetworkTableEntry airTimeEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kAirTimeSec);
+  private final NetworkTableEntry actualDistanceEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kActualDistanceM);
+  private final NetworkTableEntry fieldVelXEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kFieldVelX);
+  private final NetworkTableEntry fieldVelYEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kFieldVelY);
+  private final NetworkTableEntry leadCompGainEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kLeadCompGain);
 
   // Last-computed lead compensation values for NT telemetry
   private double lastLeadCompX = 0;
@@ -236,18 +240,18 @@ public class ShooterSubsystem extends SubsystemBase {
         ? FieldPositions.kRedFieldElements.get(0)
         : FieldPositions.kBlueFieldElements.get(0);
     Translation2d compensatedHub = getLeadCompensatedHubPosition(hubPos);
-    Translation2d robotPos = m_swerveSubsystem.getSwerveDrive().getPose().getTranslation();
-    double compensatedDistance = MathUtil.clamp(
-        robotPos.getDistance(compensatedHub), kMinShootDistanceM, kMaxShootDistanceM);
 
-    shooterVelocityTarget = shooterSpeedOnlyMap.get(compensatedDistance);
+    // RPM: use ACTUAL distance to hub (not compensated) — RPM map was tuned stationary
+    double actualDistance = MathUtil.clamp(
+        m_swerveSubsystem.getDistanceToHubMeters(), kMinShootDistanceM, kMaxShootDistanceM);
+    shooterVelocityTarget = shooterSpeedOnlyMap.get(actualDistance);
 
-    // Cache values for NT telemetry and public getter
+    // Cache compensated position for the aim stream (heading only)
     lastLeadCompHubTranslation = compensatedHub;
     Translation2d offset = compensatedHub.minus(hubPos);
     lastLeadCompX = offset.getX();
     lastLeadCompY = offset.getY();
-    lastLeadCompDistance = compensatedDistance;
+    lastLeadCompDistance = actualDistance;
   }
 
   /**
@@ -268,10 +272,11 @@ public class ShooterSubsystem extends SubsystemBase {
     double airTime = fuelAirTimeMap.get(distance);
     lastAirTimeSec = airTime;
     ChassisSpeeds fieldVel = m_swerveSubsystem.getFieldVelocity();
+    double gain = ShooterConstants.kLeadCompGain;
     // Offset aim point opposite to robot velocity (ball inherits robot momentum)
     return hubPos.minus(new Translation2d(
-        fieldVel.vxMetersPerSecond * airTime,
-        fieldVel.vyMetersPerSecond * airTime
+        fieldVel.vxMetersPerSecond * airTime * gain,
+        fieldVel.vyMetersPerSecond * airTime * gain
     ));
   }
 
@@ -312,6 +317,11 @@ public class ShooterSubsystem extends SubsystemBase {
     leadCompYEntry.setDouble(lastLeadCompY);
     leadCompDistEntry.setDouble(lastLeadCompDistance);
     airTimeEntry.setDouble(lastAirTimeSec);
+    actualDistanceEntry.setDouble(m_swerveSubsystem.getDistanceToHubMeters());
+    ChassisSpeeds fieldVel = m_swerveSubsystem.getFieldVelocity();
+    fieldVelXEntry.setDouble(fieldVel.vxMetersPerSecond);
+    fieldVelYEntry.setDouble(fieldVel.vyMetersPerSecond);
+    leadCompGainEntry.setDouble(ShooterConstants.kLeadCompGain);
   }
 
   /** This method will be called once per scheduler run */

@@ -47,6 +47,9 @@ public final class Constants {
 
     // Flywheel is "ready" when within this tolerance of target RPM
     public static final double kReadyToleranceRPM = 200;
+
+    // Lead compensation gain — multiplier for heading offset magnitude (tune on field)
+    public static final double kLeadCompGain = 1.0;
   }
 
   public static final class IntakeConstants {
@@ -257,6 +260,10 @@ public final class Constants {
       public static final String kLeadCompY = "Lead Comp Y";
       public static final String kLeadCompDistance = "Lead Comp Distance";
       public static final String kAirTimeSec = "Air Time Sec";
+      public static final String kActualDistanceM = "Actual Distance M";
+      public static final String kFieldVelX = "Field Vel X";
+      public static final String kFieldVelY = "Field Vel Y";
+      public static final String kLeadCompGain = "Lead Comp Gain";
     }
 
     public static final class Conveyor {

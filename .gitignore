@@ -189,6 +189,6 @@ compile_commands.json
 # Claude Code
 .claude/
 CLAUDE.md
-src/main/java/frc/robot/BuildConstants.java
-src/main/java/frc/robot/BuildConstants.java
+
+# Auto-generated build info (regenerated every build, causes merge conflicts)
 src/main/java/frc/robot/BuildConstants.java
