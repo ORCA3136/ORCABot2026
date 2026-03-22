@@ -120,6 +120,8 @@ public final class Constants {
     // --- Rejection thresholds ---
     public static final double kMaxYawRateDegPerSec = 270.0;
     public static final double kMaxTagDistanceM = 6.0;
+    public static final double kSingleTagMaxDistanceM = 4.0;
+    public static final double kMaxHeadingErrorDeg = 60.0;
     public static final double kMaxTimestampAgeSec = 0.5;
 
     // 2026 REBUILT field boundary + 0.5m margin (field is 16.54m x 8.21m)
@@ -274,6 +276,9 @@ public final class Constants {
       public static final String kAllianceOverride = "AllianceOverride";
       public static final String kAprilTagReady = "AprilTagReady";
       public static final String kTotalTagCount = "TotalTagCount";
+
+      // Heading cross-check
+      public static final String kHeadingError = "HeadingErrorDeg";
 
       // Drift detection telemetry
       public static final String kDriftDetected = "DriftDetected";

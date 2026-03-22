@@ -126,6 +126,7 @@ public class VisionSubsystem extends SubsystemBase {
   private int trustBoostCyclesRemaining = 0;
   private int hardResetCount = 0;
   private boolean dualCameraAgreed = false;
+  private double lastHeadingError = 0;
 
   // --- Camera health state ---
   private double lastFrontDataTime = 0;
@@ -184,6 +185,7 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry trustBoostedEntry = visionTable.getEntry(NetworkTableNames.Vision.kTrustBoosted);
   private final NetworkTableEntry hardResetCountEntry = visionTable.getEntry(NetworkTableNames.Vision.kHardResetCount);
   private final NetworkTableEntry dualCameraAgreedEntry = visionTable.getEntry(NetworkTableNames.Vision.kDualCameraAgreed);
+  private final NetworkTableEntry headingErrorEntry = visionTable.getEntry(NetworkTableNames.Vision.kHeadingError);
 
   // Per-camera health telemetry
   private final NetworkTableEntry frontStaleEntry = frontTable.getEntry(NetworkTableNames.Vision.kCameraStale);
@@ -237,11 +239,12 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     // --- Feed heading to both cameras every frame ---
+    // Use raw Pigeon2 rotation (not odometry heading) to avoid circular dependency
     Rotation3d pigeonRotation = swerveSubsystem.getGyroRotation3d();
     Rotation3d feedRotation = new Rotation3d(
         pigeonRotation.getMeasureX(),
         pigeonRotation.getMeasureY(),
-        swerveSubsystem.getHeading().getMeasure());
+        pigeonRotation.getMeasureZ());
 
     Orientation3d orientation = new Orientation3d(
         feedRotation,
@@ -469,7 +472,7 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * 4-stage rejection filter. Returns empty string if accepted.
+   * 6-stage rejection filter. Returns empty string if accepted.
    */
   private String getRejectReason(PoseEstimate estimate, Pose2d visionPose, double now) {
     // 1. Stale timestamp
@@ -495,6 +498,21 @@ public class VisionSubsystem extends SubsystemBase {
     // 4. Max tag distance — tags beyond 6m are unreliable
     if (estimate.avgTagDist > VisionConstants.kMaxTagDistanceM) {
       return "too_far";
+    }
+
+    // 5. Single-tag at distance — high 180° ambiguity risk
+    if (estimate.tagCount == 1 && estimate.avgTagDist > VisionConstants.kSingleTagMaxDistanceM) {
+      return "single_tag_too_far";
+    }
+
+    // 6. Heading cross-check — catch 180° MT2 flips
+    double visionHeadingDeg = visionPose.getRotation().getDegrees();
+    double gyroHeadingDeg = swerveSubsystem.getPigeonRawYawDeg();
+    double headingError = Math.abs(visionHeadingDeg - gyroHeadingDeg);
+    if (headingError > 180) headingError = 360 - headingError;
+    lastHeadingError = headingError;
+    if (headingError > VisionConstants.kMaxHeadingErrorDeg) {
+      return "heading_flip";
     }
 
     return "";
@@ -848,6 +866,7 @@ public class VisionSubsystem extends SubsystemBase {
     trustBoostedEntry.setBoolean(trustBoostCyclesRemaining > 0);
     hardResetCountEntry.setDouble(hardResetCount);
     dualCameraAgreedEntry.setBoolean(dualCameraAgreed);
+    headingErrorEntry.setDouble(lastHeadingError);
 
     // Camera health telemetry
     frontStaleEntry.setBoolean(frontStale);
