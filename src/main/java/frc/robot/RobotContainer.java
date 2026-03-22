@@ -19,9 +19,7 @@ import frc.robot.commands.AutoCommands;
 import frc.robot.commands.FuelPathCommands;
 import frc.robot.commands.RunConveyorAndKickerCommand;
 import frc.robot.commands.RunIntakeCommand;
-import frc.robot.commands.RunKickerCommand;
 import frc.robot.commands.ShootCommand;
-import frc.robot.commands.ShootOnlyCommand;
 import frc.robot.subsystems.ConveyorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.KickerSubsystem;
@@ -178,7 +176,7 @@ public class RobotContainer {
     // m_primaryController.rightBumper().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1950)))
     //                                  .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     // Shooting: no intake position change — intake stays where it is (driver controls retraction)
-    m_primaryController.rightBumper().whileTrue(new ShootOnlyCommand(shooterSubsystem));
+    m_primaryController.rightBumper().whileTrue(new ShootCommand(shooterSubsystem));
     m_primaryController.rightTrigger()
             .whileTrue(new ShootCommand(shooterSubsystem));
 

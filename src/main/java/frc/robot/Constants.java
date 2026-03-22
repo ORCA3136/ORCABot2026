@@ -287,21 +287,6 @@ public final class Constants {
       public static final String kAbsEncoderRaw = "Abs Encoder Raw";
     }
 
-    public static final class Climber {
-      public static final String kTable = "Climber";
-      public static final String kArmDegrees = "Arm Degrees";
-      public static final String kTargetDegrees = "Target Degrees";
-      public static final String kError = "Error";
-      public static final String kMotorRotations = "Motor Rotations";
-      public static final String kLeftMotorOutput = "Left Motor Output";
-      public static final String kClimberMotorOutput = "Right Motor Output";
-      public static final String kPrimaryCurrent = "Primary Current Amps";
-      public static final String kSecondaryCurrent = "Secondary Current Amps";
-      public static final String kAbsEncoderRaw = "Abs Encoder Raw";
-      public static final String kIsZeroed = "Is Zeroed";
-      public static final String kAtSetpoint = "At Setpoint";
-      public static final String kState = "State";
-    }
   }
 
   public static final class FieldPositions {

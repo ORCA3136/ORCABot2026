@@ -4,8 +4,6 @@
 
 package frc.robot.subsystems;
 
-import java.io.ObjectInputStream.GetField;
-
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -394,8 +392,10 @@ public class IntakeSubsystem extends SubsystemBase {
    * @param speed RPM-scale value normalized by Vortex free speed
    */
   public void setIntakeDeployDutyCycle(double speed) {
-    disableSoftLimits();
-    state = DeployState.MANUAL;
+    if (state != DeployState.MANUAL) {
+      disableSoftLimits();
+      state = DeployState.MANUAL;
+    }
     // Block inward motion (negative speed) when limit switch is pressed
     if (speed < 0 && isLimitSwitchPressed()) {
       intakeDeployMotor.set(0);
