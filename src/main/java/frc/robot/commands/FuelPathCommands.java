@@ -249,7 +249,7 @@ public final class FuelPathCommands {
     return Commands.parallel(
         new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn),
         new RunKickerCommand(kicker, FuelPathConstants.kKickerFeed)
-    ).until(() -> kicker.hasFuel())
+    ) // .until(() -> kicker.hasFuel())
      .withName("FeedUntilLoaded");
   }
 }

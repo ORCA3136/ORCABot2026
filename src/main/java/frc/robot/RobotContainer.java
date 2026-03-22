@@ -126,33 +126,41 @@ public class RobotContainer {
     driveBase.setDefaultCommand(fastDriveCommand);
 
     // Buttons
+    // Intake deploy percent out
     m_primaryController.a().and(m_primaryController.back().negate()).whileTrue(
         Commands.runEnd(
             () -> intakeSubsystem.setIntakeDeployDutyCycle(650),
             () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
             intakeSubsystem
         ));
-    m_primaryController.b().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> {
-                                        Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
-                                            ? FieldPositions.kRedFieldElements.get(0)
-                                            : FieldPositions.kBlueFieldElements.get(0);
-                                        aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
-                                        Command current = driveBase.getCurrentCommand();
-                                        if (current != null) current.cancel();
-                                        driveBase.setDefaultCommand(aimAtHubCommand);
-                                     }))
-                                     .onFalse(Commands.runOnce(() -> {
-                                        Command current = driveBase.getCurrentCommand();
-                                        if (current != null) current.cancel();
-                                        driveBase.setDefaultCommand(fastDriveCommand);
-                                     }));
-    // m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)));
-    m_primaryController.y().and(m_primaryController.back().negate()).whileTrue(
+    // Intake deploy percent in
+    m_primaryController.b().and(m_primaryController.back().negate()).whileTrue(
         Commands.runEnd(
             () -> intakeSubsystem.setIntakeDeployDutyCycle(-650),
             () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
             intakeSubsystem
         ));
+    // m_primaryController.b().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> {
+    //                                     Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+    //                                         ? FieldPositions.kRedFieldElements.get(0)
+    //                                         : FieldPositions.kBlueFieldElements.get(0);
+    //                                     aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+    //                                     Command current = driveBase.getCurrentCommand();
+    //                                     if (current != null) current.cancel();
+    //                                     driveBase.setDefaultCommand(aimAtHubCommand);
+    //                                  }))
+    //                                  .onFalse(Commands.runOnce(() -> {
+    //                                     Command current = driveBase.getCurrentCommand();
+    //                                     if (current != null) current.cancel();
+    //                                     driveBase.setDefaultCommand(fastDriveCommand);
+    //                                  }));
+    // Intake deploy setpoint out
+    m_primaryController.x().and(m_primaryController.back().negate())
+        .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended)));
+    // m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)));
+    // Intake deploy setpoint in
+    m_primaryController.y().and(m_primaryController.back().negate())
+        .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted)));
 
     // D pad
     m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
@@ -229,7 +237,7 @@ public class RobotContainer {
     m_secondaryController.button(4);
 
     m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
-    // Clear intake fault and re-home
+    // Clear intake fault
     m_secondaryController.button(6).onTrue(Commands.runOnce(() -> {
       intakeSubsystem.clearFault();
       intakeSubsystem.requestHoming();

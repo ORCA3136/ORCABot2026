@@ -42,8 +42,10 @@ public class IntakeSubsystem extends SubsystemBase {
   // ── Deploy state machine ────────────────────────────────────────────
   public enum DeployState {
     UNHOMED,
-    HOMING,
-    HOMED,
+    ZEROING,
+    TARGETING,
+    SET,
+    MANUAL,
     FAULT
   }
 
@@ -85,8 +87,10 @@ public class IntakeSubsystem extends SubsystemBase {
   // ── State ───────────────────────────────────────────────────────────
   private DeployState state = DeployState.UNHOMED;
   private String faultReason = "";
-  private int homingStallCounter = 0;
   private final Timer homingTimer = new Timer();
+  private final Timer PIDTimer = new Timer();
+
+  private int stallCounter = 0;
 
   private boolean pulseActive = false;
   private Setpoint intakeDeployTarget = Setpoint.kRetracted;
@@ -105,11 +109,11 @@ public class IntakeSubsystem extends SubsystemBase {
     if (IntakeConstants.kLimitSwitchInstalled && isLimitSwitchPressed()) {
       intakeDeployEncoder.setPosition(0);
       setHardwareSoftLimits();
-      state = DeployState.HOMED;
+      state = DeployState.SET;
       DriverStation.reportWarning("IntakeSubsystem: Limit switch detected at boot — auto-homed", false);
     } else {
       // Apply conservative soft limits for hard-stop protection even while unhomed
-      setConservativeSoftLimits();
+      disableSoftLimits();
       DriverStation.reportWarning("IntakeSubsystem: Limit switch NOT detected at boot — manual homing required", false);
     }
   }
@@ -123,12 +127,12 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** @return True if the intake is homed and ready for position commands. */
   public boolean isHomed() {
-    return state == DeployState.HOMED;
+    return state == DeployState.SET;
   }
 
   /** @return True if the limit switch is pressed (NO switch with pull-up: pressed = get() returns false). */
   public boolean isLimitSwitchPressed() {
-    return homeLimitSwitch.get();
+    return !homeLimitSwitch.get();
   }
 
   /**
@@ -137,9 +141,13 @@ public class IntakeSubsystem extends SubsystemBase {
    */
   public void requestHoming() {
     if (DriverStation.isDisabled()) return;
-    if (state == DeployState.HOMED || state == DeployState.HOMING) return;
-    state = DeployState.HOMING;
-    homingStallCounter = 0;
+    if (state == DeployState.FAULT) {
+      DriverStation.reportWarning("IntakeSubsystem: Requested homing when FAULTED", false);
+      return;
+    }
+
+    disableSoftLimits();
+    state = DeployState.ZEROING;
     homingTimer.restart();
     DriverStation.reportWarning("IntakeSubsystem: Homing requested", false);
   }
@@ -166,25 +174,6 @@ public class IntakeSubsystem extends SubsystemBase {
       return;
     }
 
-    // Stall detection (current spike)
-    if (intakeDeployMotor.getOutputCurrent() > IntakeConstants.kHomingCurrentThreshold) {
-      homingStallCounter++;
-    } else {
-      homingStallCounter = 0;
-    }
-
-    if (homingStallCounter >= IntakeConstants.kHomingStallCycles) {
-      if (IntakeConstants.kLimitSwitchInstalled) {
-        // Switch is installed but didn't trigger — stall is a fault
-        enterFault("Stall detected during homing but limit switch never triggered");
-      } else {
-        // Fallback mode: stall = homed
-        DriverStation.reportWarning("IntakeSubsystem: Homed via stall detection (fallback mode)", false);
-        completeHoming();
-      }
-      return;
-    }
-
     // Timeout
     if (homingTimer.hasElapsed(IntakeConstants.kHomingTimeoutSec)) {
       enterFault("Homing timed out after " + IntakeConstants.kHomingTimeoutSec + "s");
@@ -196,14 +185,29 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeDeployMotor.set(0);
     intakeDeployEncoder.setPosition(0);
     rampedPosition = 0;
-    intakeDeployTarget = Setpoint.kRetracted;
     homingTimer.stop();
 
     // Apply hardware soft limits now that we have a known zero
     setHardwareSoftLimits();
 
-    state = DeployState.HOMED;
+    if (intakeDeployTarget != Setpoint.kRetracted) state = DeployState.TARGETING;
+    else state = DeployState.SET;
     DriverStation.reportWarning("IntakeSubsystem: Homing complete → HOMED", false);
+  }
+
+  /** Runs each cycle to check if intake deploy is stalled */
+  private void checkIntakeDeployStall() {
+    // Stall detection (current spike)
+    if (intakeDeployMotor.getOutputCurrent() > IntakeConstants.kStallCurrentThreshold) {
+      stallCounter++;
+    } else {
+      stallCounter = 0;
+    }
+
+    if (stallCounter >= IntakeConstants.kStallCycles) {
+      // Stall was detected for 1 second - faulting
+      enterFault("Stall detected for intake deploy");
+    }
   }
 
   /** Enters the FAULT state — stops motor, logs reason. */
@@ -216,13 +220,11 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /** Applies conservative soft limits (0 to kMaxExtension) before homing — protects hard stops. */
-  private void setConservativeSoftLimits() {
+  private void disableSoftLimits() {
     SparkFlexConfig limitConfig = new SparkFlexConfig();
     limitConfig.softLimit
-        .forwardSoftLimitEnabled(true)
-        .forwardSoftLimit((float) IntakeConstants.kMaxExtension)
-        .reverseSoftLimitEnabled(true)
-        .reverseSoftLimit(0.0f);
+        .forwardSoftLimitEnabled(false)
+        .reverseSoftLimitEnabled(false);
     intakeDeployMotor.configure(limitConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
@@ -288,17 +290,40 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Sends the ramped position setpoint to the SparkFlex PID controller. */
   public void setPIDPosition() {
-    if (state != DeployState.HOMED) return;
+    if (state != DeployState.TARGETING) return;
+    if (isPIDTargetReached()) {
+      state = DeployState.SET;
+      return;
+    }
     deployPIDController.setSetpoint(rampedPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0);
+  }
+
+  /** Check if PID position reached */
+  public boolean isPIDTargetReached() {
+    boolean inTolerance = Math.abs(getIntakeDeployPosition() - rampedPosition) < IntakeConstants.kTargetTolerance;
+    if (!inTolerance) PIDTimer.reset();
+    
+    return PIDTimer.advanceIfElapsed(IntakeConstants.kPIDTimeoutSec);
   }
 
   /** Sets the deploy target setpoint. Rejected if not HOMED. */
   public void setIntakeDeployTarget(Setpoint position) {
-    if (state != DeployState.HOMED) {
-      DriverStation.reportWarning("IntakeSubsystem: setIntakeDeployTarget rejected — state is " + state, false);
-      return;
-    }
+    Setpoint lastSetpoint = intakeDeployTarget;
     intakeDeployTarget = position;
+
+    rampedPosition = getIntakeDeployPosition();
+
+    PIDTimer.restart();
+    // state = DeployState.TARGETING;
+    // setHardwareSoftLimits();
+    if (state == DeployState.SET && lastSetpoint != position) {
+      state = DeployState.TARGETING;
+      setHardwareSoftLimits();
+    }
+    else if (state == DeployState.MANUAL) {
+      state = DeployState.TARGETING;
+      setHardwareSoftLimits();
+    }
   }
 
   /** @return Current deploy position in motor rotations from home. */
@@ -363,10 +388,8 @@ public class IntakeSubsystem extends SubsystemBase {
    * @param speed RPM-scale value normalized by Vortex free speed
    */
   public void setIntakeDeployDutyCycle(double speed) {
-    if (state == DeployState.FAULT || state == DeployState.HOMING) {
-      DriverStation.reportWarning("IntakeSubsystem: setIntakeDeployDutyCycle rejected — state is " + state, false);
-      return;
-    }
+    disableSoftLimits();
+    state = DeployState.MANUAL;
     // Block inward motion (negative speed) when limit switch is pressed
     if (speed < 0 && isLimitSwitchPressed()) {
       intakeDeployMotor.set(0);
@@ -426,18 +449,28 @@ public class IntakeSubsystem extends SubsystemBase {
     switch (state) {
       case UNHOMED:
         // Idle — motor stopped, waiting for requestHoming()
+        requestHoming();
         break;
-      case HOMING:
+      case ZEROING:
         updateHoming();
         break;
-      case HOMED:
+      case TARGETING:
         rampPosition();
         setPIDPosition();
+        break;
+      case SET:
+        // Intake is in correct spot - stop motor
+        intakeDeployMotor.set(0);
+        break;
+      case MANUAL:
+        // Driver is currently controlling intake
+        // Do not call ANY motor commands
         break;
       case FAULT:
         intakeDeployMotor.set(0);
         break;
     }
+    checkIntakeDeployStall();
     updateNetworkTable();
   }
 

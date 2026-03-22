@@ -75,10 +75,12 @@ public final class Constants {
     public static final double kExtendedPosition = 25.0;
     public static final double kMaxExtension = 26.0;
 
+    public static final double kTargetTolerance = 0.25;
+
     // Deploy position ramp rates (motor rotations per 20ms cycle)
     // Bumped for longer travel distance
-    public static final double kExtendRampRate = 0.29;
-    public static final double kRetractRampRate = 0.22;
+    public static final double kExtendRampRate = 0.60;
+    public static final double kRetractRampRate = 0.45;
 
     // Slow retract for feeding: motor rotations per 20ms cycle
     // Gradually pulls intake in to feed fuel toward conveyor
@@ -86,9 +88,12 @@ public final class Constants {
 
     // Homing
     public static final double kHomingDutyCycle = -0.1;    // Slow inward (negative = retract)
-    public static final double kHomingCurrentThreshold = 15.0; // Amps — stall detection
-    public static final int kHomingStallCycles = 5;        // Consecutive cycles above threshold (~100ms)
+    public static final double kHomingCurrentThreshold = 20.0; // Amps — stall detection
+    public static final double kStallCurrentThreshold  = 25.0; // Amps — stall detection
+    public static final int kStallCycles = 50;             // Consecutive cycles above threshold (~1000ms)
+    public static final int kHomingStallCycles = 13;        // Consecutive cycles above threshold (~260ms)
     public static final double kHomingTimeoutSec = 5.0;    // Max time before FAULT
+    public static final double kPIDTimeoutSec = 0.1;    // Max time before FAULT
 
     // Set to true when the limit switch is physically wired on the robot
     public static final boolean kLimitSwitchInstalled = true;
@@ -184,9 +189,8 @@ public final class Constants {
   }
 
   public static final class DioConstants {
-    public static final int kBeamBreakPort = 0;
-    public static final int kHoodLimitSwitchPort = 1;
-    public static final int kIntakeHomeLimitSwitchPort = 2;
+    public static final int kIntakeHomeLimitSwitchPort = 0;
+    public static final int kBeamBreakPort = 1;
   }
 
   public static final class NetworkTableNames {

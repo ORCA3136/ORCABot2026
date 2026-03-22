@@ -40,7 +40,7 @@ public class KickerSubsystem extends SubsystemBase {
 
   // Beam break sensor between kicker and shooter (DIO 0)
   // Returns false when the beam is broken (fuel present), true when clear
-  private final DigitalInput beamBreak = new DigitalInput(0);
+  // private final DigitalInput beamBreak = new DigitalInput(0);
   private boolean lastBeamBroken = false;
 
   final SparkFlex kickerMotor = new SparkFlex(CanIdConstants.kKickerCanId, MotorType.kBrushless);
@@ -102,16 +102,16 @@ public class KickerSubsystem extends SubsystemBase {
   }
 
   /** @return true if the beam break detects fuel staged at the shooter. */
-  public boolean hasFuel() {
-    // DigitalInput.get() returns false when beam is broken (fuel present)
-    return !beamBreak.get();
-  }
+  // public boolean hasFuel() {
+  //   // DigitalInput.get() returns false when beam is broken (fuel present)
+  //   return !beamBreak.get();
+  // }
 
   public void updateNetworkTable() {
     velocityEntry.setDouble(getKickerVelocity());
     currentEntry.setDouble(getKickerCurrent());
     stallEntry.setBoolean(isStalled);
-    fuelStagedEntry.setBoolean(hasFuel());
+    // fuelStagedEntry.setBoolean(hasFuel());
   }
 
   /** This method will be called once per scheduler run */
@@ -120,21 +120,21 @@ public class KickerSubsystem extends SubsystemBase {
     updateNetworkTable();
 
     // Shot detection: beam break transition (broken → unbroken) while kicker is spinning = shot fired
-    boolean beamBroken = hasFuel();
+    // boolean beamBroken = hasFuel();
     double velocity = getKickerVelocity();
 
-    if (lastBeamBroken && !beamBroken && velocity > SHOT_VELOCITY_THRESHOLD) {
-      // Fuel just left the beam break while kicker is running — shot fired
-      RobotLogger.logShot();
-    } else if (velocity > SHOT_VELOCITY_THRESHOLD && !shotDetected && !beamBroken) {
-      // Fallback: RPM-based detection if beam break missed the transition
-      shotDetected = true;
-      RobotLogger.logShot();
-    } else if (velocity < SHOT_VELOCITY_THRESHOLD) {
-      shotDetected = false;
-    }
+    // if (lastBeamBroken && !beamBroken && velocity > SHOT_VELOCITY_THRESHOLD) {
+    //   // Fuel just left the beam break while kicker is running — shot fired
+    //   RobotLogger.logShot();
+    // } else if (velocity > SHOT_VELOCITY_THRESHOLD && !shotDetected && !beamBroken) {
+    //   // Fallback: RPM-based detection if beam break missed the transition
+    //   shotDetected = true;
+    //   RobotLogger.logShot();
+    // } else if (velocity < SHOT_VELOCITY_THRESHOLD) {
+    //   shotDetected = false;
+    // }
 
-    lastBeamBroken = beamBroken;
+    // lastBeamBroken = beamBroken;
 
 
     isStalled = m_debouncer.calculate(getKickerCurrent() > kStallCurrent);
