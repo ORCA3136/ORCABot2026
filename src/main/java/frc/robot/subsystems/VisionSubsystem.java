@@ -2,11 +2,17 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -24,6 +30,7 @@ import limelight.Limelight;
 import limelight.networktables.AngularVelocity3d;
 import limelight.networktables.LimelightSettings.ImuMode;
 import limelight.networktables.LimelightSettings.LEDMode;
+import limelight.networktables.LimelightUtils;
 import limelight.networktables.Orientation3d;
 import limelight.networktables.PoseEstimate;
 import limelight.results.RawFiducial;
@@ -40,8 +47,9 @@ import limelight.results.RawFiducial;
  * <ol>
  *   <li>Feeds the robot's heading to both Limelights (required for MegaTag2)</li>
  *   <li>Gets MegaTag2 pose estimates from both cameras</li>
- *   <li>Runs a 4-stage rejection filter (stale, field boundary, yaw rate, odometry cross-check)</li>
- *   <li>Calculates dynamic standard deviations based on tag distance and count</li>
+ *   <li>Runs a 4-stage rejection filter (stale, field boundary, yaw rate, tag distance)</li>
+ *   <li>Evaluates dual-camera agreement to determine trust level</li>
+ *   <li>Calculates dynamic standard deviations based on tag distance, count, and agreement</li>
  *   <li>Fuses accepted measurements into the swerve drive's Kalman filter</li>
  * </ol>
  *
@@ -55,13 +63,24 @@ import limelight.results.RawFiducial;
  */
 public class VisionSubsystem extends SubsystemBase {
 
+  /** Result of evaluating a single camera — deferred fusion. */
+  private static class CameraResult {
+    Pose2d pose;
+    double timestamp;
+    double baseXYStdDev;
+    int tagCount;
+    double avgTagDist;
+    boolean accepted;
+    boolean seeded; // true if this result triggered an odometry seed (don't fuse again)
+    String rejectReason;
+  }
+
   private final SwerveSubsystem swerveSubsystem;
 
   private final Limelight limelightFront;
   private final Limelight limelightBack;
 
   // MT2 for enabled-period Kalman fusion
-  // Direct construction avoids YALL's singleton PoseEstimate binding (see class-level comment)
   private final PoseEstimate frontPoseEstimate;
   private final PoseEstimate backPoseEstimate;
 
@@ -89,6 +108,34 @@ public class VisionSubsystem extends SubsystemBase {
   private int ledCycleCounter = 0;
   private int ledBlinksRemaining = 0;
   private boolean ledIsOn = false;
+
+  // --- Drift detection state ---
+  private Pose2d lastFrontVisionPose = null;
+  private Pose2d lastBackVisionPose = null;
+  private double lastFrontVisionTimestamp = 0;
+  private double lastBackVisionTimestamp = 0;
+  private double lastFrontAvgTagDist = 0;
+  private double lastBackAvgTagDist = 0;
+  private int frontDriftCycleCount = 0;
+  private int backDriftCycleCount = 0;
+  private int hardResetCycleCount = 0;
+  private int singleCameraHardResetCycleCount = 0;
+  private boolean driftDetected = false;
+  private double driftMagnitude = 0;
+  private double cameraAgreement = -1;
+  private int trustBoostCyclesRemaining = 0;
+  private int hardResetCount = 0;
+  private boolean dualCameraAgreed = false;
+
+  // --- Camera health state ---
+  private double lastFrontDataTime = 0;
+  private double lastBackDataTime = 0;
+  private boolean frontStale = false;
+  private boolean backStale = false;
+  private int frontRebootCount = 0;
+  private int backRebootCount = 0;
+  private double lastFrontRebootTime = 0;
+  private double lastBackRebootTime = 0;
 
   // --- NetworkTable entries ---
   private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
@@ -130,6 +177,20 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry aprilTagReadyEntry = visionTable.getEntry(NetworkTableNames.Vision.kAprilTagReady);
   private final NetworkTableEntry totalTagCountEntry = visionTable.getEntry(NetworkTableNames.Vision.kTotalTagCount);
 
+  // Drift detection telemetry
+  private final NetworkTableEntry driftDetectedEntry = visionTable.getEntry(NetworkTableNames.Vision.kDriftDetected);
+  private final NetworkTableEntry driftMagnitudeEntry = visionTable.getEntry(NetworkTableNames.Vision.kDriftMagnitude);
+  private final NetworkTableEntry cameraAgreementEntry = visionTable.getEntry(NetworkTableNames.Vision.kCameraAgreement);
+  private final NetworkTableEntry trustBoostedEntry = visionTable.getEntry(NetworkTableNames.Vision.kTrustBoosted);
+  private final NetworkTableEntry hardResetCountEntry = visionTable.getEntry(NetworkTableNames.Vision.kHardResetCount);
+  private final NetworkTableEntry dualCameraAgreedEntry = visionTable.getEntry(NetworkTableNames.Vision.kDualCameraAgreed);
+
+  // Per-camera health telemetry
+  private final NetworkTableEntry frontStaleEntry = frontTable.getEntry(NetworkTableNames.Vision.kCameraStale);
+  private final NetworkTableEntry backStaleEntry = backTable.getEntry(NetworkTableNames.Vision.kCameraStale);
+  private final NetworkTableEntry frontRebootCountEntry = frontTable.getEntry(NetworkTableNames.Vision.kRebootCount);
+  private final NetworkTableEntry backRebootCountEntry = backTable.getEntry(NetworkTableNames.Vision.kRebootCount);
+
   // Track current IMU mode label for telemetry
   private String currentImuModeLabel = "SyncInternalImu";
 
@@ -154,6 +215,11 @@ public class VisionSubsystem extends SubsystemBase {
     backPoseEstimate = new PoseEstimate(limelightBack, "botpose_orb_wpiblue", true);
     frontPoseMT1Estimate = new PoseEstimate(limelightFront, "botpose_wpiblue", true);
     backPoseMT1Estimate = new PoseEstimate(limelightBack, "botpose_wpiblue", true);
+
+    // Initialize health timestamps so cameras aren't immediately flagged stale
+    double startTime = Timer.getFPGATimestamp();
+    lastFrontDataTime = startTime;
+    lastBackDataTime = startTime;
   }
 
   @Override
@@ -197,9 +263,20 @@ public class VisionSubsystem extends SubsystemBase {
       return;
     }
 
-    // --- Process both cameras ---
-    processCamera(frontPoseEstimate, true);
-    processCamera(backPoseEstimate, false);
+    // --- Evaluate both cameras (deferred fusion) ---
+    CameraResult frontResult = evaluateCamera(frontPoseEstimate, true);
+    CameraResult backResult = evaluateCamera(backPoseEstimate, false);
+
+    // --- Decide trust levels and fuse ---
+    fuseVisionResults(frontResult, backResult);
+
+    // --- Drift detection (only when enabled and we have a fix) ---
+    if (isEnabled && hasEverHadFix) {
+      updateDriftDetection();
+    }
+
+    // --- Camera health watchdog ---
+    updateCameraHealth();
 
     // --- LED feedback while disabled ---
     int totalTags = lastFrontTagCount + lastBackTagCount;
@@ -211,9 +288,17 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Core vision pipeline for a single camera.
+   * Evaluates a single camera's vision data. Returns a CameraResult without fusing —
+   * fusion is deferred to fuseVisionResults() so we can compare both cameras first.
    */
-  private void processCamera(PoseEstimate poseEstimateObj, boolean isFront) {
+  private CameraResult evaluateCamera(PoseEstimate poseEstimateObj, boolean isFront) {
+    CameraResult result = new CameraResult();
+    result.accepted = false;
+    result.seeded = false;
+    result.rejectReason = "no_data";
+    result.tagCount = 0;
+    result.avgTagDist = 0;
+
     StructPublisher<Pose2d> posePublisher = isFront ? frontPosePublisher : backPosePublisher;
     NetworkTableEntry tagCountEntry = isFront ? frontTagCountEntry : backTagCountEntry;
     NetworkTableEntry avgDistEntry = isFront ? frontAvgDistEntry : backAvgDistEntry;
@@ -226,13 +311,26 @@ public class VisionSubsystem extends SubsystemBase {
       if (isFront) lastFrontTagCount = 0; else lastBackTagCount = 0;
       publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, acceptedEntry, rejectEntry,
           null, 0, 0, false, "no_data");
-      return;
+      return result;
     }
 
     PoseEstimate estimate = estimateOpt.get();
     if (isFront) lastFrontTagCount = estimate.tagCount; else lastBackTagCount = estimate.tagCount;
     Pose2d visionPose = estimate.pose.toPose2d();
     double now = Timer.getFPGATimestamp();
+
+    // Record vision pose for drift detection, and update data time for staleness tracking
+    if (isFront) {
+      lastFrontVisionPose = visionPose;
+      lastFrontVisionTimestamp = now;
+      lastFrontDataTime = now;
+      lastFrontAvgTagDist = estimate.avgTagDist;
+    } else {
+      lastBackVisionPose = visionPose;
+      lastBackVisionTimestamp = now;
+      lastBackDataTime = now;
+      lastBackAvgTagDist = estimate.avgTagDist;
+    }
 
     // Publish MT1 pose alongside MT2 for comparison
     StructPublisher<Pose2d> mt1Publisher = isFront ? frontPoseMT1Publisher : backPoseMT1Publisher;
@@ -255,9 +353,10 @@ public class VisionSubsystem extends SubsystemBase {
     String rejectReason = getRejectReason(estimate, visionPose, now);
 
     if (!rejectReason.isEmpty()) {
+      result.rejectReason = rejectReason;
       publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, acceptedEntry, rejectEntry,
           visionPose, estimate.tagCount, estimate.avgTagDist, false, rejectReason);
-      return;
+      return result;
     }
 
     // --- Calculate dynamic XY std devs ---
@@ -272,7 +371,6 @@ public class VisionSubsystem extends SubsystemBase {
 
     if (!hasEverHadFix || (!DriverStation.isEnabled() && highConfidence)) {
       // --- Seed odometry from MT1 (heading-independent ground truth) ---
-      // Reuse mt1Opt fetched above for telemetry
       Pose2d seedPose;
       if (mt1Opt.isPresent() && mt1Opt.get().hasData && mt1Opt.get().tagCount > 0) {
         seedPose = mt1Opt.get().pose.toPose2d();
@@ -291,18 +389,83 @@ public class VisionSubsystem extends SubsystemBase {
         DataLogManager.log("Vision: disabled seed — reset odometry to " + seedPose);
         loggedDisabledSeed = true;
       }
-    } else {
-      // --- Normal enabled fusion: Kalman filter with dynamic std devs ---
-      swerveSubsystem.addVisionMeasurement(
-          visionPose,
-          estimate.timestampSeconds,
-          VecBuilder.fill(xyStdDev, xyStdDev, 9999.0));
+
+      result.seeded = true;
+      result.accepted = true;
+      result.rejectReason = "";
+      lastAcceptTime = now;
+      publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, acceptedEntry, rejectEntry,
+          visionPose, estimate.tagCount, estimate.avgTagDist, true, "");
+      return result;
     }
 
-    lastAcceptTime = now;
+    // Accepted for fusion — populate result
+    result.pose = visionPose;
+    result.timestamp = estimate.timestampSeconds;
+    result.baseXYStdDev = xyStdDev;
+    result.tagCount = estimate.tagCount;
+    result.avgTagDist = estimate.avgTagDist;
+    result.accepted = true;
+    result.rejectReason = "";
 
+    lastAcceptTime = now;
     publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, acceptedEntry, rejectEntry,
         visionPose, estimate.tagCount, estimate.avgTagDist, true, "");
+    return result;
+  }
+
+  /**
+   * Decides how to fuse vision results based on dual-camera agreement and single-camera conditions.
+   * Called after both cameras are evaluated so we can compare their results.
+   */
+  private void fuseVisionResults(CameraResult front, CameraResult back) {
+    boolean frontReady = front.accepted && !front.seeded && front.pose != null;
+    boolean backReady = back.accepted && !back.seeded && back.pose != null;
+    dualCameraAgreed = false;
+
+    if (!frontReady && !backReady) {
+      return; // Nothing to fuse
+    }
+
+    if (frontReady && backReady) {
+      // Both cameras accepted — check agreement
+      double agreement = front.pose.getTranslation().getDistance(back.pose.getTranslation());
+
+      if (agreement < VisionConstants.kDualCameraAgreementThresholdM) {
+        // Both cameras agree — high trust, use tight std devs
+        dualCameraAgreed = true;
+        double stdDev = getEffectiveXYStdDev(VisionConstants.kDualCameraAgreedStdDev);
+        swerveSubsystem.addVisionMeasurement(
+            front.pose, front.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
+        swerveSubsystem.addVisionMeasurement(
+            back.pose, back.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
+      } else {
+        // Both accepted but disagree — use normal dynamic std devs
+        double frontStd = getEffectiveXYStdDev(front.baseXYStdDev);
+        double backStd = getEffectiveXYStdDev(back.baseXYStdDev);
+        swerveSubsystem.addVisionMeasurement(
+            front.pose, front.timestamp, VecBuilder.fill(frontStd, frontStd, 9999.0));
+        swerveSubsystem.addVisionMeasurement(
+            back.pose, back.timestamp, VecBuilder.fill(backStd, backStd, 9999.0));
+      }
+    } else {
+      // Only one camera accepted — check for single-camera boost
+      CameraResult single = frontReady ? front : back;
+      boolean otherCameraStale = frontReady ? backStale : frontStale;
+
+      double stdDev;
+      if (otherCameraStale
+          && single.tagCount >= VisionConstants.kSingleCameraBoostMinTags
+          && single.avgTagDist < VisionConstants.kSingleCameraBoostMaxDistM) {
+        // Other camera is confirmed stale, single camera has good multi-tag data
+        stdDev = getEffectiveXYStdDev(VisionConstants.kSingleCameraBoostStdDev);
+      } else {
+        stdDev = getEffectiveXYStdDev(single.baseXYStdDev);
+      }
+
+      swerveSubsystem.addVisionMeasurement(
+          single.pose, single.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
+    }
   }
 
   /**
@@ -329,15 +492,10 @@ public class VisionSubsystem extends SubsystemBase {
       return "high_yaw_rate";
     }
 
-    // 4. Odometry cross-check (skip if we've never had a fix — odometry is at 0,0)
-    // if (hasEverHadFix) {
-    //   double odometryJump = visionPose.getTranslation()
-    //       .getDistance(swerveSubsystem.getPose().getTranslation());
-    //   double odometryLimit = VisionConstants.kMaxOdometryJumpM;
-    //   if (odometryJump > odometryLimit) {
-    //     return "odometry_jump";
-    //   }
-    // }
+    // 4. Max tag distance — tags beyond 6m are unreliable
+    if (estimate.avgTagDist > VisionConstants.kMaxTagDistanceM) {
+      return "too_far";
+    }
 
     return "";
   }
@@ -438,6 +596,190 @@ public class VisionSubsystem extends SubsystemBase {
     }
   }
 
+  // --- Drift detection & camera health ---
+
+  /** Returns boosted std dev if trust boost is active, otherwise returns the base value. */
+  private double getEffectiveXYStdDev(double baseStdDev) {
+    if (trustBoostCyclesRemaining > 0) {
+      return Math.min(baseStdDev, VisionConstants.kBoostedXYStdDev);
+    }
+    return baseStdDev;
+  }
+
+  /** Compares vision poses to odometry and detects drift, triggers trust boost or hard reset. */
+  private void updateDriftDetection() {
+    Pose2d odometryPose = swerveSubsystem.getPose();
+    double now = Timer.getFPGATimestamp();
+
+    // Check freshness of each camera's last vision pose
+    boolean frontFresh = lastFrontVisionPose != null
+        && (now - lastFrontVisionTimestamp) < VisionConstants.kDriftPoseFreshnessMaxSec;
+    boolean backFresh = lastBackVisionPose != null
+        && (now - lastBackVisionTimestamp) < VisionConstants.kDriftPoseFreshnessMaxSec;
+
+    // Compute per-camera drift magnitude
+    double frontDrift = frontFresh
+        ? lastFrontVisionPose.getTranslation().getDistance(odometryPose.getTranslation()) : 0;
+    double backDrift = backFresh
+        ? lastBackVisionPose.getTranslation().getDistance(odometryPose.getTranslation()) : 0;
+    driftMagnitude = Math.max(frontDrift, backDrift);
+
+    // Increment or reset per-camera drift counters
+    if (frontFresh && frontDrift > VisionConstants.kDriftDetectionThresholdM) {
+      frontDriftCycleCount++;
+    } else {
+      frontDriftCycleCount = 0;
+    }
+    if (backFresh && backDrift > VisionConstants.kDriftDetectionThresholdM) {
+      backDriftCycleCount++;
+    } else {
+      backDriftCycleCount = 0;
+    }
+
+    driftDetected = frontDriftCycleCount >= VisionConstants.kDriftConfirmCycles
+        || backDriftCycleCount >= VisionConstants.kDriftConfirmCycles;
+
+    // Compute camera agreement (only if both fresh)
+    if (frontFresh && backFresh) {
+      cameraAgreement = lastFrontVisionPose.getTranslation()
+          .getDistance(lastBackVisionPose.getTranslation());
+    } else {
+      cameraAgreement = -1;
+    }
+
+    // Trust boost: both cameras fresh, agreeing, and drift detected
+    if (driftDetected && frontFresh && backFresh
+        && cameraAgreement >= 0 && cameraAgreement < VisionConstants.kCameraAgreementMaxM) {
+      trustBoostCyclesRemaining = VisionConstants.kBoostDurationCycles;
+    }
+
+    // --- Hard reset: dual-camera path ---
+    if (frontFresh && backFresh
+        && frontDrift > VisionConstants.kHardResetThresholdM
+        && backDrift > VisionConstants.kHardResetThresholdM
+        && cameraAgreement >= 0 && cameraAgreement < VisionConstants.kCameraAgreementMaxM) {
+      hardResetCycleCount++;
+      if (hardResetCycleCount >= VisionConstants.kHardResetConfirmCycles) {
+        // Average the two camera poses for the reset
+        Translation2d avgTranslation = lastFrontVisionPose.getTranslation()
+            .plus(lastBackVisionPose.getTranslation()).div(2.0);
+        Rotation2d resetRotation = (lastFrontTagCount >= lastBackTagCount)
+            ? lastFrontVisionPose.getRotation() : lastBackVisionPose.getRotation();
+        Pose2d resetPose = new Pose2d(avgTranslation, resetRotation);
+
+        swerveSubsystem.resetOdometry(resetPose);
+        hardResetCount++;
+        hardResetCycleCount = 0;
+        singleCameraHardResetCycleCount = 0;
+        frontDriftCycleCount = 0;
+        backDriftCycleCount = 0;
+        driftDetected = false;
+        DataLogManager.log("Vision: HARD RESET (dual-cam) odometry to " + resetPose
+            + " (drift=" + String.format("%.2f", driftMagnitude)
+            + "m, agreement=" + String.format("%.2f", cameraAgreement) + "m)");
+      }
+    } else {
+      hardResetCycleCount = 0;
+    }
+
+    // --- Hard reset: single-camera path ---
+    // Only if one camera is stale (confirmed dead) and the other has high-confidence data
+    boolean frontOnlyWithDrift = frontFresh && backStale
+        && frontDrift > VisionConstants.kHardResetThresholdM
+        && lastFrontTagCount >= VisionConstants.kSingleCameraHardResetMinTags
+        && lastFrontVisionPose != null;
+    boolean backOnlyWithDrift = backFresh && frontStale
+        && backDrift > VisionConstants.kHardResetThresholdM
+        && lastBackTagCount >= VisionConstants.kSingleCameraHardResetMinTags
+        && lastBackVisionPose != null;
+
+    if (frontOnlyWithDrift || backOnlyWithDrift) {
+      boolean isFrontActive = frontOnlyWithDrift;
+      double activeAvgTagDist = isFrontActive ? lastFrontAvgTagDist : lastBackAvgTagDist;
+
+      if (activeAvgTagDist < VisionConstants.kSingleCameraHardResetMaxDistM) {
+        singleCameraHardResetCycleCount++;
+        if (singleCameraHardResetCycleCount >= VisionConstants.kSingleCameraHardResetCycles) {
+          Pose2d resetPose = isFrontActive ? lastFrontVisionPose : lastBackVisionPose;
+          swerveSubsystem.resetOdometry(resetPose);
+          hardResetCount++;
+          singleCameraHardResetCycleCount = 0;
+          frontDriftCycleCount = 0;
+          backDriftCycleCount = 0;
+          driftDetected = false;
+          DataLogManager.log("Vision: HARD RESET (single-cam "
+              + (isFrontActive ? "front" : "back") + ") odometry to " + resetPose
+              + " (drift=" + String.format("%.2f", driftMagnitude) + "m)");
+        }
+      } else {
+        singleCameraHardResetCycleCount = 0;
+      }
+    } else {
+      singleCameraHardResetCycleCount = 0;
+    }
+
+    // Decrement trust boost counter
+    if (trustBoostCyclesRemaining > 0) {
+      trustBoostCyclesRemaining--;
+    }
+  }
+
+  /** Monitors camera data freshness and triggers HTTP reboot if a camera goes silent. */
+  private void updateCameraHealth() {
+    double now = Timer.getFPGATimestamp();
+
+    // Front camera
+    double frontAge = now - lastFrontDataTime;
+    frontStale = frontAge > VisionConstants.kCameraStaleThresholdSec;
+    if (frontAge > VisionConstants.kCameraRebootThresholdSec
+        && (now - lastFrontRebootTime) > VisionConstants.kRebootCooldownSec) {
+      rebootCameraAsync(true);
+      lastFrontRebootTime = now;
+      frontRebootCount++;
+    }
+
+    // Back camera
+    double backAge = now - lastBackDataTime;
+    backStale = backAge > VisionConstants.kCameraStaleThresholdSec;
+    if (backAge > VisionConstants.kCameraRebootThresholdSec
+        && (now - lastBackRebootTime) > VisionConstants.kRebootCooldownSec) {
+      rebootCameraAsync(false);
+      lastBackRebootTime = now;
+      backRebootCount++;
+    }
+  }
+
+  /** Sends an async HTTP reboot request to a Limelight. Fire-and-forget, does not block. */
+  private void rebootCameraAsync(boolean isFront) {
+    String cameraName = isFront ? VisionConstants.kLimelightFrontName : VisionConstants.kLimelightBackName;
+    DataLogManager.log("Vision: attempting HTTP reboot of " + cameraName);
+
+    CompletableFuture.supplyAsync(() -> {
+      try {
+        URL url = LimelightUtils.getLimelightURLString(cameraName, "reboot");
+        if (url == null) {
+          DataLogManager.log("Vision: reboot of " + cameraName + " failed — bad URL");
+          return false;
+        }
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setConnectTimeout(VisionConstants.kRebootHttpTimeoutMs);
+        connection.setReadTimeout(VisionConstants.kRebootHttpTimeoutMs);
+        int responseCode = connection.getResponseCode();
+        connection.disconnect();
+        if (responseCode == 200) {
+          DataLogManager.log("Vision: reboot of " + cameraName + " succeeded (HTTP 200)");
+          return true;
+        } else {
+          DataLogManager.log("Vision: reboot of " + cameraName + " got HTTP " + responseCode);
+        }
+      } catch (IOException e) {
+        DataLogManager.log("Vision: reboot of " + cameraName + " failed: " + e.getMessage());
+      }
+      return false;
+    });
+  }
+
   // --- Utility methods ---
 
   /** @return true if at least one camera accepted a measurement recently. */
@@ -498,6 +840,20 @@ public class VisionSubsystem extends SubsystemBase {
     imuModeEntry.setString(currentImuModeLabel);
     aprilTagReadyEntry.setBoolean(hasEverHadFix && (lastFrontTagCount + lastBackTagCount) > 0);
     totalTagCountEntry.setDouble(lastFrontTagCount + lastBackTagCount);
+
+    // Drift detection telemetry
+    driftDetectedEntry.setBoolean(driftDetected);
+    driftMagnitudeEntry.setDouble(driftMagnitude);
+    cameraAgreementEntry.setDouble(cameraAgreement);
+    trustBoostedEntry.setBoolean(trustBoostCyclesRemaining > 0);
+    hardResetCountEntry.setDouble(hardResetCount);
+    dualCameraAgreedEntry.setBoolean(dualCameraAgreed);
+
+    // Camera health telemetry
+    frontStaleEntry.setBoolean(frontStale);
+    backStaleEntry.setBoolean(backStale);
+    frontRebootCountEntry.setDouble(frontRebootCount);
+    backRebootCountEntry.setDouble(backRebootCount);
   }
 
   @Override

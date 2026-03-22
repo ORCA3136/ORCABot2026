@@ -119,8 +119,7 @@ public final class Constants {
 
     // --- Rejection thresholds ---
     public static final double kMaxYawRateDegPerSec = 270.0;
-    public static final double kMaxOdometryJumpM = 1.0;
-    public static final double kMaxOdometryJumpFirstFixM = 2.0;
+    public static final double kMaxTagDistanceM = 6.0;
     public static final double kMaxTimestampAgeSec = 0.5;
 
     // 2026 REBUILT field boundary + 0.5m margin (field is 16.54m x 8.21m)
@@ -143,6 +142,34 @@ public final class Constants {
     // Minimum conditions for disabled-period odometry seeding
     public static final int kSeedMinTagCount = 2;
     public static final double kSeedMaxDistM = 4.0;
+
+    // --- Dual-camera drift detection & trust boost ---
+    public static final double kDriftDetectionThresholdM = 0.75;
+    public static final double kCameraAgreementMaxM = 0.3;
+    public static final int kDriftConfirmCycles = 10;     // ~200ms at 50Hz
+    public static final double kBoostedXYStdDev = 0.02;
+    public static final int kBoostDurationCycles = 25;    // ~500ms at 50Hz
+    public static final double kHardResetThresholdM = 1.5;
+    public static final int kHardResetConfirmCycles = 25; // ~500ms at 50Hz
+    public static final double kDriftPoseFreshnessMaxSec = 0.2;
+
+    // --- Dual-camera same-cycle agreement ---
+    public static final double kDualCameraAgreementThresholdM = 0.25;
+    public static final double kDualCameraAgreedStdDev = 0.03;
+
+    // --- Single-camera-unavailable trust ---
+    public static final int kSingleCameraBoostMinTags = 2;
+    public static final double kSingleCameraBoostMaxDistM = 3.0;
+    public static final double kSingleCameraBoostStdDev = 0.06;
+    public static final int kSingleCameraHardResetMinTags = 3;
+    public static final double kSingleCameraHardResetMaxDistM = 2.5;
+    public static final int kSingleCameraHardResetCycles = 50; // ~1s at 50Hz
+
+    // --- Camera health monitoring ---
+    public static final double kCameraStaleThresholdSec = 5.0;
+    public static final double kCameraRebootThresholdSec = 10.0;
+    public static final double kRebootCooldownSec = 30.0;
+    public static final int kRebootHttpTimeoutMs = 500;
   }
   
   public static final class OperatorConstants {
@@ -247,6 +274,20 @@ public final class Constants {
       public static final String kAllianceOverride = "AllianceOverride";
       public static final String kAprilTagReady = "AprilTagReady";
       public static final String kTotalTagCount = "TotalTagCount";
+
+      // Drift detection telemetry
+      public static final String kDriftDetected = "DriftDetected";
+      public static final String kDriftMagnitude = "DriftMagnitudeM";
+      public static final String kCameraAgreement = "CameraAgreement";
+      public static final String kTrustBoosted = "TrustBoosted";
+      public static final String kHardResetCount = "HardResetCount";
+
+      // Dual-camera agreement
+      public static final String kDualCameraAgreed = "DualCameraAgreed";
+
+      // Per-camera health
+      public static final String kCameraStale = "CameraStale";
+      public static final String kRebootCount = "RebootCount";
     }
 
     public static final class Shooter {
