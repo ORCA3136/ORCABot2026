@@ -175,8 +175,23 @@ public class RobotContainer {
 
     // m_primaryController.rightBumper().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1950)))
     //                                  .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
-    // Shooting: no intake position change — intake stays where it is (driver controls retraction)
-    m_primaryController.rightBumper().whileTrue(new ShootCommand(shooterSubsystem));
+    // Aim at hub + shoot: auto-rotate rear toward hub while spinning up shooter from distance map
+    m_primaryController.rightBumper()
+        .onTrue(Commands.runOnce(() -> {
+          Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+              ? FieldPositions.kRedFieldElements.get(0)
+              : FieldPositions.kBlueFieldElements.get(0);
+          aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+          Command current = driveBase.getCurrentCommand();
+          if (current != null) current.cancel();
+          driveBase.setDefaultCommand(aimAtHubCommand);
+        }))
+        .whileTrue(new ShootCommand(shooterSubsystem))
+        .onFalse(Commands.runOnce(() -> {
+          Command current = driveBase.getCurrentCommand();
+          if (current != null) current.cancel();
+          driveBase.setDefaultCommand(fastDriveCommand);
+        }));
     m_primaryController.rightTrigger()
             .whileTrue(new ShootCommand(shooterSubsystem));
 
