@@ -27,7 +27,18 @@ public class Configs {
             secondaryShooterConfig.closedLoop
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
                 .pid(ShooterConstants.kP, ShooterConstants.kI, ShooterConstants.kD);
-            
+            primaryShooterConfig.signals
+                .primaryEncoderPositionPeriodMs(500)
+                .primaryEncoderVelocityPeriodMs(20)
+                .busVoltagePeriodMs(500)
+                .outputCurrentPeriodMs(100)
+                .appliedOutputPeriodMs(100);
+            secondaryShooterConfig.signals
+                .primaryEncoderPositionPeriodMs(500)
+                .primaryEncoderVelocityPeriodMs(20)
+                .busVoltagePeriodMs(500)
+                .outputCurrentPeriodMs(200)
+                .appliedOutputPeriodMs(200);
         }
     }
 
@@ -39,6 +50,12 @@ public class Configs {
                 .idleMode(IdleMode.kCoast)
                 .voltageCompensation(12)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+            conveyorMotorConfig.signals
+                .primaryEncoderPositionPeriodMs(500)
+                .primaryEncoderVelocityPeriodMs(200)
+                .busVoltagePeriodMs(500)
+                .outputCurrentPeriodMs(200)
+                .appliedOutputPeriodMs(500);
         }
     }
 
@@ -50,6 +67,12 @@ public class Configs {
                 .idleMode(IdleMode.kCoast)
                 .voltageCompensation(12)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+            kickerMotorConfig.signals
+                .primaryEncoderPositionPeriodMs(500)
+                .primaryEncoderVelocityPeriodMs(40)
+                .busVoltagePeriodMs(500)
+                .outputCurrentPeriodMs(100)
+                .appliedOutputPeriodMs(500);
         }
     }
 
@@ -63,6 +86,12 @@ public class Configs {
                 .idleMode(IdleMode.kCoast)
                 .voltageCompensation(12)
                 .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+            intakeMotorConfig.signals
+                .primaryEncoderPositionPeriodMs(500)
+                .primaryEncoderVelocityPeriodMs(200)
+                .busVoltagePeriodMs(500)
+                .outputCurrentPeriodMs(200)
+                .appliedOutputPeriodMs(500);
             intakeDeployMotorConfig
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
@@ -82,6 +111,13 @@ public class Configs {
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
                 .pid(IntakeConstants.kP, IntakeConstants.kI, IntakeConstants.kD)
                 .outputRange(-IntakeConstants.kMaxOutputDutyCycle, IntakeConstants.kMaxOutputDutyCycle);
+            intakeDeployMotorConfig.signals
+                .primaryEncoderPositionPeriodMs(20)
+                .primaryEncoderVelocityPeriodMs(100)
+                .busVoltagePeriodMs(500)
+                .outputCurrentPeriodMs(50)
+                .appliedOutputPeriodMs(200)
+                .absoluteEncoderPositionPeriodMs(500);
         }
     }
 
