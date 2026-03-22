@@ -13,7 +13,9 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
@@ -198,6 +200,23 @@ public class ShooterSubsystem extends SubsystemBase {
     double distanceToHub = m_swerveSubsystem.getDistanceToHubMeters();
     // set shooter based on distance
     shooterVelocityTarget = shooterSpeedOnlyMap.get(distanceToHub);
+  }
+
+
+  /**
+   * Returns a lead-compensated aim point for shoot-on-the-move.
+   * Offsets the hub position by (robot_velocity * fuel_air_time) so the
+   * heading lock aims where the hub "will be" relative to the moving ball.
+   */
+  public Translation2d getLeadCompensatedHubPosition(Translation2d hubPos) {
+    double distance = m_swerveSubsystem.getDistanceToHubMeters();
+    double airTime = fuelAirTimeMap.get(distance);
+    ChassisSpeeds fieldVel = m_swerveSubsystem.getFieldVelocity();
+    // Offset aim point opposite to robot velocity (ball inherits robot momentum)
+    return hubPos.minus(new Translation2d(
+        fieldVel.vxMetersPerSecond * airTime,
+        fieldVel.vyMetersPerSecond * airTime
+    ));
   }
 
   /** @return Velocity in RPM */

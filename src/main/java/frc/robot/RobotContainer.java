@@ -263,9 +263,8 @@ public class RobotContainer {
     // m_secondaryController.button(7).onTrue(
     //     ClimberCommands.executeClimb(climberSubsystem));
 
-    // Aim at hub (moved from button 7) — driver keeps translation, heading auto-locks
+    // Shoot on the move: aim at hub + full pipeline + moving shooter map
     m_secondaryController.button(8)
-
         .onTrue(Commands.runOnce(() -> {
           Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
               ? FieldPositions.kRedFieldElements.get(0)
@@ -275,6 +274,8 @@ public class RobotContainer {
           if (current != null) current.cancel();
           driveBase.setDefaultCommand(aimAtHubCommand);
         }))
+        .whileTrue(FuelPathCommands.shootOnMove(
+            intakeSubsystem, conveyorSubsystem, kickerSubsystem, shooterSubsystem))
         .onFalse(Commands.runOnce(() -> {
           Command current = driveBase.getCurrentCommand();
           if (current != null) current.cancel();

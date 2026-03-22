@@ -236,6 +236,31 @@ public final class FuelPathCommands {
     ).withName("EmergencyReverse");
   }
 
+  /**
+   * Shoot-on-the-move: intake extended + full pipeline + metered kicker + moving shooter map.
+   * Driver keeps full translation; heading auto-locks to hub (handled in RobotContainer).
+   */
+  public static Command shootOnMove(
+      IntakeSubsystem intake, ConveyorSubsystem conveyor,
+      KickerSubsystem kicker, ShooterSubsystem shooter) {
+    return Commands.parallel(
+        new RunIntakeCommand(intake, FuelPathConstants.kIntakeInFast),
+        new RunConveyorCommand(conveyor, FuelPathConstants.kConveyorIn),
+        // Metered kicker: only feed when shooter is at speed
+        Commands.run(() -> {
+          if (shooter.isShooterReady()) {
+            kicker.setKickerDutyCycle(FuelPathConstants.kKickerFeed);
+          } else {
+            kicker.setKickerDutyCycle(0);
+          }
+        }, kicker).finallyDo(i -> kicker.setKickerDutyCycle(0)),
+        new ShootOnMoveCommand(shooter)
+    )
+    .beforeStarting(() -> intake.setIntakeDeployTarget(Setpoint.kExtended))
+    .finallyDo(interrupted -> intake.setIntakeDeployTarget(Setpoint.kRetracted))
+    .withName("ShootOnMove");
+  }
+
   /** Wraps KickerJamProtectionCommand for use as a standalone. */
   public static Command kickerWithJamProtection(KickerSubsystem kicker, double speed) {
     return new KickerJamProtectionCommand(kicker, speed);
