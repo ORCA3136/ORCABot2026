@@ -253,6 +253,10 @@ public final class Constants {
       public static final String kRampedSetpoint = "Ramped Setpoint RPM";
       public static final String kPrimaryCurrent = "Primary Current";
       public static final String kSecondaryCurrent = "Secondary Current";
+      public static final String kLeadCompX = "Lead Comp X";
+      public static final String kLeadCompY = "Lead Comp Y";
+      public static final String kLeadCompDistance = "Lead Comp Distance";
+      public static final String kAirTimeSec = "Air Time Sec";
     }
 
     public static final class Conveyor {

@@ -263,13 +263,14 @@ public class RobotContainer {
     // m_secondaryController.button(7).onTrue(
     //     ClimberCommands.executeClimb(climberSubsystem));
 
-    // Shoot on the move: aim at hub + full pipeline + moving shooter map
+    // Shoot on the move: aim at lead-compensated hub + full pipeline + moving shooter map
     m_secondaryController.button(8)
         .onTrue(Commands.runOnce(() -> {
-          Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
-              ? FieldPositions.kRedFieldElements.get(0)
-              : FieldPositions.kBlueFieldElements.get(0);
-          aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+          // Seed the lead compensation with an initial computation so the
+          // aim supplier returns the real hub position on the first cycle
+          shooterSubsystem.setShooterMapLeadCompensated();
+          aimAtHubStream.aim(() -> new Pose2d(
+              shooterSubsystem.getLeadCompensatedHubTranslation(), new Rotation2d()));
           Command current = driveBase.getCurrentCommand();
           if (current != null) current.cancel();
           driveBase.setDefaultCommand(aimAtHubCommand);

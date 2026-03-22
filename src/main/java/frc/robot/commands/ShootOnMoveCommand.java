@@ -14,7 +14,7 @@ public class ShootOnMoveCommand extends Command {
 
   @Override
   public void execute() {
-    m_shooter.setShooterMapOnly();
+    m_shooter.setShooterMapLeadCompensated();
   }
 
   @Override

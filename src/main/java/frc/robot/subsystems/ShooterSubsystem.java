@@ -13,15 +13,18 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.ShooterConfigs;
+import frc.robot.Constants.FieldPositions;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.Constants.CanIdConstants;
 import frc.robot.Constants.NetworkTableNames;
@@ -63,6 +66,21 @@ public class ShooterSubsystem extends SubsystemBase {
   private final NetworkTableEntry primaryCurrentEntryShooter = shooterTable.getEntry(NetworkTableNames.Shooter.kPrimaryCurrent);
   private final NetworkTableEntry secondaryCurrentEntryShooter = shooterTable.getEntry(NetworkTableNames.Shooter.kSecondaryCurrent);
   private final NetworkTableEntry readyEntryShooter = shooterTable.getEntry("Ready");
+  private final NetworkTableEntry leadCompXEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kLeadCompX);
+  private final NetworkTableEntry leadCompYEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kLeadCompY);
+  private final NetworkTableEntry leadCompDistEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kLeadCompDistance);
+  private final NetworkTableEntry airTimeEntry = shooterTable.getEntry(NetworkTableNames.Shooter.kAirTimeSec);
+
+  // Last-computed lead compensation values for NT telemetry
+  private double lastLeadCompX = 0;
+  private double lastLeadCompY = 0;
+  private double lastLeadCompDistance = 0;
+  private double lastAirTimeSec = 0;
+  private Translation2d lastLeadCompHubTranslation = new Translation2d();
+
+  // Distance clamp range for lead-compensated shooting (meters)
+  private static final double kMinShootDistanceM = Units.inchesToMeters(70);
+  private static final double kMaxShootDistanceM = Units.inchesToMeters(170);
 
   private InterpolatingDoubleTreeMap shooterSpeedOnlyMap = new InterpolatingDoubleTreeMap();
   private InterpolatingDoubleTreeMap fuelAirTimeMap = new InterpolatingDoubleTreeMap();
@@ -207,6 +225,36 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterVelocityTarget = shooterSpeedOnlyMap.get(distanceToHub);
   }
 
+  /**
+   * Sets shooter RPM using the lead-compensated distance to the hub.
+   * Accounts for robot motion so RPM matches the effective shot distance.
+   */
+  public void setShooterMapLeadCompensated() {
+    Translation2d hubPos = m_swerveSubsystem.getAlliance() == DriverStation.Alliance.Red
+        ? FieldPositions.kRedFieldElements.get(0)
+        : FieldPositions.kBlueFieldElements.get(0);
+    Translation2d compensatedHub = getLeadCompensatedHubPosition(hubPos);
+    Translation2d robotPos = m_swerveSubsystem.getSwerveDrive().getPose().getTranslation();
+    double compensatedDistance = MathUtil.clamp(
+        robotPos.getDistance(compensatedHub), kMinShootDistanceM, kMaxShootDistanceM);
+
+    shooterVelocityTarget = shooterSpeedOnlyMap.get(compensatedDistance);
+
+    // Cache values for NT telemetry and public getter
+    lastLeadCompHubTranslation = compensatedHub;
+    Translation2d offset = compensatedHub.minus(hubPos);
+    lastLeadCompX = offset.getX();
+    lastLeadCompY = offset.getY();
+    lastLeadCompDistance = compensatedDistance;
+  }
+
+  /**
+   * Returns the last-computed lead-compensated hub position.
+   * Used by RobotContainer to continuously update the aim target.
+   */
+  public Translation2d getLeadCompensatedHubTranslation() {
+    return lastLeadCompHubTranslation;
+  }
 
   /**
    * Returns a lead-compensated aim point for shoot-on-the-move.
@@ -216,6 +264,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public Translation2d getLeadCompensatedHubPosition(Translation2d hubPos) {
     double distance = m_swerveSubsystem.getDistanceToHubMeters();
     double airTime = fuelAirTimeMap.get(distance);
+    lastAirTimeSec = airTime;
     ChassisSpeeds fieldVel = m_swerveSubsystem.getFieldVelocity();
     // Offset aim point opposite to robot velocity (ball inherits robot momentum)
     return hubPos.minus(new Translation2d(
@@ -257,6 +306,10 @@ public class ShooterSubsystem extends SubsystemBase {
     primaryCurrentEntryShooter.setDouble(getShooterPrimaryCurrent());
     secondaryCurrentEntryShooter.setDouble(getShooterSecondaryCurrent());
     readyEntryShooter.setBoolean(isShooterReady());
+    leadCompXEntry.setDouble(lastLeadCompX);
+    leadCompYEntry.setDouble(lastLeadCompY);
+    leadCompDistEntry.setDouble(lastLeadCompDistance);
+    airTimeEntry.setDouble(lastAirTimeSec);
   }
 
   /** This method will be called once per scheduler run */
