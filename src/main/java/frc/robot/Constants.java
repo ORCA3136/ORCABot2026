@@ -92,8 +92,8 @@ public final class Constants {
     // Homing
     public static final double kHomingDutyCycle = -0.1;    // Slow inward (negative = retract)
     public static final double kHomingCurrentThreshold = 20.0; // Amps — stall detection
-    public static final double kStallCurrentThreshold  = 25.0; // Amps — stall detection
-    public static final int kStallCycles = 50;             // Consecutive cycles above threshold (~1000ms)
+    public static final double kStallCurrentThreshold  = 35.0; // Amps — stall detection (above normal PID servo current)
+    public static final int kStallCycles = 75;             // Consecutive cycles above threshold (~1500ms)
     public static final int kHomingStallCycles = 13;        // Consecutive cycles above threshold (~260ms)
     public static final double kHomingTimeoutSec = 5.0;    // Max time before FAULT
     public static final double kPIDTimeoutSec = 0.1;    // Max time before FAULT

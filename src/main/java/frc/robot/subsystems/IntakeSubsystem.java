@@ -160,6 +160,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public void clearFault() {
     if (state != DeployState.FAULT) return;
     faultReason = "";
+    stallCounter = 0;
     state = DeployState.UNHOMED;
     DriverStation.reportWarning("IntakeSubsystem: Fault cleared → UNHOMED", false);
   }
@@ -198,6 +199,12 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Runs each cycle to check if intake deploy is stalled */
   private void checkIntakeDeployStall() {
+    // Only check for stalls when the motor is actively being driven by PID or manual
+    if (state != DeployState.TARGETING && state != DeployState.MANUAL) {
+      stallCounter = 0;
+      return;
+    }
+
     // Stall detection (current spike)
     if (intakeDeployMotor.getOutputCurrent() > IntakeConstants.kStallCurrentThreshold) {
       stallCounter++;
@@ -206,7 +213,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     if (stallCounter >= IntakeConstants.kStallCycles) {
-      // Stall was detected for 1 second - faulting
+      // Stall was detected - faulting
       enterFault("Stall detected for intake deploy");
     }
   }
@@ -334,6 +341,7 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeDeployTarget = position;
 
     rampedPosition = getIntakeDeployPosition();
+    stallCounter = 0;
 
     PIDTimer.restart();
     // state = DeployState.TARGETING;
@@ -482,6 +490,8 @@ public class IntakeSubsystem extends SubsystemBase {
     if (!IntakeConstants.kLimitSwitchInstalled) return;
     if (!isLimitSwitchPressed()) return;
     if (state == DeployState.ZEROING) return;
+    // Don't reset ramp when PID is actively extending away from home
+    if (state == DeployState.TARGETING && intakeDeployTarget != Setpoint.kRetracted) return;
 
     intakeDeployEncoder.setPosition(0);
     rampedPosition = 0;
