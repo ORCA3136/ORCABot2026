@@ -91,7 +91,7 @@ public final class RobotLogger {
   }
 
   /**
-   * Capture a shot snapshot. Writes shooter RPM, hood angle, kicker velocity,
+   * Capture a shot snapshot. Writes shooter RPM, kicker velocity,
    * robot pose, and distance to hub into the "Shots/" log group.
    * Called by KickerSubsystem when a shot is detected.
    */

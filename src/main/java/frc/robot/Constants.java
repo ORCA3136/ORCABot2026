@@ -185,7 +185,7 @@ public final class Constants {
     public static final int kIntakeDeployCanId = 18;
 
     // PDH
-    public static final int kPDHCanId = 63;
+    public static final int kPDHCanId = 50;
   }
 
   public static final class DioConstants {
@@ -248,16 +248,6 @@ public final class Constants {
       public static final String kVelocityRPM = "Velocity RPM";
       public static final String kTargetRPM = "Target RPM";
       public static final String kRampedSetpoint = "Ramped Setpoint RPM";
-      public static final String kPrimaryCurrent = "Primary Current";
-      public static final String kSecondaryCurrent = "Secondary Current";
-    }
-
-    public static final class Hood {
-      public static final String kTable = "Hood";
-      public static final String kVelocityRPM = "Velocity RPM";
-      public static final String kPositionRotations = "Position Rotations";
-      public static final String kTargetRotations = "Target Position Rotations";
-      public static final String kAngleDegrees = "Angle Degrees";
       public static final String kPrimaryCurrent = "Primary Current";
       public static final String kSecondaryCurrent = "Secondary Current";
     }

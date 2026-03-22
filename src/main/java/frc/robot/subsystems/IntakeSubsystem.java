@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems;
 
+import java.io.ObjectInputStream.GetField;
+
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -63,7 +65,7 @@ public class IntakeSubsystem extends SubsystemBase {
   final RelativeEncoder intakeDeployEncoder = intakeDeployMotor.getEncoder();
   final AbsoluteEncoder intakeDeployAbsEncoder = intakeDeployMotor.getAbsoluteEncoder();
 
-  final SparkClosedLoopController deployPIDController = intakeDeployMotor.getClosedLoopController();
+  private final SparkClosedLoopController deployPIDController = intakeDeployMotor.getClosedLoopController();
 
   private final DigitalInput homeLimitSwitch = new DigitalInput(DioConstants.kIntakeHomeLimitSwitchPort);
 
@@ -306,6 +308,10 @@ public class IntakeSubsystem extends SubsystemBase {
     return PIDTimer.advanceIfElapsed(IntakeConstants.kPIDTimeoutSec);
   }
 
+  public SparkClosedLoopController getDeployClosedLoopController() {
+    return deployPIDController;
+  }
+
   /** Sets the deploy target setpoint. Rejected if not HOMED. */
   public void setIntakeDeployTarget(Setpoint position) {
     Setpoint lastSetpoint = intakeDeployTarget;
@@ -396,6 +402,10 @@ public class IntakeSubsystem extends SubsystemBase {
       return;
     }
     intakeDeployMotor.set(speed / RobotConstants.kNeoVortexFreeSpeedRPM);
+  }
+
+  public void stopMotor() {
+    setIntakeDeployDutyCycle(0);
   }
 
   /** @return Deploy motor velocity in RPM. */

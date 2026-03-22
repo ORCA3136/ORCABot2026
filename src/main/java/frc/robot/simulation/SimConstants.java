@@ -74,7 +74,7 @@ public final class SimConstants {
     public static final double kSimTimestepSeconds = 0.020;
 
     // Beam break DIO port (prepare for physical wiring)
-    public static final int kBeamBreakDIOPort = 1; // TODO: assign when wired
+    // public static final int kBeamBreakDIOPort = 0; // TODO: assign when wired
 
     private SimConstants() {}
 }
