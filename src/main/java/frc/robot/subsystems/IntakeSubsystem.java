@@ -235,7 +235,7 @@ public class IntakeSubsystem extends SubsystemBase {
         .forwardSoftLimitEnabled(true)
         .forwardSoftLimit((float) IntakeConstants.kMaxExtension)
         .reverseSoftLimitEnabled(true)
-        .reverseSoftLimit(-1.0f);
+        .reverseSoftLimit(-0.25f);
     intakeDeployMotor.configure(limitConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
@@ -465,10 +465,28 @@ public class IntakeSubsystem extends SubsystemBase {
     SmartDashboard.putBoolean("Intake Limit Switch", isLimitSwitchPressed());
   }
 
+  // ── Limit switch re-zero ───────────────────────────────────────────
+
+  /**
+   * Re-zeros the deploy encoder whenever the limit switch is pressed during
+   * normal operation (TARGETING, SET, MANUAL). Corrects encoder drift so
+   * position stays accurate across extend/retract cycles.
+   * Skips during ZEROING — homing handles that via completeHoming().
+   */
+  private void checkLimitSwitchRezero() {
+    if (!IntakeConstants.kLimitSwitchInstalled) return;
+    if (!isLimitSwitchPressed()) return;
+    if (state == DeployState.ZEROING) return;
+
+    intakeDeployEncoder.setPosition(0);
+    rampedPosition = 0;
+  }
+
   // ── Periodic ───────────────────────────────────────────────────────
 
   @Override
   public void periodic() {
+    checkLimitSwitchRezero();
     switch (state) {
       case UNHOMED:
         // Idle — motor stopped, waiting for requestHoming()

@@ -73,7 +73,7 @@ public final class Constants {
     public static final double kFullTravelMotorRotations = (32.0 / 12.0) * 9.0; // 24.0
 
     // Linear positions in motor rotations from home (0 = fully retracted)
-    public static final double kRetractedPosition = 0.0;
+    public static final double kRetractedPosition = -0.25;
     public static final double kShuttleCenter = 12.5;      // Center point for shuttle pulse (halfway)
     public static final double kExtendedPosition = 25.0;
     public static final double kMaxExtension = 26.0;
