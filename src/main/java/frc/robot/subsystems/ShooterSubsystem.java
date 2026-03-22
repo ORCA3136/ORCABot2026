@@ -115,7 +115,9 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(3875));
 
     fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(70 )), Double.valueOf(0.78)); // Value is in seconds
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(80 )), Double.valueOf(0.79));
     fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(90 )), Double.valueOf(0.83));
+    fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(100 )), Double.valueOf(0.9));
     fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(110)), Double.valueOf(1.0));
     fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(120)), Double.valueOf(1.02));
     fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(130)), Double.valueOf(1.08));
