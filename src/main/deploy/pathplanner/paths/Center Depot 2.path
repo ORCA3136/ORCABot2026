@@ -36,7 +36,7 @@
         "y": 5.682
       },
       "prevControl": {
-        "x": 1.3305670457313628,
+        "x": 1.330567045731363,
         "y": 5.742508084791695
       },
       "nextControl": null,
@@ -75,7 +75,7 @@
     "rotation": 180.0
   },
   "reversed": false,
-  "folder": "Center Depot Folder",
+  "folder": "Center depot Folder",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 180.0

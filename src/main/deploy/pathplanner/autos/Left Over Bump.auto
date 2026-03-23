@@ -11,7 +11,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Right mid fuel 1 (v4)"
+                  "pathName": "Left over bump 1"
                 }
               },
               {
@@ -27,7 +27,7 @@
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 0.25
+                        "waitTime": 0.75
                       }
                     },
                     {
@@ -46,7 +46,7 @@
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 1.25
+                        "waitTime": 1.75
                       }
                     },
                     {
@@ -109,6 +109,6 @@
     }
   },
   "resetOdom": true,
-  "folder": "Right Side Autos",
+  "folder": "Left Side Autos",
   "choreoAuto": false
 }

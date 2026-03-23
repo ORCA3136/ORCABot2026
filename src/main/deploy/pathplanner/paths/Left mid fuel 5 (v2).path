@@ -45,7 +45,7 @@
     "rotation": -90.0
   },
   "reversed": false,
-  "folder": "Left Mid Fuel v2 Folder",
+  "folder": "Left mid fuel v2 Folder",
   "idealStartingState": {
     "velocity": 0.5,
     "rotation": -90.0
