@@ -182,10 +182,10 @@ public final class AutoCommands {
         Commands.sequence(
             // Phase 1: Slow retract to pull fuel in
             Commands.runOnce(() -> intake.slowRetract(true), intake),
-            Commands.waitSeconds(timeoutSec * 0.5),
+            Commands.waitSeconds(3),
             // Phase 2: Switch to shuttle pulse for remaining fuel
             Commands.runOnce(() -> intake.slowRetract(false)),
-            FuelPathCommands.intakeShuttlePulse(intake).withTimeout(timeoutSec * 0.4),
+            FuelPathCommands.intakeShuttlePulse(intake).withTimeout(2.5),
             Commands.runOnce(() -> intake.setIntakeDeployTarget(Setpoint.kRetracted), intake)
         )
     )

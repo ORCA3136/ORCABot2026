@@ -8,10 +8,11 @@
     "Left Depot and Climb Folder",
     "Left Mid Fuel v2 Folder",
     "Left mid fuel Folder",
-    "Right Mid Fuel v3 Folder",
     "Right Human Player Pickup Folder",
     "Right Mid Fuel v2 Folder",
-    "Right mid fuel Folder"
+    "Right over bump Folder",
+    "Right mid fuel Folder",
+    "Right mid fuel v4 Folder"
   ],
   "autoFolders": [
     "Center Autos",
@@ -23,7 +24,7 @@
   "defaultMaxAngVel": 360.0,
   "defaultMaxAngAccel": 360.0,
   "defaultNominalVoltage": 12.0,
-  "robotMass": 61.0,
+  "robotMass": 56.7,
   "robotMOI": 6.883,
   "robotTrackwidth": 0.546,
   "driveWheelRadius": 0.038,

@@ -7,13 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Test Auto part 2"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Run Intake"
+            "pathName": "Right mid fuel 2 (v4, unused)"
           }
         }
       ]

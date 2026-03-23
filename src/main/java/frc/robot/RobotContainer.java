@@ -373,6 +373,8 @@ public class RobotContainer {
     // Teleop-mirrored sequences (safe for parallel use in PathPlanner)
     NamedCommands.registerCommand("Shoot Sequence",       AutoCommands.shootSequence(shooterSubsystem, 6.0));
     NamedCommands.registerCommand("Feed Sequence",        AutoCommands.feedSequence(intakeSubsystem, conveyorSubsystem, kickerSubsystem, 6.0));
+    NamedCommands.registerCommand("Feed Sequence20s",        AutoCommands.feedSequence(intakeSubsystem, conveyorSubsystem, kickerSubsystem, 20.0));
+
 
     // Drive-to-position
     NamedCommands.registerCommand("Drive To Hub",          DriveToPositionCommand.driveToHub(driveBase));

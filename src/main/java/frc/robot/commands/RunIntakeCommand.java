@@ -22,7 +22,8 @@ public class RunIntakeCommand extends Command {
     this.intakeVelocity = intakeVelocity;
     
     // Use addRequirements() here to declare subsystem dependencies.
-    addRequirements(intakeSubsystem);
+    /** Commented out because it creates imagined conflicts in path planner */
+    // addRequirements();
     
   }
 
