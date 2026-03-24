@@ -261,6 +261,111 @@ public final class FuelPathCommands {
     .withName("ShootOnMove");
   }
 
+  // ── Experimental feed methods (operator buttons 1-4) ───────────────
+
+  /**
+   * Experiment 1: "Brute Force" — max speed everything, straight retract, no oscillation.
+   */
+  public static Command experimentBruteForce(
+      IntakeSubsystem intake, ConveyorSubsystem conveyor, KickerSubsystem kicker) {
+    return Commands.parallel(
+        new RunIntakeCommand(intake, 6000),
+        new RunConveyorCommand(conveyor, 2500),
+        new RunKickerCommand(kicker, 5000)
+    )
+    .beforeStarting(() -> intake.slowRetract(true))
+    .finallyDo(interrupted -> {
+      intake.slowRetract(false);
+      intake.setIntakeDeployTarget(Setpoint.kRetracted);
+    })
+    .withName("Exp1-BruteForce");
+  }
+
+  /**
+   * Experiment 2: "Oscillate From Start" — pulse + slow retract from the beginning.
+   */
+  public static Command experimentOscillateFromStart(
+      IntakeSubsystem intake, ConveyorSubsystem conveyor, KickerSubsystem kicker) {
+    return Commands.parallel(
+        new RunIntakeCommand(intake, 4000),
+        new RunConveyorCommand(conveyor, 2000),
+        new RunKickerCommand(kicker, 5000)
+    )
+    .beforeStarting(() -> {
+      intake.pulse(true);
+      intake.slowRetract(true);
+    })
+    .finallyDo(interrupted -> {
+      intake.pulse(false);
+      intake.slowRetract(false);
+      intake.setIntakeDeployTarget(Setpoint.kRetracted);
+    })
+    .withName("Exp2-OscillateFromStart");
+  }
+
+  /**
+   * Experiment 3: "Staged Ramp" — gentle start, ramp up speeds in 3 phases.
+   */
+  public static Command experimentStagedRamp(
+      IntakeSubsystem intake, ConveyorSubsystem conveyor, KickerSubsystem kicker) {
+    return Commands.sequence(
+        // Phase 1: gentle (1.5s)
+        Commands.parallel(
+            new RunIntakeCommand(intake, 2000),
+            new RunConveyorCommand(conveyor, 1500),
+            new RunKickerCommand(kicker, 3000)
+        ).withTimeout(1.5),
+        // Phase 2: medium (1.5s)
+        Commands.parallel(
+            new RunIntakeCommand(intake, 4000),
+            new RunConveyorCommand(conveyor, 2000),
+            new RunKickerCommand(kicker, 4000)
+        ).withTimeout(1.5),
+        // Phase 3: full speed + shuttle pulse (hold indefinitely)
+        Commands.parallel(
+            new RunIntakeCommand(intake, 6000),
+            new RunConveyorCommand(conveyor, 2500),
+            new RunKickerCommand(kicker, 5000),
+            Commands.runOnce(() -> {
+              intake.setIntakeDeployTarget(Setpoint.kShuttle);
+              intake.pulse(true);
+            })
+        )
+    )
+    .beforeStarting(() -> intake.slowRetract(true))
+    .finallyDo(interrupted -> {
+      intake.slowRetract(false);
+      intake.pulse(false);
+      intake.setIntakeDeployTarget(Setpoint.kRetracted);
+    })
+    .withName("Exp3-StagedRamp");
+  }
+
+  /**
+   * Experiment 4: "Conveyor Jog Burst" — forward with periodic brief reversals.
+   */
+  public static Command experimentConveyorJog(
+      IntakeSubsystem intake, ConveyorSubsystem conveyor, KickerSubsystem kicker) {
+    return Commands.parallel(
+        new RunIntakeCommand(intake, 4000),
+        new RunKickerCommand(kicker, 5000),
+        // Conveyor: cycle forward/reverse
+        Commands.repeatingSequence(
+            Commands.runOnce(() -> conveyor.setConveyorDutyCycle(2000), conveyor),
+            Commands.waitSeconds(0.5),
+            Commands.runOnce(() -> conveyor.setConveyorDutyCycle(-500), conveyor),
+            Commands.waitSeconds(0.1)
+        )
+    )
+    .beforeStarting(() -> intake.slowRetract(true))
+    .finallyDo(interrupted -> {
+      intake.slowRetract(false);
+      intake.setIntakeDeployTarget(Setpoint.kRetracted);
+      conveyor.setConveyorDutyCycle(0);
+    })
+    .withName("Exp4-ConveyorJog");
+  }
+
   /** Wraps KickerJamProtectionCommand for use as a standalone. */
   public static Command kickerWithJamProtection(KickerSubsystem kicker, double speed) {
     return new KickerJamProtectionCommand(kicker, speed);

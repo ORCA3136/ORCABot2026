@@ -243,11 +243,15 @@ public class RobotContainer {
 
   /** Operator button board bindings for drive-to-position commands. */
   private void configureOperatorBindings() {
-    // Manual climber jog with software limits
-    m_secondaryController.button(1);
-    m_secondaryController.button(2);
-    m_secondaryController.button(3);
-    m_secondaryController.button(4);
+    // Experimental fuel throughput methods (test and compare)
+    m_secondaryController.button(1).whileTrue(
+        FuelPathCommands.experimentBruteForce(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+    m_secondaryController.button(2).whileTrue(
+        FuelPathCommands.experimentOscillateFromStart(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+    m_secondaryController.button(3).whileTrue(
+        FuelPathCommands.experimentStagedRamp(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+    m_secondaryController.button(4).whileTrue(
+        FuelPathCommands.experimentConveyorJog(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
 
     m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
     // Clear intake fault
