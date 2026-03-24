@@ -2,12 +2,8 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayDeque;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -36,7 +32,6 @@ import limelight.Limelight;
 import limelight.networktables.AngularVelocity3d;
 import limelight.networktables.LimelightSettings.ImuMode;
 import limelight.networktables.LimelightSettings.LEDMode;
-import limelight.networktables.LimelightUtils;
 import limelight.networktables.Orientation3d;
 import limelight.networktables.PoseEstimate;
 import limelight.results.RawFiducial;
@@ -141,10 +136,6 @@ public class VisionSubsystem extends SubsystemBase {
   private double lastBackDataTime = 0;
   private boolean frontStale = false;
   private boolean backStale = false;
-  private int frontRebootCount = 0;
-  private int backRebootCount = 0;
-  private double lastFrontRebootTime = 0;
-  private double lastBackRebootTime = 0;
 
   // --- Rejection counters ---
   private int rejectCountStale = 0;
@@ -219,8 +210,6 @@ public class VisionSubsystem extends SubsystemBase {
   // Per-camera health telemetry
   private final NetworkTableEntry frontStaleEntry = frontTable.getEntry(NetworkTableNames.Vision.kCameraStale);
   private final NetworkTableEntry backStaleEntry = backTable.getEntry(NetworkTableNames.Vision.kCameraStale);
-  private final NetworkTableEntry frontRebootCountEntry = frontTable.getEntry(NetworkTableNames.Vision.kRebootCount);
-  private final NetworkTableEntry backRebootCountEntry = backTable.getEntry(NetworkTableNames.Vision.kRebootCount);
 
   // --- Enhanced logging publishers ---
 
@@ -868,60 +857,11 @@ public class VisionSubsystem extends SubsystemBase {
     }
   }
 
-  /** Monitors camera data freshness and triggers HTTP reboot if a camera goes silent. */
+  /** Monitors camera data freshness for staleness detection. */
   private void updateCameraHealth() {
     double now = Timer.getFPGATimestamp();
-
-    // Front camera
-    double frontAge = now - lastFrontDataTime;
-    frontStale = frontAge > VisionConstants.kCameraStaleThresholdSec;
-    if (frontAge > VisionConstants.kCameraRebootThresholdSec
-        && (now - lastFrontRebootTime) > VisionConstants.kRebootCooldownSec) {
-      rebootCameraAsync(true);
-      lastFrontRebootTime = now;
-      frontRebootCount++;
-    }
-
-    // Back camera
-    double backAge = now - lastBackDataTime;
-    backStale = backAge > VisionConstants.kCameraStaleThresholdSec;
-    if (backAge > VisionConstants.kCameraRebootThresholdSec
-        && (now - lastBackRebootTime) > VisionConstants.kRebootCooldownSec) {
-      rebootCameraAsync(false);
-      lastBackRebootTime = now;
-      backRebootCount++;
-    }
-  }
-
-  /** Sends an async HTTP reboot request to a Limelight. Fire-and-forget, does not block. */
-  private void rebootCameraAsync(boolean isFront) {
-    String cameraName = isFront ? VisionConstants.kLimelightFrontName : VisionConstants.kLimelightBackName;
-    DataLogManager.log("Vision: attempting HTTP reboot of " + cameraName);
-
-    CompletableFuture.supplyAsync(() -> {
-      try {
-        URL url = LimelightUtils.getLimelightURLString(cameraName, "reboot");
-        if (url == null) {
-          DataLogManager.log("Vision: reboot of " + cameraName + " failed — bad URL");
-          return false;
-        }
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
-        connection.setConnectTimeout(VisionConstants.kRebootHttpTimeoutMs);
-        connection.setReadTimeout(VisionConstants.kRebootHttpTimeoutMs);
-        int responseCode = connection.getResponseCode();
-        connection.disconnect();
-        if (responseCode == 200) {
-          DataLogManager.log("Vision: reboot of " + cameraName + " succeeded (HTTP 200)");
-          return true;
-        } else {
-          DataLogManager.log("Vision: reboot of " + cameraName + " got HTTP " + responseCode);
-        }
-      } catch (IOException e) {
-        DataLogManager.log("Vision: reboot of " + cameraName + " failed: " + e.getMessage());
-      }
-      return false;
-    });
+    frontStale = (now - lastFrontDataTime) > VisionConstants.kCameraStaleThresholdSec;
+    backStale = (now - lastBackDataTime) > VisionConstants.kCameraStaleThresholdSec;
   }
 
   // --- Utility methods ---
@@ -1009,8 +949,6 @@ public class VisionSubsystem extends SubsystemBase {
     // Camera health telemetry
     frontStaleEntry.setBoolean(frontStale);
     backStaleEntry.setBoolean(backStale);
-    frontRebootCountEntry.setDouble(frontRebootCount);
-    backRebootCountEntry.setDouble(backRebootCount);
 
     // Rejection counters
     countAcceptedEntry.setDouble(acceptCount);

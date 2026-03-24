@@ -169,9 +169,6 @@ public final class Constants {
 
     // --- Camera health monitoring ---
     public static final double kCameraStaleThresholdSec = 5.0;
-    public static final double kCameraRebootThresholdSec = 10.0;
-    public static final double kRebootCooldownSec = 30.0;
-    public static final int kRebootHttpTimeoutMs = 500;
   }
   
   public static final class OperatorConstants {
@@ -292,7 +289,6 @@ public final class Constants {
 
       // Per-camera health
       public static final String kCameraStale = "CameraStale";
-      public static final String kRebootCount = "RebootCount";
 
       // --- Enhanced logging for AdvantageScope ---
 
