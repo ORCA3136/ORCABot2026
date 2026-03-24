@@ -135,6 +135,32 @@ public final class FuelPathCommands {
     .withName("FullFuelPathJamProtected");
   }
 
+  // ── Intake with reverse pulse ──────────────────────────────────────
+
+  /**
+   * Runs intake roller forward, but when deploy position drops to ≤ 10 rotations
+   * (~3/4 retracted), pulses reverse twice to dislodge stuck fuel, then resumes forward.
+   */
+  public static Command intakeWithReversePulse(IntakeSubsystem intake, double forwardSpeed) {
+    return Commands.sequence(
+        // Phase A: run forward until position crosses threshold
+        Commands.run(() -> intake.setIntakeDutyCycle(forwardSpeed), intake)
+            .until(() -> intake.getIntakePosition() <= 10),
+        // Phase B: two reverse pulse cycles to dislodge stuck fuel
+        Commands.runOnce(() -> intake.setIntakeDutyCycle(-3000), intake),
+        Commands.waitSeconds(0.15),
+        Commands.runOnce(() -> intake.setIntakeDutyCycle(forwardSpeed), intake),
+        Commands.waitSeconds(0.3),
+        Commands.runOnce(() -> intake.setIntakeDutyCycle(-3000), intake),
+        Commands.waitSeconds(0.15),
+        Commands.runOnce(() -> intake.setIntakeDutyCycle(forwardSpeed), intake),
+        Commands.waitSeconds(0.3),
+        // Phase C: resume forward for remainder
+        Commands.run(() -> intake.setIntakeDutyCycle(forwardSpeed), intake)
+    ).finallyDo(interrupted -> intake.setIntakeDutyCycle(0))
+     .withName("IntakeWithReversePulse");
+  }
+
   // ── Specialty ───────────────────────────────────────────────────────
 
   /** Jog conveyor forward then reverse briefly to clear a minor blockage. Runs once. */
@@ -269,7 +295,7 @@ public final class FuelPathCommands {
   public static Command experimentBruteForce(
       IntakeSubsystem intake, ConveyorSubsystem conveyor, KickerSubsystem kicker) {
     return Commands.parallel(
-        new RunIntakeCommand(intake, 6000),
+        intakeWithReversePulse(intake, 6000),
         new RunConveyorCommand(conveyor, 2500),
         new RunKickerCommand(kicker, 5000)
     )
@@ -287,7 +313,7 @@ public final class FuelPathCommands {
   public static Command experimentOscillateFromStart(
       IntakeSubsystem intake, ConveyorSubsystem conveyor, KickerSubsystem kicker) {
     return Commands.parallel(
-        new RunIntakeCommand(intake, 4000),
+        intakeWithReversePulse(intake, 4000),
         new RunConveyorCommand(conveyor, 2000),
         new RunKickerCommand(kicker, 5000)
     )
@@ -321,9 +347,9 @@ public final class FuelPathCommands {
             new RunConveyorCommand(conveyor, 2000),
             new RunKickerCommand(kicker, 4000)
         ).withTimeout(1.5),
-        // Phase 3: full speed + shuttle pulse (hold indefinitely)
+        // Phase 3: full speed + shuttle pulse + reverse pulses (hold indefinitely)
         Commands.parallel(
-            new RunIntakeCommand(intake, 6000),
+            intakeWithReversePulse(intake, 6000),
             new RunConveyorCommand(conveyor, 2500),
             new RunKickerCommand(kicker, 5000),
             Commands.runOnce(() -> {
@@ -347,7 +373,7 @@ public final class FuelPathCommands {
   public static Command experimentConveyorJog(
       IntakeSubsystem intake, ConveyorSubsystem conveyor, KickerSubsystem kicker) {
     return Commands.parallel(
-        new RunIntakeCommand(intake, 4000),
+        intakeWithReversePulse(intake, 4000),
         new RunKickerCommand(kicker, 5000),
         // Conveyor: cycle forward/reverse
         Commands.repeatingSequence(
