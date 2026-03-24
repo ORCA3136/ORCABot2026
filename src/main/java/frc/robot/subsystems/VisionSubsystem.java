@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.DegreesPerSecond;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayDeque;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -13,13 +14,18 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.networktables.IntegerArrayPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -73,6 +79,8 @@ public class VisionSubsystem extends SubsystemBase {
     boolean accepted;
     boolean seeded; // true if this result triggered an odometry seed (don't fuse again)
     String rejectReason;
+    long[] tagIds = new long[0];
+    double latencyMs;
   }
 
   private final SwerveSubsystem swerveSubsystem;
@@ -138,6 +146,27 @@ public class VisionSubsystem extends SubsystemBase {
   private double lastFrontRebootTime = 0;
   private double lastBackRebootTime = 0;
 
+  // --- Rejection counters ---
+  private int rejectCountStale = 0;
+  private int rejectCountOutOfField = 0;
+  private int rejectCountYawRate = 0;
+  private int rejectCountTooFar = 0;
+  private int rejectCountSingleTagFar = 0;
+  private int rejectCountHeadingFlip = 0;
+  private int rejectCountNoData = 0;
+  private int acceptCount = 0;
+
+  // --- Pose trail buffers (rolling ~1s history) ---
+  private static final int POSE_TRAIL_CAPACITY = 50;
+  private final ArrayDeque<Pose2d> frontPoseTrail = new ArrayDeque<>(POSE_TRAIL_CAPACITY);
+  private final ArrayDeque<Pose2d> backPoseTrail = new ArrayDeque<>(POSE_TRAIL_CAPACITY);
+
+  // --- Field2d for AdvantageScope visualization ---
+  private final Field2d visionField = new Field2d();
+  private final FieldObject2d fieldOdometry;
+  private final FieldObject2d fieldFrontVision;
+  private final FieldObject2d fieldBackVision;
+
   // --- NetworkTable entries ---
   private final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
   private final NetworkTable frontTable = ntInstance.getTable(NetworkTableNames.Vision.kFrontTable);
@@ -193,6 +222,41 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry frontRebootCountEntry = frontTable.getEntry(NetworkTableNames.Vision.kRebootCount);
   private final NetworkTableEntry backRebootCountEntry = backTable.getEntry(NetworkTableNames.Vision.kRebootCount);
 
+  // --- Enhanced logging publishers ---
+
+  // Per-camera: fused std dev, latency, tag IDs
+  private final NetworkTableEntry frontFusedStdDevEntry = frontTable.getEntry(NetworkTableNames.Vision.kFusedStdDevXY);
+  private final NetworkTableEntry backFusedStdDevEntry = backTable.getEntry(NetworkTableNames.Vision.kFusedStdDevXY);
+  private final NetworkTableEntry frontLatencyEntry = frontTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
+  private final NetworkTableEntry backLatencyEntry = backTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
+  private final IntegerArrayPublisher frontTagIdsPub = frontTable
+      .getIntegerArrayTopic(NetworkTableNames.Vision.kTagIDs).publish();
+  private final IntegerArrayPublisher backTagIdsPub = backTable
+      .getIntegerArrayTopic(NetworkTableNames.Vision.kTagIDs).publish();
+
+  // Per-camera: pose trails
+  private final StructArrayPublisher<Pose2d> frontPoseTrailPub = frontTable
+      .getStructArrayTopic(NetworkTableNames.Vision.kPoseTrail, Pose2d.struct).publish();
+  private final StructArrayPublisher<Pose2d> backPoseTrailPub = backTable
+      .getStructArrayTopic(NetworkTableNames.Vision.kPoseTrail, Pose2d.struct).publish();
+
+  // System-level: fusion mode, pre-fusion pose, vision delta
+  private final NetworkTableEntry fusionModeEntry = visionTable.getEntry(NetworkTableNames.Vision.kFusionMode);
+  private final StructPublisher<Pose2d> preFusionPosePub = visionTable
+      .getStructTopic(NetworkTableNames.Vision.kPreFusionPose, Pose2d.struct).publish();
+  private final NetworkTableEntry visionDeltaEntry = visionTable.getEntry(NetworkTableNames.Vision.kVisionDeltaM);
+
+  // Rejection counters
+  private final NetworkTable countsTable = ntInstance.getTable(NetworkTableNames.Vision.kCountsTable);
+  private final NetworkTableEntry countAcceptedEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountAccepted);
+  private final NetworkTableEntry countStaleEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountStale);
+  private final NetworkTableEntry countOutOfFieldEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountOutOfField);
+  private final NetworkTableEntry countYawRateEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountYawRate);
+  private final NetworkTableEntry countTooFarEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountTooFar);
+  private final NetworkTableEntry countSingleTagFarEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountSingleTagFar);
+  private final NetworkTableEntry countHeadingFlipEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountHeadingFlip);
+  private final NetworkTableEntry countNoDataEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountNoData);
+
   // Track current IMU mode label for telemetry
   private String currentImuModeLabel = "SyncInternalImu";
 
@@ -222,6 +286,12 @@ public class VisionSubsystem extends SubsystemBase {
     double startTime = Timer.getFPGATimestamp();
     lastFrontDataTime = startTime;
     lastBackDataTime = startTime;
+
+    // Field2d for AdvantageScope — overlay odometry + both vision poses
+    fieldOdometry = visionField.getObject("Odometry");
+    fieldFrontVision = visionField.getObject("FrontVision");
+    fieldBackVision = visionField.getObject("BackVision");
+    SmartDashboard.putData("VisionField", visionField);
   }
 
   @Override
@@ -312,6 +382,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     if (estimateOpt.isEmpty() || !estimateOpt.get().hasData) {
       if (isFront) lastFrontTagCount = 0; else lastBackTagCount = 0;
+      rejectCountNoData++;
       publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, acceptedEntry, rejectEntry,
           null, 0, 0, false, "no_data");
       return result;
@@ -321,6 +392,21 @@ public class VisionSubsystem extends SubsystemBase {
     if (isFront) lastFrontTagCount = estimate.tagCount; else lastBackTagCount = estimate.tagCount;
     Pose2d visionPose = estimate.pose.toPose2d();
     double now = Timer.getFPGATimestamp();
+
+    // Extract tag IDs and compute measurement latency
+    long[] tagIds = new long[estimate.rawFiducials.length];
+    for (int i = 0; i < estimate.rawFiducials.length; i++) {
+      tagIds[i] = estimate.rawFiducials[i].id;
+    }
+    result.tagIds = tagIds;
+    result.latencyMs = (now - estimate.timestampSeconds) * 1000.0;
+
+    // Add to pose trail buffer for AdvantageScope ghost trail
+    ArrayDeque<Pose2d> trail = isFront ? frontPoseTrail : backPoseTrail;
+    if (trail.size() >= POSE_TRAIL_CAPACITY) {
+      trail.pollFirst();
+    }
+    trail.addLast(visionPose);
 
     // Record vision pose for drift detection, and update data time for staleness tracking
     if (isFront) {
@@ -357,10 +443,13 @@ public class VisionSubsystem extends SubsystemBase {
 
     if (!rejectReason.isEmpty()) {
       result.rejectReason = rejectReason;
+      incrementRejectCounter(rejectReason);
       publishCameraTelemetry(posePublisher, tagCountEntry, avgDistEntry, acceptedEntry, rejectEntry,
           visionPose, estimate.tagCount, estimate.avgTagDist, false, rejectReason);
       return result;
     }
+
+    acceptCount++;
 
     // --- Calculate dynamic XY std devs ---
     double distanceFactor = estimate.avgTagDist * estimate.avgTagDist;
@@ -426,9 +515,24 @@ public class VisionSubsystem extends SubsystemBase {
     boolean backReady = back.accepted && !back.seeded && back.pose != null;
     dualCameraAgreed = false;
 
+    // Publish per-camera tag IDs and latency regardless of fusion
+    frontTagIdsPub.set(front.tagIds);
+    backTagIdsPub.set(back.tagIds);
+    frontLatencyEntry.setDouble(front.latencyMs);
+    backLatencyEntry.setDouble(back.latencyMs);
+
     if (!frontReady && !backReady) {
-      return; // Nothing to fuse
+      // Nothing to fuse — clear fusion telemetry
+      fusionModeEntry.setString("none");
+      frontFusedStdDevEntry.setDouble(-1);
+      backFusedStdDevEntry.setDouble(-1);
+      visionDeltaEntry.setDouble(-1);
+      return;
     }
+
+    // Capture odometry pose BEFORE fusion for delta measurement
+    Pose2d preFusionPose = swerveSubsystem.getPose();
+    preFusionPosePub.set(preFusionPose);
 
     if (frontReady && backReady) {
       // Both cameras accepted — check agreement
@@ -442,6 +546,9 @@ public class VisionSubsystem extends SubsystemBase {
             front.pose, front.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
         swerveSubsystem.addVisionMeasurement(
             back.pose, back.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
+        fusionModeEntry.setString("dual_agreed");
+        frontFusedStdDevEntry.setDouble(stdDev);
+        backFusedStdDevEntry.setDouble(stdDev);
       } else {
         // Both accepted but disagree — use normal dynamic std devs
         double frontStd = getEffectiveXYStdDev(front.baseXYStdDev);
@@ -450,7 +557,15 @@ public class VisionSubsystem extends SubsystemBase {
             front.pose, front.timestamp, VecBuilder.fill(frontStd, frontStd, 9999.0));
         swerveSubsystem.addVisionMeasurement(
             back.pose, back.timestamp, VecBuilder.fill(backStd, backStd, 9999.0));
+        fusionModeEntry.setString("dual_independent");
+        frontFusedStdDevEntry.setDouble(frontStd);
+        backFusedStdDevEntry.setDouble(backStd);
       }
+
+      // Vision delta: average distance from odometry to both vision poses
+      double frontDelta = preFusionPose.getTranslation().getDistance(front.pose.getTranslation());
+      double backDelta = preFusionPose.getTranslation().getDistance(back.pose.getTranslation());
+      visionDeltaEntry.setDouble((frontDelta + backDelta) / 2.0);
     } else {
       // Only one camera accepted — check for single-camera boost
       CameraResult single = frontReady ? front : back;
@@ -468,6 +583,17 @@ public class VisionSubsystem extends SubsystemBase {
 
       swerveSubsystem.addVisionMeasurement(
           single.pose, single.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
+
+      fusionModeEntry.setString(frontReady ? "single_front" : "single_back");
+      if (frontReady) {
+        frontFusedStdDevEntry.setDouble(stdDev);
+        backFusedStdDevEntry.setDouble(-1);
+      } else {
+        frontFusedStdDevEntry.setDouble(-1);
+        backFusedStdDevEntry.setDouble(stdDev);
+      }
+      visionDeltaEntry.setDouble(
+          preFusionPose.getTranslation().getDistance(single.pose.getTranslation()));
     }
   }
 
@@ -832,6 +958,18 @@ public class VisionSubsystem extends SubsystemBase {
     return -1;
   }
 
+  private void incrementRejectCounter(String reason) {
+    switch (reason) {
+      case "stale_timestamp": rejectCountStale++; break;
+      case "out_of_field": rejectCountOutOfField++; break;
+      case "high_yaw_rate": rejectCountYawRate++; break;
+      case "too_far": rejectCountTooFar++; break;
+      case "single_tag_too_far": rejectCountSingleTagFar++; break;
+      case "heading_flip": rejectCountHeadingFlip++; break;
+      default: break;
+    }
+  }
+
   // --- Telemetry ---
 
   private void publishCameraTelemetry(
@@ -873,6 +1011,29 @@ public class VisionSubsystem extends SubsystemBase {
     backStaleEntry.setBoolean(backStale);
     frontRebootCountEntry.setDouble(frontRebootCount);
     backRebootCountEntry.setDouble(backRebootCount);
+
+    // Rejection counters
+    countAcceptedEntry.setDouble(acceptCount);
+    countStaleEntry.setDouble(rejectCountStale);
+    countOutOfFieldEntry.setDouble(rejectCountOutOfField);
+    countYawRateEntry.setDouble(rejectCountYawRate);
+    countTooFarEntry.setDouble(rejectCountTooFar);
+    countSingleTagFarEntry.setDouble(rejectCountSingleTagFar);
+    countHeadingFlipEntry.setDouble(rejectCountHeadingFlip);
+    countNoDataEntry.setDouble(rejectCountNoData);
+
+    // Field2d — overlay odometry + vision poses
+    fieldOdometry.setPose(swerveSubsystem.getPose());
+    if (lastFrontVisionPose != null) {
+      fieldFrontVision.setPose(lastFrontVisionPose);
+    }
+    if (lastBackVisionPose != null) {
+      fieldBackVision.setPose(lastBackVisionPose);
+    }
+
+    // Pose trails
+    frontPoseTrailPub.set(frontPoseTrail.toArray(new Pose2d[0]));
+    backPoseTrailPub.set(backPoseTrail.toArray(new Pose2d[0]));
   }
 
   @Override

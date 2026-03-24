@@ -293,6 +293,30 @@ public final class Constants {
       // Per-camera health
       public static final String kCameraStale = "CameraStale";
       public static final String kRebootCount = "RebootCount";
+
+      // --- Enhanced logging for AdvantageScope ---
+
+      // Per-camera: fused std dev, latency, tag IDs, pose trail
+      public static final String kFusedStdDevXY = "FusedStdDevXY";
+      public static final String kLatencyMs = "LatencyMs";
+      public static final String kTagIDs = "TagIDs";
+      public static final String kPoseTrail = "PoseTrail";
+
+      // System-level: fusion mode, pre-fusion pose, vision delta
+      public static final String kFusionMode = "FusionMode";
+      public static final String kPreFusionPose = "PreFusionPose";
+      public static final String kVisionDeltaM = "VisionDeltaM";
+
+      // Rejection counters
+      public static final String kCountsTable = "Vision/Counts";
+      public static final String kCountAccepted = "Accepted";
+      public static final String kCountStale = "StaleTimestamp";
+      public static final String kCountOutOfField = "OutOfField";
+      public static final String kCountYawRate = "HighYawRate";
+      public static final String kCountTooFar = "TooFar";
+      public static final String kCountSingleTagFar = "SingleTagFar";
+      public static final String kCountHeadingFlip = "HeadingFlip";
+      public static final String kCountNoData = "NoData";
     }
 
     public static final class Shooter {
