@@ -199,12 +199,14 @@ public class RobotContainer {
     m_primaryController.leftBumper  ().whileTrue(Commands.parallel(
         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 2000, 5000),
         Commands.sequence(
-            // Phase 1: slow retract with intake roller running
+            // Phase 1: slow retract with intake roller pulling fuel in
             Commands.runOnce(() -> intakeSubsystem.slowRetract(true)),
             new RunIntakeCommand(intakeSubsystem, 4000).withTimeout(2),
             // Phase 2: shuttle pulse to clear remaining fuel
             Commands.runOnce(() -> intakeSubsystem.slowRetract(false)),
             FuelPathCommands.intakeShuttlePulse(intakeSubsystem).withTimeout(3),
+            // Phase 3: reverse pulses to dislodge stuck fuel once intake is mostly in
+            FuelPathCommands.intakeWithReversePulse(intakeSubsystem, 4000).withTimeout(2),
             Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted))
         )
     ).finallyDo(interrupted -> {
