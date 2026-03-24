@@ -379,6 +379,10 @@ public class IntakeSubsystem extends SubsystemBase {
     slowRetractActive = enable;
     if (enable && state == DeployState.SET) {
       state = DeployState.TARGETING;
+      // Kickstart: give PID initial error to overcome static friction
+      rampedPosition = Math.max(
+          rampedPosition - 0.5,
+          IntakeConstants.kRetractedPosition);
     }
   }
 

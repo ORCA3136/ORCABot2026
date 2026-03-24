@@ -90,7 +90,7 @@ public final class Constants {
 
     // Slow retract for feeding: motor rotations per 20ms cycle
     // Gradually pulls intake in to feed fuel toward conveyor
-    public static final double kFeedRetractRate = 0.054;
+    public static final double kFeedRetractRate = 0.084;
 
     // Homing
     public static final double kHomingDutyCycle = -0.1;    // Slow inward (negative = retract)
