@@ -309,12 +309,12 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     // --- Feed heading to both cameras every frame ---
-    // Use raw Pigeon2 rotation (not odometry heading) to avoid circular dependency
+    // Pitch/roll from Pigeon2, yaw from odometry heading (which includes vision seed offset)
     Rotation3d pigeonRotation = swerveSubsystem.getGyroRotation3d();
     Rotation3d feedRotation = new Rotation3d(
         pigeonRotation.getMeasureX(),
         pigeonRotation.getMeasureY(),
-        pigeonRotation.getMeasureZ());
+        swerveSubsystem.getHeading().getMeasure());
 
     Orientation3d orientation = new Orientation3d(
         feedRotation,
@@ -633,7 +633,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     // 6. Heading cross-check — catch 180° MT2 flips
     double visionHeadingDeg = visionPose.getRotation().getDegrees();
-    double gyroHeadingDeg = swerveSubsystem.getPigeonRawYawDeg();
+    double gyroHeadingDeg = swerveSubsystem.getHeading().getDegrees();
     double headingError = Math.abs(visionHeadingDeg - gyroHeadingDeg);
     if (headingError > 180) headingError = 360 - headingError;
     lastHeadingError = headingError;
