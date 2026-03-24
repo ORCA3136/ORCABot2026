@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 
-import java.util.ArrayDeque;
 import java.util.Optional;
 
 import edu.wpi.first.math.VecBuilder;
@@ -14,7 +13,6 @@ import edu.wpi.first.networktables.IntegerArrayPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -147,11 +145,6 @@ public class VisionSubsystem extends SubsystemBase {
   private int rejectCountNoData = 0;
   private int acceptCount = 0;
 
-  // --- Pose trail buffers (rolling ~1s history) ---
-  private static final int POSE_TRAIL_CAPACITY = 50;
-  private final ArrayDeque<Pose2d> frontPoseTrail = new ArrayDeque<>(POSE_TRAIL_CAPACITY);
-  private final ArrayDeque<Pose2d> backPoseTrail = new ArrayDeque<>(POSE_TRAIL_CAPACITY);
-
   // --- Field2d for AdvantageScope visualization ---
   private final Field2d visionField = new Field2d();
   private final FieldObject2d fieldOdometry;
@@ -222,12 +215,6 @@ public class VisionSubsystem extends SubsystemBase {
       .getIntegerArrayTopic(NetworkTableNames.Vision.kTagIDs).publish();
   private final IntegerArrayPublisher backTagIdsPub = backTable
       .getIntegerArrayTopic(NetworkTableNames.Vision.kTagIDs).publish();
-
-  // Per-camera: pose trails
-  private final StructArrayPublisher<Pose2d> frontPoseTrailPub = frontTable
-      .getStructArrayTopic(NetworkTableNames.Vision.kPoseTrail, Pose2d.struct).publish();
-  private final StructArrayPublisher<Pose2d> backPoseTrailPub = backTable
-      .getStructArrayTopic(NetworkTableNames.Vision.kPoseTrail, Pose2d.struct).publish();
 
   // System-level: fusion mode, pre-fusion pose, vision delta
   private final NetworkTableEntry fusionModeEntry = visionTable.getEntry(NetworkTableNames.Vision.kFusionMode);
@@ -389,13 +376,6 @@ public class VisionSubsystem extends SubsystemBase {
     }
     result.tagIds = tagIds;
     result.latencyMs = (now - estimate.timestampSeconds) * 1000.0;
-
-    // Add to pose trail buffer for AdvantageScope ghost trail
-    ArrayDeque<Pose2d> trail = isFront ? frontPoseTrail : backPoseTrail;
-    if (trail.size() >= POSE_TRAIL_CAPACITY) {
-      trail.pollFirst();
-    }
-    trail.addLast(visionPose);
 
     // Record vision pose for drift detection, and update data time for staleness tracking
     if (isFront) {
@@ -969,9 +949,6 @@ public class VisionSubsystem extends SubsystemBase {
       fieldBackVision.setPose(lastBackVisionPose);
     }
 
-    // Pose trails
-    frontPoseTrailPub.set(frontPoseTrail.toArray(new Pose2d[0]));
-    backPoseTrailPub.set(backPoseTrail.toArray(new Pose2d[0]));
   }
 
   @Override

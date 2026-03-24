@@ -296,7 +296,6 @@ public final class Constants {
       public static final String kFusedStdDevXY = "FusedStdDevXY";
       public static final String kLatencyMs = "LatencyMs";
       public static final String kTagIDs = "TagIDs";
-      public static final String kPoseTrail = "PoseTrail";
 
       // System-level: fusion mode, pre-fusion pose, vision delta
       public static final String kFusionMode = "FusionMode";
