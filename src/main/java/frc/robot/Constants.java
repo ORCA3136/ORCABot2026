@@ -491,7 +491,7 @@ public final class Constants {
     public static final double kIntakeOutFast = -5000;
 
     // Conveyor speeds (RPM)
-    public static final double kConveyorIn = 500;
+    public static final double kConveyorIn = 1500;
     public static final double kConveyorOut = -1000;
 
     // Conveyor jog (nudge to clear minor blockages)

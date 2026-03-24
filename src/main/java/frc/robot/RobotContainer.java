@@ -197,7 +197,7 @@ public class RobotContainer {
 
     // Feed: slow retract to pull fuel in, then shuttle pulse for remaining fuel
     m_primaryController.leftBumper  ().whileTrue(Commands.parallel(
-        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 1000, 5000),
+        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 2000, 5000),
         Commands.sequence(
             // Phase 1: slow retract with intake roller running
             Commands.runOnce(() -> intakeSubsystem.slowRetract(true)),
@@ -336,7 +336,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("Run Shooter High",     Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(ShooterConstants.kVelocityHigh)));
     
     // Conveyor/kicker
-    NamedCommands.registerCommand("Run Conveyor",         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 500, 4000));
+    NamedCommands.registerCommand("Run Conveyor",         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 1500, 4000));
     NamedCommands.registerCommand("Stop Conveyor",        Commands.runOnce(() -> { conveyorSubsystem.setConveyorDutyCycle(0); kickerSubsystem.setKickerDutyCycle(0); }, conveyorSubsystem, kickerSubsystem));
 
     // Fuel path commands

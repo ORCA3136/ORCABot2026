@@ -178,7 +178,7 @@ public final class AutoCommands {
   public static Command feedSequence(IntakeSubsystem intake, ConveyorSubsystem conveyor,
                                       KickerSubsystem kicker, double timeoutSec) {
     return Commands.parallel(
-        new RunConveyorAndKickerCommand(conveyor, kicker, 1000, 5000),
+        new RunConveyorAndKickerCommand(conveyor, kicker, 1500, 5000),
         Commands.sequence(
             // Phase 1: Slow retract to pull fuel in
             Commands.runOnce(() -> intake.slowRetract(true), intake),
