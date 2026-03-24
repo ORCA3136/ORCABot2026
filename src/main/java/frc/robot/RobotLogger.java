@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import org.littletonrobotics.urcl.URCL;
 import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
@@ -42,14 +41,11 @@ public final class RobotLogger {
    */
   public static void init(boolean useUSB) {
     if (useUSB) {
-      DataLogManager.start("/U/logs", "", 0.1);
+      DataLogManager.start("/U/logs", "", 0.5);
     } else {
-      DataLogManager.start("", "", 0.1);
+      DataLogManager.start("", "", 0.5);
     }
     DataLogManager.logNetworkTables(true);
-
-    // Log all REV SparkMax/SparkFlex CAN data to WPILOG
-    URCL.start();
 
     // Log match metadata
     DataLogManager.log("Match: " + DriverStation.getEventName()
