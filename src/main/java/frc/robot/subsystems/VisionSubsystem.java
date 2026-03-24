@@ -128,6 +128,8 @@ public class VisionSubsystem extends SubsystemBase {
   private int hardResetCount = 0;
   private boolean dualCameraAgreed = false;
   private double lastHeadingError = 0;
+  private double lastMT1HeadingDeg = Double.NaN;
+  private int rejectCountMT1Flip = 0;
 
   // --- Camera health state ---
   private double lastFrontDataTime = 0;
@@ -231,6 +233,7 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry countTooFarEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountTooFar);
   private final NetworkTableEntry countSingleTagFarEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountSingleTagFar);
   private final NetworkTableEntry countHeadingFlipEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountHeadingFlip);
+  private final NetworkTableEntry countMT1FlipEntry = countsTable.getEntry("MT1Flip");
   private final NetworkTableEntry countNoDataEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountNoData);
 
   // Track current IMU mode label for telemetry
@@ -396,6 +399,7 @@ public class VisionSubsystem extends SubsystemBase {
     Optional<PoseEstimate> mt1Opt = mt1Obj.getPoseEstimate();
     if (mt1Opt.isPresent() && mt1Opt.get().hasData && mt1Opt.get().tagCount > 0) {
       Pose2d mt1Pose = mt1Opt.get().pose.toPose2d();
+      lastMT1HeadingDeg = mt1Pose.getRotation().getDegrees();
       mt1Publisher.set(mt1Pose);
 
       // Log large MT1 vs MT2 heading divergence for post-match analysis
@@ -409,6 +413,18 @@ public class VisionSubsystem extends SubsystemBase {
 
     // --- 4-stage rejection ---
     String rejectReason = getRejectReason(estimate, visionPose, now);
+
+    // Secondary MT1 heading guard — catches 180° flips that the MT2-vs-odometry check misses
+    if (rejectReason.isEmpty() && !Double.isNaN(lastMT1HeadingDeg) && estimate.tagCount > 0) {
+      double mt1Error = Math.abs(visionPose.getRotation().getDegrees() - lastMT1HeadingDeg);
+      if (mt1Error > 180) mt1Error = 360 - mt1Error;
+      if (mt1Error > 120.0) {
+        rejectReason = "mt1_flip";
+        System.out.println("[VISION-MT1-FLIP] MT2 hdg=" + String.format("%.1f", visionPose.getRotation().getDegrees())
+            + " MT1 hdg=" + String.format("%.1f", lastMT1HeadingDeg)
+            + " error=" + String.format("%.1f", mt1Error) + "°");
+      }
+    }
 
     if (!rejectReason.isEmpty()) {
       result.rejectReason = rejectReason;
@@ -439,6 +455,9 @@ public class VisionSubsystem extends SubsystemBase {
         seedPose = visionPose;
       }
 
+      System.out.println("[VISION-SEED] oldHdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees())
+          + " newHdg=" + String.format("%.1f", seedPose.getRotation().getDegrees())
+          + " firstFix=" + !hasEverHadFix + " tags=" + estimate.tagCount);
       swerveSubsystem.resetOdometry(seedPose);
       imuSettleCycleCount = 0;
       imuSettled = false;
@@ -606,7 +625,18 @@ public class VisionSubsystem extends SubsystemBase {
     double headingError = Math.abs(visionHeadingDeg - gyroHeadingDeg);
     if (headingError > 180) headingError = 360 - headingError;
     lastHeadingError = headingError;
+    if (headingError > 15.0) {
+      System.out.println("[VISION-HEADING] error=" + String.format("%.1f", headingError)
+          + "° visionHdg=" + String.format("%.1f", visionHeadingDeg)
+          + " gyroHdg=" + String.format("%.1f", gyroHeadingDeg)
+          + " tags=" + estimate.tagCount
+          + " avgDist=" + String.format("%.2f", estimate.avgTagDist) + "m");
+    }
     if (headingError > VisionConstants.kMaxHeadingErrorDeg) {
+      System.out.println("[VISION-REJECTED] heading_flip error=" + String.format("%.1f", headingError)
+          + "° visionHdg=" + String.format("%.1f", visionHeadingDeg)
+          + " gyroHdg=" + String.format("%.1f", gyroHeadingDeg)
+          + " tags=" + estimate.tagCount);
       return "heading_flip";
     }
 
@@ -616,6 +646,7 @@ public class VisionSubsystem extends SubsystemBase {
   // --- IMU mode transitions ---
 
   private void enterSeedMode() {
+    System.out.println("[VISION-IMU] -> SyncInternalImu, hdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees()));
     limelightFront.getSettings().withImuMode(ImuMode.SyncInternalImu).save();
     limelightBack.getSettings().withImuMode(ImuMode.SyncInternalImu).save();
     imuSettleCycleCount = 0;
@@ -626,6 +657,7 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   private void enterActiveMode() {
+    System.out.println("[VISION-IMU] -> ExternalImu, hdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees()));
     limelightFront.getSettings()
         .withImuMode(ImuMode.ExternalImu)
         .withLimelightLEDMode(LEDMode.ForceOff)
@@ -780,16 +812,34 @@ public class VisionSubsystem extends SubsystemBase {
             ? lastFrontVisionPose.getRotation() : lastBackVisionPose.getRotation();
         Pose2d resetPose = new Pose2d(avgTranslation, resetRotation);
 
-        swerveSubsystem.resetOdometry(resetPose);
-        hardResetCount++;
-        hardResetCycleCount = 0;
-        singleCameraHardResetCycleCount = 0;
-        frontDriftCycleCount = 0;
-        backDriftCycleCount = 0;
-        driftDetected = false;
-        DataLogManager.log("Vision: HARD RESET (dual-cam) odometry to " + resetPose
-            + " (drift=" + String.format("%.2f", driftMagnitude)
-            + "m, agreement=" + String.format("%.2f", cameraAgreement) + "m)");
+        // MT1 heading guard — block hard reset if heading is 180° off
+        boolean dualResetBlocked = false;
+        if (!Double.isNaN(lastMT1HeadingDeg)) {
+          double resetHdgError = Math.abs(resetPose.getRotation().getDegrees() - lastMT1HeadingDeg);
+          if (resetHdgError > 180) resetHdgError = 360 - resetHdgError;
+          if (resetHdgError > 120.0) {
+            System.out.println("[VISION-HARD-RESET-BLOCKED] dual-cam heading "
+                + String.format("%.1f", resetPose.getRotation().getDegrees())
+                + "° vs MT1 " + String.format("%.1f", lastMT1HeadingDeg) + "° — skipping reset");
+            dualResetBlocked = true;
+            hardResetCycleCount = 0;
+          }
+        }
+        if (!dualResetBlocked) {
+          System.out.println("[VISION-HARD-RESET-DUAL] oldHdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees())
+              + " newHdg=" + String.format("%.1f", resetPose.getRotation().getDegrees())
+              + " drift=" + String.format("%.2f", driftMagnitude) + "m");
+          swerveSubsystem.resetOdometry(resetPose);
+          hardResetCount++;
+          hardResetCycleCount = 0;
+          singleCameraHardResetCycleCount = 0;
+          frontDriftCycleCount = 0;
+          backDriftCycleCount = 0;
+          driftDetected = false;
+          DataLogManager.log("Vision: HARD RESET (dual-cam) odometry to " + resetPose
+              + " (drift=" + String.format("%.2f", driftMagnitude)
+              + "m, agreement=" + String.format("%.2f", cameraAgreement) + "m)");
+        }
       }
     } else {
       hardResetCycleCount = 0;
@@ -814,15 +864,36 @@ public class VisionSubsystem extends SubsystemBase {
         singleCameraHardResetCycleCount++;
         if (singleCameraHardResetCycleCount >= VisionConstants.kSingleCameraHardResetCycles) {
           Pose2d resetPose = isFrontActive ? lastFrontVisionPose : lastBackVisionPose;
-          swerveSubsystem.resetOdometry(resetPose);
-          hardResetCount++;
-          singleCameraHardResetCycleCount = 0;
-          frontDriftCycleCount = 0;
-          backDriftCycleCount = 0;
-          driftDetected = false;
-          DataLogManager.log("Vision: HARD RESET (single-cam "
-              + (isFrontActive ? "front" : "back") + ") odometry to " + resetPose
-              + " (drift=" + String.format("%.2f", driftMagnitude) + "m)");
+
+          // MT1 heading guard — block hard reset if heading is 180° off
+          boolean singleResetBlocked = false;
+          if (!Double.isNaN(lastMT1HeadingDeg)) {
+            double resetHdgError = Math.abs(resetPose.getRotation().getDegrees() - lastMT1HeadingDeg);
+            if (resetHdgError > 180) resetHdgError = 360 - resetHdgError;
+            if (resetHdgError > 120.0) {
+              System.out.println("[VISION-HARD-RESET-BLOCKED] single-cam ("
+                  + (isFrontActive ? "front" : "back") + ") heading "
+                  + String.format("%.1f", resetPose.getRotation().getDegrees())
+                  + "° vs MT1 " + String.format("%.1f", lastMT1HeadingDeg) + "° — skipping reset");
+              singleResetBlocked = true;
+              singleCameraHardResetCycleCount = 0;
+            }
+          }
+          if (!singleResetBlocked) {
+            System.out.println("[VISION-HARD-RESET-SINGLE] cam=" + (isFrontActive ? "front" : "back")
+                + " oldHdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees())
+                + " newHdg=" + String.format("%.1f", resetPose.getRotation().getDegrees())
+                + " drift=" + String.format("%.2f", driftMagnitude) + "m");
+            swerveSubsystem.resetOdometry(resetPose);
+            hardResetCount++;
+            singleCameraHardResetCycleCount = 0;
+            frontDriftCycleCount = 0;
+            backDriftCycleCount = 0;
+            driftDetected = false;
+            DataLogManager.log("Vision: HARD RESET (single-cam "
+                + (isFrontActive ? "front" : "back") + ") odometry to " + resetPose
+                + " (drift=" + String.format("%.2f", driftMagnitude) + "m)");
+          }
         }
       } else {
         singleCameraHardResetCycleCount = 0;
@@ -886,6 +957,7 @@ public class VisionSubsystem extends SubsystemBase {
       case "too_far": rejectCountTooFar++; break;
       case "single_tag_too_far": rejectCountSingleTagFar++; break;
       case "heading_flip": rejectCountHeadingFlip++; break;
+      case "mt1_flip": rejectCountMT1Flip++; break;
       default: break;
     }
   }
@@ -938,6 +1010,7 @@ public class VisionSubsystem extends SubsystemBase {
     countTooFarEntry.setDouble(rejectCountTooFar);
     countSingleTagFarEntry.setDouble(rejectCountSingleTagFar);
     countHeadingFlipEntry.setDouble(rejectCountHeadingFlip);
+    countMT1FlipEntry.setDouble(rejectCountMT1Flip);
     countNoDataEntry.setDouble(rejectCountNoData);
 
     // Field2d — overlay odometry + vision poses

@@ -18,6 +18,7 @@ import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.commands.AutoCommands;
 import frc.robot.commands.FuelPathCommands;
 import frc.robot.commands.RunConveyorAndKickerCommand;
+import frc.robot.commands.RunConveyorCommand;
 import frc.robot.commands.RunIntakeCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.subsystems.ConveyorSubsystem;
@@ -213,7 +214,10 @@ public class RobotContainer {
         intakeSubsystem.slowRetract(false);
         intakeSubsystem.pulse(false);
     }));
-    m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500));
+    m_primaryController.leftTrigger ().whileTrue(Commands.parallel(
+        new RunIntakeCommand(intakeSubsystem, 6500),
+        new RunConveyorCommand(conveyorSubsystem, 1000)
+    ));
 
     m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
     // Right stick held: medium speed driving (0.8x translation)

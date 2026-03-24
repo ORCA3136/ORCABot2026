@@ -75,6 +75,9 @@ public class SwerveSubsystem extends SubsystemBase {
   private final NetworkTableEntry batteryVoltageEntry = robotTable.getEntry(NetworkTableNames.Robot.kBatteryVoltage);
   private final NetworkTableEntry batteryBrownoutEntry = robotTable.getEntry(NetworkTableNames.Robot.kBatteryBrownout);
 
+  // Pigeon2 yaw jump detection — catches resets/brownouts
+  private double prevPigeonRawYaw = Double.NaN;
+
   // Pigeon2 angular velocity suppliers — X=roll, Y=pitch, Z=yaw in device frame
   Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityZDevice().asSupplier();
   Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
@@ -352,6 +355,7 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public void zeroGyro()
   {
+    System.out.println("[GYRO-ZERO] heading was " + String.format("%.1f", getHeading().getDegrees()));
     swerveDrive.zeroGyro();
     pigeon2.reset();
   }
@@ -366,6 +370,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public void resetOdometry(Pose2d initialHolonomicPose)
   {
+    System.out.println("[ODOMETRY-RESET] oldHdg=" + String.format("%.1f", getPose().getRotation().getDegrees())
+        + " newHdg=" + String.format("%.1f", initialHolonomicPose.getRotation().getDegrees()));
     swerveDrive.resetOdometry(initialHolonomicPose);
   }
 
@@ -659,6 +665,19 @@ public class SwerveSubsystem extends SubsystemBase {
     updateNetworkTable();
     // Note: updateOdometry() runs automatically on YAGSL's internal Notifier thread.
     // Vision fusion is handled by VisionSubsystem.periodic() calling addVisionMeasurement().
+
+    // Pigeon2 yaw jump detection — catches resets/brownouts
+    double currentPigeonYaw = pigeon2.getYaw().getValueAsDouble();
+    if (!Double.isNaN(prevPigeonRawYaw)) {
+      double yawJump = Math.abs(currentPigeonYaw - prevPigeonRawYaw);
+      if (yawJump > 180) yawJump = 360 - yawJump;
+      if (yawJump > 30.0) {
+        System.out.println("[PIGEON-JUMP] " + String.format("%.1f", yawJump)
+            + "° in one cycle! prev=" + String.format("%.1f", prevPigeonRawYaw)
+            + " now=" + String.format("%.1f", currentPigeonYaw));
+      }
+    }
+    prevPigeonRawYaw = currentPigeonYaw;
   }
 
   /** This method will be called once per scheduler run during simulation */
