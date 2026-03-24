@@ -377,6 +377,9 @@ public class IntakeSubsystem extends SubsystemBase {
    */
   public void slowRetract(boolean enable) {
     slowRetractActive = enable;
+    if (enable && state == DeployState.SET) {
+      state = DeployState.TARGETING;
+    }
   }
 
   /** @return true if slow retract is currently active. */
