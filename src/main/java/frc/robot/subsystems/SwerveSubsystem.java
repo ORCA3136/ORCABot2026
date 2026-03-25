@@ -631,6 +631,11 @@ public class SwerveSubsystem extends SubsystemBase {
     return pigeon2.getYaw().getValueAsDouble();
   }
 
+  /** @return Raw Pigeon2 pitch in degrees. */
+  public double getPigeonPitchDeg() {
+    return pigeon2.getPitch().getValueAsDouble();
+  }
+
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
     enabledEntry.setBoolean(DriverStation.isEnabled());

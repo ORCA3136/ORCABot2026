@@ -92,6 +92,11 @@ public class IntakeSubsystem extends SubsystemBase {
 
   private int stallCounter = 0;
 
+  // ── Fuel detection state ────────────────────────────────────────
+  private int     fuelDetectCounter = 0;
+  private boolean fuelDetected      = false;
+  private boolean fuelDetectArmed   = true;
+
   private boolean pulseActive = false;
   private boolean hardwareSoftLimitsActive = false;
   private Setpoint intakeDeployTarget = Setpoint.kRetracted;
@@ -485,6 +490,50 @@ public class IntakeSubsystem extends SubsystemBase {
     SmartDashboard.putBoolean("Intake Limit Switch", isLimitSwitchPressed());
   }
 
+  // ── Fuel detection ─────────────────────────────────────────────
+
+  /**
+   * Monitors intake roller current for a fuel pickup spike.
+   * Only checks when the roller is actively intaking (positive applied output).
+   * Uses debounce (consecutive cycles) to reject transient noise.
+   * Latches {@code fuelDetected} for one cycle per event; re-arms when current drops.
+   */
+  private void checkFuelDetection() {
+    double rollerOutput = intakeMotor.getAppliedOutput();
+    double rollerCurrent = intakeMotor.getOutputCurrent();
+
+    // Only detect when roller is actively intaking
+    if (rollerOutput <= 0.01) {
+      fuelDetectCounter = 0;
+      fuelDetectArmed = true;
+      fuelDetected = false;
+      return;
+    }
+
+    if (rollerCurrent > IntakeConstants.kFuelDetectCurrentAmps) {
+      fuelDetectCounter++;
+    } else {
+      fuelDetectCounter = 0;
+      fuelDetectArmed = true;
+    }
+
+    // One-shot trigger: fire once per spike event
+    if (fuelDetectCounter >= IntakeConstants.kFuelDetectDebounceCycles && fuelDetectArmed) {
+      fuelDetected = true;
+      fuelDetectArmed = false;
+    } else {
+      fuelDetected = false;
+    }
+  }
+
+  /**
+   * Returns true for exactly one scheduler cycle when fuel is detected
+   * via a current spike on the intake roller.
+   */
+  public boolean isFuelDetected() {
+    return fuelDetected;
+  }
+
   // ── Limit switch re-zero ───────────────────────────────────────────
 
   /**
@@ -534,6 +583,7 @@ public class IntakeSubsystem extends SubsystemBase {
         break;
     }
     checkIntakeDeployStall();
+    checkFuelDetection();
     updateNetworkTable();
   }
 

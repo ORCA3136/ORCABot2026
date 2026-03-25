@@ -110,6 +110,12 @@ public final class Constants {
 
     // PID output clamp to prevent slamming into hard stops
     public static final double kMaxOutputDutyCycle = 0.6;
+
+    // ── Fuel detection (roller current spike) ───────────────────────
+    // Threshold must be above normal free-running current (~5-8A) but below
+    // the deploy stall threshold (35A). Tune with URCL current data.
+    public static final double kFuelDetectCurrentAmps    = 17.0; // Amps — spike threshold
+    public static final int    kFuelDetectDebounceCycles = 2;    // Consecutive cycles above threshold (~40ms at 50Hz)
   }
 
   public static final class VisionConstants {
@@ -167,6 +173,10 @@ public final class Constants {
     public static final double kSingleCameraHardResetMaxDistM = 2.5;
     public static final int kSingleCameraHardResetCycles = 50; // ~1s at 50Hz
 
+    // --- MT1 heading recovery ---
+    public static final int kMT1RecoveryCycles = 50;        // ~1s of sustained MT1 flip before auto-recovery
+    public static final double kPitchGateThresholdDeg = 10.0; // suppress recovery while pitch > this
+
     // --- Camera health monitoring ---
     public static final double kCameraStaleThresholdSec = 5.0;
   }
@@ -181,6 +191,10 @@ public final class Constants {
     public static final double kStickDeadband = 0.08;
     public static final double kPathplannerDeadband = 0.01;
     public static final double kTriggerDeadband = 0.05;
+
+    // ── Driver rumble feedback ──────────────────────────────────────
+    public static final double kRumbleIntensity   = 1.0; // 0.0 – 1.0 scale
+    public static final double kRumbleDurationSec = 0.5; // Seconds per detection event
   }
 
   public static final class CanIdConstants {

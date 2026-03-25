@@ -130,6 +130,8 @@ public class VisionSubsystem extends SubsystemBase {
   private double lastHeadingError = 0;
   private double lastMT1HeadingDeg = Double.NaN;
   private int rejectCountMT1Flip = 0;
+  private int consecutiveMT1FlipCount = 0;
+  private int mt1HeadingRecoveryCount = 0;
 
   // --- Camera health state ---
   private double lastFrontDataTime = 0;
@@ -234,7 +236,16 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry countSingleTagFarEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountSingleTagFar);
   private final NetworkTableEntry countHeadingFlipEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountHeadingFlip);
   private final NetworkTableEntry countMT1FlipEntry = countsTable.getEntry("MT1Flip");
+  private final NetworkTableEntry mt1RecoveryCountEntry = countsTable.getEntry("MT1RecoveryCount");
+  private final NetworkTableEntry countMT1FlipConsecutiveEntry = countsTable.getEntry("MT1FlipConsecutive");
   private final NetworkTableEntry countNoDataEntry = countsTable.getEntry(NetworkTableNames.Vision.kCountNoData);
+
+  // Limelight IMU + pitch monitoring (read LL IMU directly from NetworkTables)
+  private final NetworkTableEntry frontLLImuEntry = ntInstance.getTable(VisionConstants.kLimelightFrontName).getEntry("imu");
+  private final NetworkTableEntry backLLImuEntry = ntInstance.getTable(VisionConstants.kLimelightBackName).getEntry("imu");
+  private final NetworkTableEntry frontLLImuYawEntry = visionTable.getEntry("FrontLLInternalYaw");
+  private final NetworkTableEntry backLLImuYawEntry = visionTable.getEntry("BackLLInternalYaw");
+  private final NetworkTableEntry pitchDegEntry = visionTable.getEntry("PigeonPitchDeg");
 
   // Track current IMU mode label for telemetry
   private String currentImuModeLabel = "SyncInternalImu";
@@ -304,6 +315,31 @@ public class VisionSubsystem extends SubsystemBase {
 
     limelightFront.getSettings().withRobotOrientation(orientation);
     limelightBack.getSettings().withRobotOrientation(orientation);
+
+    // --- Limelight IMU + pitch logging for 3-way gyro analysis ---
+    // LL IMU NT array: [robotYaw, roll, pitch, internalYaw, rollRate, pitchRate, yawRate, accelX, accelY, accelZ]
+    double pitchDeg = swerveSubsystem.getPigeonPitchDeg();
+    double[] emptyImu = new double[0];
+    double[] frontImu = frontLLImuEntry.getDoubleArray(emptyImu);
+    double[] backImu = backLLImuEntry.getDoubleArray(emptyImu);
+    double frontLLInternalYaw = frontImu.length > 3 ? frontImu[3] : Double.NaN;
+    double backLLInternalYaw = backImu.length > 3 ? backImu[3] : Double.NaN;
+    double frontLLRobotYaw = frontImu.length > 0 ? frontImu[0] : Double.NaN;
+    double backLLRobotYaw = backImu.length > 0 ? backImu[0] : Double.NaN;
+    double pigeonYaw = swerveSubsystem.getPigeonRawYawDeg();
+
+    frontLLImuYawEntry.setDouble(frontLLInternalYaw);
+    backLLImuYawEntry.setDouble(backLLInternalYaw);
+    pitchDegEntry.setDouble(pitchDeg);
+
+    if (Math.abs(pitchDeg) > 10.0) {
+      System.out.println("[PITCH] " + String.format("%.1f", pitchDeg) + "°"
+          + " pigeonYaw=" + String.format("%.1f", pigeonYaw)
+          + " frontLL_internal=" + String.format("%.1f", frontLLInternalYaw)
+          + " backLL_internal=" + String.format("%.1f", backLLInternalYaw)
+          + " frontLL_robot=" + String.format("%.1f", frontLLRobotYaw)
+          + " backLL_robot=" + String.format("%.1f", backLLRobotYaw));
+    }
 
     // --- Wait for IMU to settle after mode switch ---
     if (!imuSettled) {
@@ -415,15 +451,44 @@ public class VisionSubsystem extends SubsystemBase {
     String rejectReason = getRejectReason(estimate, visionPose, now);
 
     // Secondary MT1 heading guard — catches 180° flips that the MT2-vs-odometry check misses
-    if (rejectReason.isEmpty() && !Double.isNaN(lastMT1HeadingDeg) && estimate.tagCount > 0) {
+    if ((rejectReason.isEmpty() || rejectReason.equals("heading_flip")) && !Double.isNaN(lastMT1HeadingDeg) && estimate.tagCount > 0) {
       double mt1Error = Math.abs(visionPose.getRotation().getDegrees() - lastMT1HeadingDeg);
       if (mt1Error > 180) mt1Error = 360 - mt1Error;
       if (mt1Error > 120.0) {
         rejectReason = "mt1_flip";
+        boolean pitchIsLevel = Math.abs(swerveSubsystem.getPigeonPitchDeg()) < VisionConstants.kPitchGateThresholdDeg;
+        if (pitchIsLevel) {
+          consecutiveMT1FlipCount++;
+        }
+
         System.out.println("[VISION-MT1-FLIP] MT2 hdg=" + String.format("%.1f", visionPose.getRotation().getDegrees())
             + " MT1 hdg=" + String.format("%.1f", lastMT1HeadingDeg)
-            + " error=" + String.format("%.1f", mt1Error) + "°");
+            + " error=" + String.format("%.1f", mt1Error) + "°"
+            + " consecutive=" + consecutiveMT1FlipCount
+            + " pitch=" + String.format("%.1f", swerveSubsystem.getPigeonPitchDeg()) + "°");
+
+        // Auto-recovery: sustained MT1 flip while level → reset heading from MT1
+        if (consecutiveMT1FlipCount >= VisionConstants.kMT1RecoveryCycles) {
+          Pose2d currentPose = swerveSubsystem.getPose();
+          Pose2d recoveryPose = new Pose2d(currentPose.getTranslation(),
+              Rotation2d.fromDegrees(lastMT1HeadingDeg));
+          System.out.println("[VISION-MT1-RECOVERY] heading " + String.format("%.1f", currentPose.getRotation().getDegrees())
+              + "° → MT1 " + String.format("%.1f", lastMT1HeadingDeg)
+              + "° after " + consecutiveMT1FlipCount + " cycles");
+          DataLogManager.log("Vision: MT1 HEADING RECOVERY — heading "
+              + String.format("%.1f", currentPose.getRotation().getDegrees())
+              + " → " + String.format("%.1f", lastMT1HeadingDeg));
+          swerveSubsystem.resetOdometry(recoveryPose);
+          consecutiveMT1FlipCount = 0;
+          mt1HeadingRecoveryCount++;
+          imuSettleCycleCount = 0;
+          imuSettled = false;
+        }
+      } else {
+        consecutiveMT1FlipCount = Math.max(0, consecutiveMT1FlipCount - 1);
       }
+    } else {
+      consecutiveMT1FlipCount = Math.max(0, consecutiveMT1FlipCount - 1);
     }
 
     if (!rejectReason.isEmpty()) {
@@ -435,6 +500,7 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     acceptCount++;
+    consecutiveMT1FlipCount = 0;
 
     // --- Calculate dynamic XY std devs ---
     double distanceFactor = estimate.avgTagDist * estimate.avgTagDist;
@@ -1011,6 +1077,8 @@ public class VisionSubsystem extends SubsystemBase {
     countSingleTagFarEntry.setDouble(rejectCountSingleTagFar);
     countHeadingFlipEntry.setDouble(rejectCountHeadingFlip);
     countMT1FlipEntry.setDouble(rejectCountMT1Flip);
+    mt1RecoveryCountEntry.setDouble(mt1HeadingRecoveryCount);
+    countMT1FlipConsecutiveEntry.setDouble(consecutiveMT1FlipCount);
     countNoDataEntry.setDouble(rejectCountNoData);
 
     // Field2d — overlay odometry + vision poses

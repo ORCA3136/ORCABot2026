@@ -17,6 +17,7 @@ import frc.robot.Constants.ShooterConstants;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.commands.AutoCommands;
 import frc.robot.commands.FuelPathCommands;
+import frc.robot.commands.RumbleCommand;
 import frc.robot.commands.RunConveyorAndKickerCommand;
 import frc.robot.commands.RunConveyorCommand;
 import frc.robot.commands.RunIntakeCommand;
@@ -80,6 +81,7 @@ public class RobotContainer {
     }
     configureOperatorBindings();
     configureNamedCommands();
+    configureFuelDetectionRumble();
 
     autoChooser = AutoBuilder.buildAutoChooser(); //pick a default
     SmartDashboard.putData("Auto Chooser", autoChooser);
@@ -393,6 +395,19 @@ public class RobotContainer {
     NamedCommands.registerCommand("Drive To Right Trench", DriveToPositionCommand.driveToRightTrench(driveBase));
     NamedCommands.registerCommand("Drive To Outpost",      DriveToPositionCommand.driveToOutpost(driveBase));
     NamedCommands.registerCommand("Drive To Depot",        DriveToPositionCommand.driveToDepot(driveBase));
+  }
+
+  /**
+   * Wires intake fuel detection to driver controller rumble.
+   * When IntakeSubsystem detects a current spike (fuel pickup), the controller
+   * rumbles for a configurable duration then auto-stops.
+   */
+  private void configureFuelDetectionRumble() {
+    new Trigger(intakeSubsystem::isFuelDetected)
+        .onTrue(new RumbleCommand(
+            m_primaryController,
+            OperatorConstants.kRumbleIntensity,
+            OperatorConstants.kRumbleDurationSec));
   }
 
   /** Returns true if the driver is actively pushing sticks (wants manual control). */
