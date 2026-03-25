@@ -193,8 +193,19 @@ public final class Constants {
     public static final double kTriggerDeadband = 0.05;
 
     // ── Driver rumble feedback ──────────────────────────────────────
-    public static final double kRumbleIntensity   = 1.0; // 0.0 – 1.0 scale
-    public static final double kRumbleDurationSec = 0.5; // Seconds per detection event
+    // Rumble provides tactile feedback through the Xbox controller.
+    // Intensity ranges from 0.0 (off) to 1.0 (max vibration).
+
+    // Fuel detection — single pulse when intake roller picks up fuel
+    public static final double kFuelRumbleIntensity   = 0.5; // Rumble strength (0.0 – 1.0)
+    public static final double kFuelRumbleDurationSec = 0.5; // Duration of each pulse
+
+    // Deploy stall warning — repeating pulse while deploy motor is near stall
+    // Pattern: ON for kStallRumblePulseSec → OFF for kStallRumblePauseSec → repeat
+    // Tied to IntakeConstants.kStallCurrentThreshold (35A)
+    public static final double kStallRumbleIntensity  = 1.0; // Rumble strength (0.0 – 1.0)
+    public static final double kStallRumblePulseSec   = 1.0; // Rumble ON duration per pulse
+    public static final double kStallRumblePauseSec   = 0.3; // Gap between pulses
   }
 
   public static final class CanIdConstants {

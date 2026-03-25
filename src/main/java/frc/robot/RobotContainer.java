@@ -31,6 +31,7 @@ import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import swervelib.SwerveInputStream;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -82,6 +83,7 @@ public class RobotContainer {
     configureOperatorBindings();
     configureNamedCommands();
     configureFuelDetectionRumble();
+    configureStallWarningRumble();
 
     autoChooser = AutoBuilder.buildAutoChooser(); //pick a default
     SmartDashboard.putData("Auto Chooser", autoChooser);
@@ -406,8 +408,25 @@ public class RobotContainer {
     new Trigger(intakeSubsystem::isFuelDetected)
         .onTrue(new RumbleCommand(
             m_primaryController,
-            OperatorConstants.kRumbleIntensity,
-            OperatorConstants.kRumbleDurationSec));
+            OperatorConstants.kFuelRumbleIntensity,
+            OperatorConstants.kFuelRumbleDurationSec));
+  }
+
+  /**
+   * Wires intake deploy stall detection to a pulsing rumble pattern.
+   * Pulses 1s on / 0.3s off while the deploy motor current exceeds stall threshold.
+   */
+  private void configureStallWarningRumble() {
+    new Trigger(intakeSubsystem::isDeployStallWarning)
+        .whileTrue(Commands.repeatingSequence(
+            Commands.runOnce(() -> m_primaryController.getHID().setRumble(
+                GenericHID.RumbleType.kBothRumble, OperatorConstants.kStallRumbleIntensity)),
+            Commands.waitSeconds(OperatorConstants.kStallRumblePulseSec),
+            Commands.runOnce(() -> m_primaryController.getHID().setRumble(
+                GenericHID.RumbleType.kBothRumble, 0.0)),
+            Commands.waitSeconds(OperatorConstants.kStallRumblePauseSec)
+        ).finallyDo(() -> m_primaryController.getHID().setRumble(
+            GenericHID.RumbleType.kBothRumble, 0.0)));
   }
 
   /** Returns true if the driver is actively pushing sticks (wants manual control). */

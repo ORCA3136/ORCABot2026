@@ -223,6 +223,16 @@ public class IntakeSubsystem extends SubsystemBase {
     }
   }
 
+  /**
+   * Returns true when the deploy motor current exceeds the stall threshold
+   * and the motor is actively being driven. Used by RobotContainer to
+   * trigger pulsing rumble feedback warning the driver of an impending fault.
+   */
+  public boolean isDeployStallWarning() {
+    if (state != DeployState.TARGETING && state != DeployState.MANUAL) return false;
+    return intakeDeployMotor.getOutputCurrent() > IntakeConstants.kStallCurrentThreshold;
+  }
+
   /** Enters the FAULT state — stops motor, logs reason. */
   private void enterFault(String reason) {
     intakeDeployMotor.set(0);
