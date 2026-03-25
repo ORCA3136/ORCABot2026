@@ -73,7 +73,6 @@ public class VisionSubsystem extends SubsystemBase {
     boolean seeded; // true if this result triggered an odometry seed (don't fuse again)
     String rejectReason;
     long[] tagIds = new long[0];
-    double latencyMs;
   }
 
   private final SwerveSubsystem swerveSubsystem;
@@ -139,6 +138,10 @@ public class VisionSubsystem extends SubsystemBase {
   private boolean frontStale = false;
   private boolean backStale = false;
 
+  // --- Rate-limiting for log messages ---
+  private boolean wasPitchHigh = false;
+  private boolean wasHeadingErrorHigh = false;
+
   // --- Rejection counters ---
   private int rejectCountStale = 0;
   private int rejectCountOutOfField = 0;
@@ -188,11 +191,8 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry visionHealthyEntry = visionTable.getEntry(NetworkTableNames.Vision.kVisionHealthy);
   private final NetworkTableEntry imuSettledEntry = visionTable.getEntry(NetworkTableNames.Vision.kImuSettled);
   private final NetworkTableEntry odometryHeadingEntry = visionTable.getEntry(NetworkTableNames.Vision.kOdometryHeading);
-  private final NetworkTableEntry pigeonRawYawEntry = visionTable.getEntry(NetworkTableNames.Vision.kPigeonRawYaw);
-  private final NetworkTableEntry detectedAllianceEntry = visionTable.getEntry(NetworkTableNames.Vision.kDetectedAlliance);
-  private final NetworkTableEntry firstFixStatusEntry = visionTable.getEntry(NetworkTableNames.Vision.kFirstFixStatus);
-  private final NetworkTableEntry imuModeEntry = visionTable.getEntry(NetworkTableNames.Vision.kImuMode);
-  private final NetworkTableEntry aprilTagReadyEntry = visionTable.getEntry(NetworkTableNames.Vision.kAprilTagReady);
+  // Removed: pigeonRawYaw, detectedAlliance, firstFixStatus, imuMode, aprilTagReady
+  // — these are logged as string events on state change instead of per-cycle NT entries
   private final NetworkTableEntry totalTagCountEntry = visionTable.getEntry(NetworkTableNames.Vision.kTotalTagCount);
 
   // Drift detection telemetry
@@ -205,16 +205,14 @@ public class VisionSubsystem extends SubsystemBase {
   private final NetworkTableEntry headingErrorEntry = visionTable.getEntry(NetworkTableNames.Vision.kHeadingError);
 
   // Per-camera health telemetry
-  private final NetworkTableEntry frontStaleEntry = frontTable.getEntry(NetworkTableNames.Vision.kCameraStale);
-  private final NetworkTableEntry backStaleEntry = backTable.getEntry(NetworkTableNames.Vision.kCameraStale);
+  // Removed: frontStaleEntry, backStaleEntry — development-only diagnostic
 
   // --- Enhanced logging publishers ---
 
   // Per-camera: fused std dev, latency, tag IDs
   private final NetworkTableEntry frontFusedStdDevEntry = frontTable.getEntry(NetworkTableNames.Vision.kFusedStdDevXY);
   private final NetworkTableEntry backFusedStdDevEntry = backTable.getEntry(NetworkTableNames.Vision.kFusedStdDevXY);
-  private final NetworkTableEntry frontLatencyEntry = frontTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
-  private final NetworkTableEntry backLatencyEntry = backTable.getEntry(NetworkTableNames.Vision.kLatencyMs);
+  // Removed: frontLatencyEntry, backLatencyEntry — development-only diagnostic
   private final IntegerArrayPublisher frontTagIdsPub = frontTable
       .getIntegerArrayTopic(NetworkTableNames.Vision.kTagIDs).publish();
   private final IntegerArrayPublisher backTagIdsPub = backTable
@@ -332,14 +330,16 @@ public class VisionSubsystem extends SubsystemBase {
     backLLImuYawEntry.setDouble(backLLInternalYaw);
     pitchDegEntry.setDouble(pitchDeg);
 
-    if (Math.abs(pitchDeg) > 10.0) {
-      System.out.println("[PITCH] " + String.format("%.1f", pitchDeg) + "°"
+    boolean pitchHigh = Math.abs(pitchDeg) > 10.0;
+    if (pitchHigh && !wasPitchHigh) {
+      DataLogManager.log("[PITCH] entered high: " + String.format("%.1f", pitchDeg) + "°"
           + " pigeonYaw=" + String.format("%.1f", pigeonYaw)
           + " frontLL_internal=" + String.format("%.1f", frontLLInternalYaw)
           + " backLL_internal=" + String.format("%.1f", backLLInternalYaw)
           + " frontLL_robot=" + String.format("%.1f", frontLLRobotYaw)
           + " backLL_robot=" + String.format("%.1f", backLLRobotYaw));
     }
+    wasPitchHigh = pitchHigh;
 
     // --- Wait for IMU to settle after mode switch ---
     if (!imuSettled) {
@@ -414,7 +414,6 @@ public class VisionSubsystem extends SubsystemBase {
       tagIds[i] = estimate.rawFiducials[i].id;
     }
     result.tagIds = tagIds;
-    result.latencyMs = (now - estimate.timestampSeconds) * 1000.0;
 
     // Record vision pose for drift detection, and update data time for staleness tracking
     if (isFront) {
@@ -461,7 +460,7 @@ public class VisionSubsystem extends SubsystemBase {
           consecutiveMT1FlipCount++;
         }
 
-        System.out.println("[VISION-MT1-FLIP] MT2 hdg=" + String.format("%.1f", visionPose.getRotation().getDegrees())
+        DataLogManager.log("[VISION-MT1-FLIP] MT2 hdg=" + String.format("%.1f", visionPose.getRotation().getDegrees())
             + " MT1 hdg=" + String.format("%.1f", lastMT1HeadingDeg)
             + " error=" + String.format("%.1f", mt1Error) + "°"
             + " consecutive=" + consecutiveMT1FlipCount
@@ -472,7 +471,7 @@ public class VisionSubsystem extends SubsystemBase {
           Pose2d currentPose = swerveSubsystem.getPose();
           Pose2d recoveryPose = new Pose2d(currentPose.getTranslation(),
               Rotation2d.fromDegrees(lastMT1HeadingDeg));
-          System.out.println("[VISION-MT1-RECOVERY] heading " + String.format("%.1f", currentPose.getRotation().getDegrees())
+          DataLogManager.log("[VISION-MT1-RECOVERY] heading " + String.format("%.1f", currentPose.getRotation().getDegrees())
               + "° → MT1 " + String.format("%.1f", lastMT1HeadingDeg)
               + "° after " + consecutiveMT1FlipCount + " cycles");
           DataLogManager.log("Vision: MT1 HEADING RECOVERY — heading "
@@ -521,7 +520,7 @@ public class VisionSubsystem extends SubsystemBase {
         seedPose = visionPose;
       }
 
-      System.out.println("[VISION-SEED] oldHdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees())
+      DataLogManager.log("[VISION-SEED] oldHdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees())
           + " newHdg=" + String.format("%.1f", seedPose.getRotation().getDegrees())
           + " firstFix=" + !hasEverHadFix + " tags=" + estimate.tagCount);
       swerveSubsystem.resetOdometry(seedPose);
@@ -572,8 +571,7 @@ public class VisionSubsystem extends SubsystemBase {
     // Publish per-camera tag IDs and latency regardless of fusion
     frontTagIdsPub.set(front.tagIds);
     backTagIdsPub.set(back.tagIds);
-    frontLatencyEntry.setDouble(front.latencyMs);
-    backLatencyEntry.setDouble(back.latencyMs);
+    // latency entries removed — development-only diagnostic
 
     if (!frontReady && !backReady) {
       // Nothing to fuse — clear fusion telemetry
@@ -691,15 +689,17 @@ public class VisionSubsystem extends SubsystemBase {
     double headingError = Math.abs(visionHeadingDeg - gyroHeadingDeg);
     if (headingError > 180) headingError = 360 - headingError;
     lastHeadingError = headingError;
-    if (headingError > 15.0) {
-      System.out.println("[VISION-HEADING] error=" + String.format("%.1f", headingError)
+    boolean headingErrorHigh = headingError > 15.0;
+    if (headingErrorHigh && !wasHeadingErrorHigh) {
+      DataLogManager.log("[VISION-HEADING] error=" + String.format("%.1f", headingError)
           + "° visionHdg=" + String.format("%.1f", visionHeadingDeg)
           + " gyroHdg=" + String.format("%.1f", gyroHeadingDeg)
           + " tags=" + estimate.tagCount
           + " avgDist=" + String.format("%.2f", estimate.avgTagDist) + "m");
     }
+    wasHeadingErrorHigh = headingErrorHigh;
     if (headingError > VisionConstants.kMaxHeadingErrorDeg) {
-      System.out.println("[VISION-REJECTED] heading_flip error=" + String.format("%.1f", headingError)
+      DataLogManager.log("[VISION-REJECTED] heading_flip error=" + String.format("%.1f", headingError)
           + "° visionHdg=" + String.format("%.1f", visionHeadingDeg)
           + " gyroHdg=" + String.format("%.1f", gyroHeadingDeg)
           + " tags=" + estimate.tagCount);
@@ -712,7 +712,7 @@ public class VisionSubsystem extends SubsystemBase {
   // --- IMU mode transitions ---
 
   private void enterSeedMode() {
-    System.out.println("[VISION-IMU] -> SyncInternalImu, hdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees()));
+    DataLogManager.log("[VISION-IMU] -> SyncInternalImu, hdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees()));
     limelightFront.getSettings().withImuMode(ImuMode.SyncInternalImu).save();
     limelightBack.getSettings().withImuMode(ImuMode.SyncInternalImu).save();
     imuSettleCycleCount = 0;
@@ -723,7 +723,7 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   private void enterActiveMode() {
-    System.out.println("[VISION-IMU] -> ExternalImu, hdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees()));
+    DataLogManager.log("[VISION-IMU] -> ExternalImu, hdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees()));
     limelightFront.getSettings()
         .withImuMode(ImuMode.ExternalImu)
         .withLimelightLEDMode(LEDMode.ForceOff)
@@ -884,7 +884,7 @@ public class VisionSubsystem extends SubsystemBase {
           double resetHdgError = Math.abs(resetPose.getRotation().getDegrees() - lastMT1HeadingDeg);
           if (resetHdgError > 180) resetHdgError = 360 - resetHdgError;
           if (resetHdgError > 120.0) {
-            System.out.println("[VISION-HARD-RESET-BLOCKED] dual-cam heading "
+            DataLogManager.log("[VISION-HARD-RESET-BLOCKED] dual-cam heading "
                 + String.format("%.1f", resetPose.getRotation().getDegrees())
                 + "° vs MT1 " + String.format("%.1f", lastMT1HeadingDeg) + "° — skipping reset");
             dualResetBlocked = true;
@@ -892,7 +892,7 @@ public class VisionSubsystem extends SubsystemBase {
           }
         }
         if (!dualResetBlocked) {
-          System.out.println("[VISION-HARD-RESET-DUAL] oldHdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees())
+          DataLogManager.log("[VISION-HARD-RESET-DUAL] oldHdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees())
               + " newHdg=" + String.format("%.1f", resetPose.getRotation().getDegrees())
               + " drift=" + String.format("%.2f", driftMagnitude) + "m");
           swerveSubsystem.resetOdometry(resetPose);
@@ -937,7 +937,7 @@ public class VisionSubsystem extends SubsystemBase {
             double resetHdgError = Math.abs(resetPose.getRotation().getDegrees() - lastMT1HeadingDeg);
             if (resetHdgError > 180) resetHdgError = 360 - resetHdgError;
             if (resetHdgError > 120.0) {
-              System.out.println("[VISION-HARD-RESET-BLOCKED] single-cam ("
+              DataLogManager.log("[VISION-HARD-RESET-BLOCKED] single-cam ("
                   + (isFrontActive ? "front" : "back") + ") heading "
                   + String.format("%.1f", resetPose.getRotation().getDegrees())
                   + "° vs MT1 " + String.format("%.1f", lastMT1HeadingDeg) + "° — skipping reset");
@@ -946,7 +946,7 @@ public class VisionSubsystem extends SubsystemBase {
             }
           }
           if (!singleResetBlocked) {
-            System.out.println("[VISION-HARD-RESET-SINGLE] cam=" + (isFrontActive ? "front" : "back")
+            DataLogManager.log("[VISION-HARD-RESET-SINGLE] cam=" + (isFrontActive ? "front" : "back")
                 + " oldHdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees())
                 + " newHdg=" + String.format("%.1f", resetPose.getRotation().getDegrees())
                 + " drift=" + String.format("%.2f", driftMagnitude) + "m");
@@ -1047,12 +1047,8 @@ public class VisionSubsystem extends SubsystemBase {
     visionHealthyEntry.setBoolean(isVisionHealthy());
     imuSettledEntry.setBoolean(imuSettled);
     odometryHeadingEntry.setDouble(swerveSubsystem.getHeading().getDegrees());
-    pigeonRawYawEntry.setDouble(swerveSubsystem.getPigeonRawYawDeg());
-    Optional<DriverStation.Alliance> rawAlliance = DriverStation.getAlliance();
-    detectedAllianceEntry.setString(rawAlliance.isPresent() ? rawAlliance.get().name() : "NOT_SET");
-    firstFixStatusEntry.setBoolean(hasEverHadFix);
-    imuModeEntry.setString(currentImuModeLabel);
-    aprilTagReadyEntry.setBoolean(hasEverHadFix && (lastFrontTagCount + lastBackTagCount) > 0);
+    // pigeonRawYaw removed — redundant with odometry heading
+    // detectedAlliance, firstFixStatus, imuMode, aprilTagReady — removed (logged as events)
     totalTagCountEntry.setDouble(lastFrontTagCount + lastBackTagCount);
 
     // Drift detection telemetry
@@ -1065,8 +1061,7 @@ public class VisionSubsystem extends SubsystemBase {
     headingErrorEntry.setDouble(lastHeadingError);
 
     // Camera health telemetry
-    frontStaleEntry.setBoolean(frontStale);
-    backStaleEntry.setBoolean(backStale);
+    // frontStale/backStale removed from NT — only used internally for fusion logic
 
     // Rejection counters
     countAcceptedEntry.setDouble(acceptCount);

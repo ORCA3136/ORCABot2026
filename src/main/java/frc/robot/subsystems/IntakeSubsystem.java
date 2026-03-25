@@ -21,7 +21,6 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.*;
@@ -497,7 +496,7 @@ public class IntakeSubsystem extends SubsystemBase {
     faultReasonEntry.setString(faultReason);
     limitSwitchEntry.setBoolean(isLimitSwitchPressed());
     absEncoderRawEntry.setDouble(intakeDeployAbsEncoder.getPosition());
-    SmartDashboard.putBoolean("Intake Limit Switch", isLimitSwitchPressed());
+    // Removed duplicate SmartDashboard write — already published as IntakeDeploy/LimitSwitch
   }
 
   // ── Fuel detection ─────────────────────────────────────────────

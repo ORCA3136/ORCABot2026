@@ -10,6 +10,8 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
+
+import edu.wpi.first.wpilibj.DataLogManager;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.commands.PathfindingCommand;
@@ -355,7 +357,7 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public void zeroGyro()
   {
-    System.out.println("[GYRO-ZERO] heading was " + String.format("%.1f", getHeading().getDegrees()));
+    DataLogManager.log("[GYRO-ZERO] heading was " + String.format("%.1f", getHeading().getDegrees()));
     swerveDrive.zeroGyro();
     pigeon2.reset();
   }
@@ -370,7 +372,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public void resetOdometry(Pose2d initialHolonomicPose)
   {
-    System.out.println("[ODOMETRY-RESET] oldHdg=" + String.format("%.1f", getPose().getRotation().getDegrees())
+    DataLogManager.log("[ODOMETRY-RESET] oldHdg=" + String.format("%.1f", getPose().getRotation().getDegrees())
         + " newHdg=" + String.format("%.1f", initialHolonomicPose.getRotation().getDegrees()));
     swerveDrive.resetOdometry(initialHolonomicPose);
   }
@@ -677,7 +679,7 @@ public class SwerveSubsystem extends SubsystemBase {
       double yawJump = Math.abs(currentPigeonYaw - prevPigeonRawYaw);
       if (yawJump > 180) yawJump = 360 - yawJump;
       if (yawJump > 30.0) {
-        System.out.println("[PIGEON-JUMP] " + String.format("%.1f", yawJump)
+        DataLogManager.log("[PIGEON-JUMP] " + String.format("%.1f", yawJump)
             + "° in one cycle! prev=" + String.format("%.1f", prevPigeonRawYaw)
             + " now=" + String.format("%.1f", currentPigeonYaw));
       }

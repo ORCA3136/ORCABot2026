@@ -291,12 +291,9 @@ public final class Constants {
       public static final String kVisionHealthy = "VisionHealthy";
       public static final String kImuSettled = "ImuSettled";
       public static final String kOdometryHeading = "OdometryHeading";
-      public static final String kPigeonRawYaw = "PigeonRawYaw";
-      public static final String kDetectedAlliance = "DetectedAlliance";
-      public static final String kFirstFixStatus = "FirstFixStatus";
-      public static final String kImuMode = "ImuMode";
+      // Removed: PigeonRawYaw, DetectedAlliance, FirstFixStatus, ImuMode, AprilTagReady
+      // — logged as string events on state change instead of per-cycle NT entries
       public static final String kAllianceOverride = "AllianceOverride";
-      public static final String kAprilTagReady = "AprilTagReady";
       public static final String kTotalTagCount = "TotalTagCount";
 
       // Heading cross-check
@@ -312,14 +309,10 @@ public final class Constants {
       // Dual-camera agreement
       public static final String kDualCameraAgreed = "DualCameraAgreed";
 
-      // Per-camera health
-      public static final String kCameraStale = "CameraStale";
-
       // --- Enhanced logging for AdvantageScope ---
 
-      // Per-camera: fused std dev, latency, tag IDs, pose trail
+      // Per-camera: fused std dev, tag IDs
       public static final String kFusedStdDevXY = "FusedStdDevXY";
-      public static final String kLatencyMs = "LatencyMs";
       public static final String kTagIDs = "TagIDs";
 
       // System-level: fusion mode, pre-fusion pose, vision delta

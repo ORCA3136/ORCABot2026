@@ -45,7 +45,9 @@ public final class RobotLogger {
     } else {
       DataLogManager.start("", "", 0.5);
     }
-    DataLogManager.logNetworkTables(true);
+    // NT data is already captured by AdvantageKit (LoggedRobot + WPILOGWriter).
+    // Mirroring to DataLogManager causes buffer overflow on roboRIO USB.
+    DataLogManager.logNetworkTables(false);
 
     // Log match metadata
     DataLogManager.log("Match: " + DriverStation.getEventName()
