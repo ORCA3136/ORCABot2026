@@ -132,14 +132,14 @@ public class RobotContainer {
     // Intake deploy percent out
     m_primaryController.a().and(m_primaryController.back().negate()).whileTrue(
         Commands.runEnd(
-            () -> intakeSubsystem.setIntakeDeployDutyCycle(1200),
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(3500),
             () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
             intakeSubsystem
         ));
     // Intake deploy percent in
     m_primaryController.b().and(m_primaryController.back().negate()).whileTrue(
         Commands.runEnd(
-            () -> intakeSubsystem.setIntakeDeployDutyCycle(-1200),
+            () -> intakeSubsystem.setIntakeDeployDutyCycle(-4500),
             () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
             intakeSubsystem
         ));

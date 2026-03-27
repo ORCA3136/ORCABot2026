@@ -62,7 +62,7 @@ public final class Constants {
     // Rack & pinion deploy PID (on SparkFlex relative encoder, position control)
     public static final double kP = 0.2;
     public static final double kI = 0.0;
-    public static final double kD = 0.015;
+    public static final double kD = 0.025;
 
     // Gravity feedforward for extending (mechanism angles slightly downward)
     public static final double kExtendArbFF = 0.05;     // duty cycle offset for extending against gravity
@@ -85,8 +85,8 @@ public final class Constants {
 
     // Deploy position ramp rates (motor rotations per 20ms cycle)
     // Bumped for longer travel distance
-    public static final double kExtendRampRate = 0.50;
-    public static final double kRetractRampRate = 0.55;
+    public static final double kExtendRampRate = 1.0;
+    public static final double kRetractRampRate = 1.1;
 
     // Slow retract for feeding: motor rotations per 20ms cycle
     // Gradually pulls intake in to feed fuel toward conveyor
@@ -114,7 +114,7 @@ public final class Constants {
     public static final double kPulseFrequencyHz = 1.0;    // Slow deliberate in/out motion
 
     // PID output clamp to prevent slamming into hard stops
-    public static final double kMaxOutputDutyCycle = 0.6;
+    public static final double kMaxOutputDutyCycle = 0.8;
 
     // ── Fuel detection (roller current spike) ───────────────────────
     // Threshold must be above normal free-running current (~5-8A) but below
