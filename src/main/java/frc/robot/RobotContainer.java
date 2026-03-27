@@ -181,7 +181,7 @@ public class RobotContainer {
     // m_primaryController.rightBumper().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1950)))
     //                                  .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     // Aim at hub + shoot: auto-rotate rear toward hub while spinning up shooter from distance map
-    m_primaryController.rightBumper()
+    m_primaryController.rightTrigger()
         .onTrue(Commands.runOnce(() -> {
           Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
               ? FieldPositions.kRedFieldElements.get(0)
@@ -197,7 +197,7 @@ public class RobotContainer {
           if (current != null) current.cancel();
           driveBase.setDefaultCommand(fastDriveCommand);
         }));
-    m_primaryController.rightTrigger()
+    m_primaryController.rightBumper()
             .whileTrue(new ShootCommand(shooterSubsystem));
 
     // Feed: slow retract to pull fuel in, then shuttle pulse for remaining fuel

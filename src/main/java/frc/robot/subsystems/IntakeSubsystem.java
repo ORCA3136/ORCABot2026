@@ -45,6 +45,7 @@ public class IntakeSubsystem extends SubsystemBase {
     TARGETING,
     SET,
     MANUAL,
+    STALL_RECOVERY,
     FAULT
   }
 
@@ -90,6 +91,9 @@ public class IntakeSubsystem extends SubsystemBase {
   private final Timer PIDTimer = new Timer();
 
   private int stallCounter = 0;
+  private int stallRetryCount = 0;
+  private double stallRecoveryTarget = 0;
+  private final Timer stallRecoveryTimer = new Timer();
 
   // ── Fuel detection state ────────────────────────────────────────
   private int     fuelDetectCounter = 0;
@@ -165,6 +169,7 @@ public class IntakeSubsystem extends SubsystemBase {
     if (state != DeployState.FAULT) return;
     faultReason = "";
     stallCounter = 0;
+    stallRetryCount = 0;
     state = DeployState.UNHOMED;
     DriverStation.reportWarning("IntakeSubsystem: Fault cleared → UNHOMED", false);
   }
@@ -203,8 +208,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Runs each cycle to check if intake deploy is stalled */
   private void checkIntakeDeployStall() {
-    // Only check for stalls when the motor is actively being driven by PID or manual
-    if (state != DeployState.TARGETING && state != DeployState.MANUAL) {
+    // Only check for stalls when the motor is actively being driven
+    if (state != DeployState.TARGETING && state != DeployState.MANUAL && state != DeployState.STALL_RECOVERY) {
       stallCounter = 0;
       return;
     }
@@ -217,8 +222,47 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     if (stallCounter >= IntakeConstants.kStallCycles) {
-      // Stall was detected - faulting
-      enterFault("Stall detected for intake deploy");
+      if (stallRetryCount < IntakeConstants.kMaxStallRetries) {
+        // Attempt stall recovery — reverse direction to dislodge fuel
+        stallRetryCount++;
+        stallCounter = 0;
+
+        // Reverse: if heading toward extended (positive), go back; if toward retracted, go forward
+        double currentPos = getIntakeDeployPosition();
+        double target = calculatePosition();
+        if (currentPos < target) {
+          // Was extending → reverse inward
+          stallRecoveryTarget = currentPos - IntakeConstants.kStallReverseRotations;
+        } else {
+          // Was retracting → reverse outward
+          stallRecoveryTarget = currentPos + IntakeConstants.kStallReverseRotations;
+        }
+        // Clamp within soft limits
+        stallRecoveryTarget = Math.max(IntakeConstants.kRetractedPosition,
+            Math.min(stallRecoveryTarget, IntakeConstants.kMaxExtension));
+
+        state = DeployState.STALL_RECOVERY;
+        stallRecoveryTimer.restart();
+        DriverStation.reportWarning("IntakeSubsystem: Stall recovery attempt "
+            + stallRetryCount + "/" + IntakeConstants.kMaxStallRetries, false);
+      } else {
+        enterFault("Stall detected after " + IntakeConstants.kMaxStallRetries + " recovery attempts");
+      }
+    }
+  }
+
+  /** Drives the deploy motor to the recovery target, then resumes TARGETING. */
+  private void updateStallRecovery() {
+    deployPIDController.setSetpoint(stallRecoveryTarget, ControlType.kPosition, ClosedLoopSlot.kSlot0, 0);
+
+    boolean posReached = Math.abs(getIntakeDeployPosition() - stallRecoveryTarget) < IntakeConstants.kTargetTolerance;
+    boolean timedOut = stallRecoveryTimer.hasElapsed(IntakeConstants.kStallRecoveryTimeoutSec);
+
+    if (posReached || timedOut) {
+      stallCounter = 0;
+      rampedPosition = getIntakeDeployPosition();
+      state = DeployState.TARGETING;
+      DriverStation.reportWarning("IntakeSubsystem: Stall recovery complete, resuming", false);
     }
   }
 
@@ -228,7 +272,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * trigger pulsing rumble feedback warning the driver of an impending fault.
    */
   public boolean isDeployStallWarning() {
-    if (state != DeployState.TARGETING && state != DeployState.MANUAL) return false;
+    if (state != DeployState.TARGETING && state != DeployState.MANUAL && state != DeployState.STALL_RECOVERY) return false;
     return intakeDeployMotor.getOutputCurrent() > IntakeConstants.kStallCurrentThreshold;
   }
 
@@ -356,6 +400,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     rampedPosition = getIntakeDeployPosition();
     stallCounter = 0;
+    stallRetryCount = 0;
 
     PIDTimer.restart();
     // state = DeployState.TARGETING;
@@ -586,6 +631,9 @@ public class IntakeSubsystem extends SubsystemBase {
       case MANUAL:
         // Driver is currently controlling intake
         // Do not call ANY motor commands
+        break;
+      case STALL_RECOVERY:
+        updateStallRecovery();
         break;
       case FAULT:
         intakeDeployMotor.set(0);

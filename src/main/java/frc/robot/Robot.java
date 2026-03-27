@@ -62,7 +62,7 @@ public class Robot extends LoggedRobot {
     }
 
     // Start data logging before subsystems so early messages are captured
-    RobotLogger.init(true); // Logging to USB stick
+    RobotLogger.init(false); // Logging to USB stick
 
     commandScheduler = CommandScheduler.getInstance();
     m_robotContainer = new RobotContainer();

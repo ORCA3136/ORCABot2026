@@ -95,11 +95,16 @@ public final class Constants {
     // Homing
     public static final double kHomingDutyCycle = -0.1;    // Slow inward (negative = retract)
     public static final double kHomingCurrentThreshold = 20.0; // Amps — stall detection
-    public static final double kStallCurrentThreshold  = 35.0; // Amps — stall detection (above normal PID servo current)
-    public static final int kStallCycles = 75;             // Consecutive cycles above threshold (~1500ms)
+    public static final double kStallCurrentThreshold  = 38.0; // Amps — stall detection (above normal PID servo current)
+    public static final int kStallCycles = 100;            // Consecutive cycles above threshold (~2000ms)
     public static final int kHomingStallCycles = 13;        // Consecutive cycles above threshold (~260ms)
     public static final double kHomingTimeoutSec = 5.0;    // Max time before FAULT
     public static final double kPIDTimeoutSec = 0.1;    // Max time before FAULT
+
+    // Stall recovery — reverse and retry instead of immediate FAULT
+    public static final int kMaxStallRetries = 3;
+    public static final double kStallReverseRotations = 1.5;      // Motor rotations to reverse
+    public static final double kStallRecoveryTimeoutSec = 1.0;    // Max time for recovery move
 
     // Set to true when the limit switch is physically wired on the robot
     public static final boolean kLimitSwitchInstalled = true;
@@ -113,7 +118,7 @@ public final class Constants {
 
     // ── Fuel detection (roller current spike) ───────────────────────
     // Threshold must be above normal free-running current (~5-8A) but below
-    // the deploy stall threshold (35A). Tune with URCL current data.
+    // the deploy stall threshold (38A). Tune with URCL current data.
     public static final double kFuelDetectCurrentAmps    = 17.0; // Amps — spike threshold
     public static final int    kFuelDetectDebounceCycles = 2;    // Consecutive cycles above threshold (~40ms at 50Hz)
   }
@@ -501,14 +506,14 @@ public final class Constants {
   public static final class FuelPathConstants {
     // Intake roller speeds (RPM)
     public static final double kIntakeInSlow = 2000;
-    public static final double kIntakeInStandard = 4000;
+    public static final double kIntakeInStandard = 5000;
     public static final double kIntakeInFast = 6000;
     public static final double kIntakeOutSlow = -1500;
     public static final double kIntakeOutStandard = -3000;
     public static final double kIntakeOutFast = -5000;
 
     // Conveyor speeds (RPM)
-    public static final double kConveyorIn = 1500;
+    public static final double kConveyorIn = 2000;
     public static final double kConveyorOut = -1000;
 
     // Conveyor jog (nudge to clear minor blockages)
