@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-import com.studica.frc.AHRS;
+import com.studica.frc.Navx;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 
 import edu.wpi.first.wpilibj.DataLogManager;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -604,34 +606,34 @@ public class SwerveSubsystem extends SubsystemBase {
     return swerveDrive.getGyroRotation3d();
   }
 
-  /** @return The raw NavX3 AHRS object from YAGSL's gyro wrapper. */
-  private AHRS getNavX() {
-    return (AHRS) swerveDrive.getGyro().getIMU();
+  /** @return The raw NavX3 object from YAGSL's gyro wrapper. */
+  private Navx getNavX() {
+    return (Navx) swerveDrive.getGyro().getIMU();
   }
 
   /** @return Pitch rate in degrees per second. */
   public double getPitchRateDegPerSec() {
-    return getNavX().getRawGyroY();
+    return getNavX().getAngularVel()[1].in(DegreesPerSecond);
   }
 
   /** @return Roll rate in degrees per second. */
   public double getRollRateDegPerSec() {
-    return getNavX().getRawGyroX();
+    return getNavX().getAngularVel()[0].in(DegreesPerSecond);
   }
 
   /** @return Yaw rate in degrees per second. */
   public double getYawRateDegPerSec() {
-    return getNavX().getRate();
+    return getNavX().getAngularVel()[2].in(DegreesPerSecond);
   }
 
   /** @return Raw yaw in degrees (from the IMU, not odometry-corrected). */
   public double getRawYawDeg() {
-    return getNavX().getYaw();
+    return getNavX().getYaw().in(Degrees);
   }
 
   /** @return Raw pitch in degrees. */
   public double getRawPitchDeg() {
-    return getNavX().getPitch();
+    return getNavX().getPitch().in(Degrees);
   }
 
   /** Publish continuous values to network table */
