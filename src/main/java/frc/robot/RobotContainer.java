@@ -196,6 +196,7 @@ public class RobotContainer {
           Command current = driveBase.getCurrentCommand();
           if (current != null) current.cancel();
           driveBase.setDefaultCommand(fastDriveCommand);
+          intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
         }));
     m_primaryController.rightBumper()
             .whileTrue(new ShootCommand(shooterSubsystem));
