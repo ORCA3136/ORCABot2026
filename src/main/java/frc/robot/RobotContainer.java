@@ -269,13 +269,9 @@ public class RobotContainer {
       intakeSubsystem.clearFault();
       intakeSubsystem.requestHoming();
     }));
-    // Prepare to climb — stow intake, move arm to horizontal
-    // m_secondaryController.button(6).onTrue(
-    //     ClimberCommands.prepareToClimb(climberSubsystem, intakeSubsystem));
 
-    // // Execute climb — pull arm to climbed position and hold
-    // m_secondaryController.button(7).onTrue(
-    //     ClimberCommands.executeClimb(climberSubsystem));
+    m_secondaryController.button(6);
+    m_secondaryController.button(7);
 
     // Shoot on the move: aim at lead-compensated hub + full pipeline + moving shooter map
     m_secondaryController.button(8)
