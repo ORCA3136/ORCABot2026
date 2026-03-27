@@ -311,8 +311,11 @@ public class VisionSubsystem extends SubsystemBase {
             DegreesPerSecond.of(swerveSubsystem.getPigeon2PitchRateDegPerSec()),
             DegreesPerSecond.of(swerveSubsystem.getPigeon2YawRateDegPerSec())));
 
-    limelightFront.getSettings().withRobotOrientation(orientation);
-    limelightBack.getSettings().withRobotOrientation(orientation);
+    // Only feed heading when pigeon is healthy — otherwise let LL4 IMU run independently
+    if (!swerveSubsystem.isPigeonUnhealthy()) {
+      limelightFront.getSettings().withRobotOrientation(orientation);
+      limelightBack.getSettings().withRobotOrientation(orientation);
+    }
 
     // --- Limelight IMU + pitch logging for 3-way gyro analysis ---
     // LL IMU NT array: [robotYaw, roll, pitch, internalYaw, rollRate, pitchRate, yawRate, accelX, accelY, accelZ]
@@ -467,17 +470,23 @@ public class VisionSubsystem extends SubsystemBase {
             + " pitch=" + String.format("%.1f", swerveSubsystem.getPigeonPitchDeg()) + "°");
 
         // Auto-recovery: sustained MT1 flip while level → reset heading from MT1
-        if (consecutiveMT1FlipCount >= VisionConstants.kMT1RecoveryCycles) {
+        // Fast path: when pigeon CAN is unhealthy, recover in 3 cycles instead of 50
+        int recoveryCycles = swerveSubsystem.isPigeonUnhealthy()
+            ? VisionConstants.kMT1FastRecoveryCycles
+            : VisionConstants.kMT1RecoveryCycles;
+        if (consecutiveMT1FlipCount >= recoveryCycles) {
           Pose2d currentPose = swerveSubsystem.getPose();
           Pose2d recoveryPose = new Pose2d(currentPose.getTranslation(),
               Rotation2d.fromDegrees(lastMT1HeadingDeg));
           DataLogManager.log("[VISION-MT1-RECOVERY] heading " + String.format("%.1f", currentPose.getRotation().getDegrees())
               + "° → MT1 " + String.format("%.1f", lastMT1HeadingDeg)
-              + "° after " + consecutiveMT1FlipCount + " cycles");
+              + "° after " + consecutiveMT1FlipCount + " cycles"
+              + (swerveSubsystem.isPigeonUnhealthy() ? " (FAST — pigeon unhealthy)" : ""));
           DataLogManager.log("Vision: MT1 HEADING RECOVERY — heading "
               + String.format("%.1f", currentPose.getRotation().getDegrees())
               + " → " + String.format("%.1f", lastMT1HeadingDeg));
           swerveSubsystem.resetOdometry(recoveryPose);
+          swerveSubsystem.clearPigeonUnhealthy();
           consecutiveMT1FlipCount = 0;
           mt1HeadingRecoveryCount++;
           imuSettleCycleCount = 0;
@@ -723,21 +732,23 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   private void enterActiveMode() {
-    DataLogManager.log("[VISION-IMU] -> ExternalImu, hdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees()));
+    DataLogManager.log("[VISION-IMU] -> SyncInternalImu (active), hdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees()));
+    // Stay in SyncInternalImu — LL4 maintains its own IMU, soft-synced from our heading feed.
+    // If pigeon goes bad and we stop feeding, LL4 continues independently on its own IMU.
     limelightFront.getSettings()
-        .withImuMode(ImuMode.ExternalImu)
+        .withImuMode(ImuMode.SyncInternalImu)
         .withLimelightLEDMode(LEDMode.ForceOff)
         .save();
     limelightBack.getSettings()
-        .withImuMode(ImuMode.ExternalImu)
+        .withImuMode(ImuMode.SyncInternalImu)
         .withLimelightLEDMode(LEDMode.ForceOff)
         .save();
     ledIsOn = false;
     ledState = LedState.OFF;
     imuSettleCycleCount = 0;
     imuSettled = false;
-    currentImuModeLabel = "ExternalImu";
-    DataLogManager.log("Vision: entering active mode (ExternalImu), settling for "
+    currentImuModeLabel = "SyncInternalImu";
+    DataLogManager.log("Vision: entering active mode (SyncInternalImu), settling for "
         + VisionConstants.kImuSettleCycles + " cycles");
   }
 

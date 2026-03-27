@@ -79,6 +79,11 @@ public class SwerveSubsystem extends SubsystemBase {
 
   // Pigeon2 yaw jump detection — catches resets/brownouts
   private double prevPigeonRawYaw = Double.NaN;
+  private int pigeonJumpCount = 0;
+  private int pigeonJumpWindowCycles = 0;
+  private boolean pigeonUnhealthy = false;
+  private static final int PIGEON_JUMP_THRESHOLD = 3;
+  private static final int PIGEON_JUMP_WINDOW_CYCLES = 20;
 
   // Pigeon2 angular velocity suppliers — X=roll, Y=pitch, Z=yaw in device frame
   Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityZDevice().asSupplier();
@@ -638,6 +643,19 @@ public class SwerveSubsystem extends SubsystemBase {
     return pigeon2.getPitch().getValueAsDouble();
   }
 
+  /** @return True if the Pigeon2 has detected rapid yaw jumps indicating CAN dropout. */
+  public boolean isPigeonUnhealthy() {
+    return pigeonUnhealthy;
+  }
+
+  /** Clears the pigeon unhealthy flag after vision MT1 recovery resets odometry. */
+  public void clearPigeonUnhealthy() {
+    if (pigeonUnhealthy) {
+      pigeonUnhealthy = false;
+      DataLogManager.log("[PIGEON-HEALTHY] Pigeon unhealthy flag cleared after MT1 recovery");
+    }
+  }
+
   /** Publish continuous values to network table */
   public void updateNetworkTable() {
     enabledEntry.setBoolean(DriverStation.isEnabled());
@@ -675,14 +693,26 @@ public class SwerveSubsystem extends SubsystemBase {
 
     // Pigeon2 yaw jump detection — catches resets/brownouts
     double currentPigeonYaw = pigeon2.getYaw().getValueAsDouble();
+    pigeonJumpWindowCycles++;
     if (!Double.isNaN(prevPigeonRawYaw)) {
       double yawJump = Math.abs(currentPigeonYaw - prevPigeonRawYaw);
       if (yawJump > 180) yawJump = 360 - yawJump;
       if (yawJump > 30.0) {
+        pigeonJumpCount++;
         DataLogManager.log("[PIGEON-JUMP] " + String.format("%.1f", yawJump)
             + "° in one cycle! prev=" + String.format("%.1f", prevPigeonRawYaw)
             + " now=" + String.format("%.1f", currentPigeonYaw));
       }
+    }
+    // Sliding window: decay jump count after window expires
+    if (pigeonJumpWindowCycles >= PIGEON_JUMP_WINDOW_CYCLES) {
+      pigeonJumpCount = Math.max(0, pigeonJumpCount - 1);
+      pigeonJumpWindowCycles = 0;
+    }
+    // Flag unhealthy when too many jumps in the window
+    if (pigeonJumpCount >= PIGEON_JUMP_THRESHOLD && !pigeonUnhealthy) {
+      pigeonUnhealthy = true;
+      DataLogManager.log("[PIGEON-UNHEALTHY] " + pigeonJumpCount + " yaw jumps detected — requesting fast MT1 recovery");
     }
     prevPigeonRawYaw = currentPigeonYaw;
   }

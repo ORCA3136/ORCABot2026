@@ -180,6 +180,7 @@ public final class Constants {
 
     // --- MT1 heading recovery ---
     public static final int kMT1RecoveryCycles = 50;        // ~1s of sustained MT1 flip before auto-recovery
+    public static final int kMT1FastRecoveryCycles = 3;    // Fast recovery when pigeon CAN is unhealthy (~60ms)
     public static final double kPitchGateThresholdDeg = 10.0; // suppress recovery while pitch > this
 
     // --- Camera health monitoring ---
