@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-import com.ctre.phoenix6.hardware.Pigeon2;
+import com.studica.frc.AHRS;
 
 import edu.wpi.first.wpilibj.DataLogManager;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -43,7 +43,6 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
-import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.*;
 
@@ -66,8 +65,6 @@ public class SwerveSubsystem extends SubsystemBase {
   
   SwerveDrive swerveDrive;
   
-  private final Pigeon2 pigeon2 = new Pigeon2(CanIdConstants.kPigeonCanId, "rio");
-
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kTable);
   final NetworkTable robotTable = networkTable.getTable(NetworkTableNames.Robot.kTable);
@@ -77,13 +74,8 @@ public class SwerveSubsystem extends SubsystemBase {
   private final NetworkTableEntry batteryVoltageEntry = robotTable.getEntry(NetworkTableNames.Robot.kBatteryVoltage);
   private final NetworkTableEntry batteryBrownoutEntry = robotTable.getEntry(NetworkTableNames.Robot.kBatteryBrownout);
 
-  // Pigeon2 yaw jump detection — catches resets/brownouts
-  private double prevPigeonRawYaw = Double.NaN;
-
-  // Pigeon2 angular velocity suppliers — X=roll, Y=pitch, Z=yaw in device frame
-  Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityZDevice().asSupplier();
-  Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
-  Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityYDevice().asSupplier();
+  // Yaw jump detection — catches resets/brownouts
+  private double prevRawYaw = Double.NaN;
 
   StructPublisher<Pose2d> robotPose2dPublisher = odometryTable
       .getStructTopic(NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();
@@ -359,7 +351,6 @@ public class SwerveSubsystem extends SubsystemBase {
   {
     DataLogManager.log("[GYRO-ZERO] heading was " + String.format("%.1f", getHeading().getDegrees()));
     swerveDrive.zeroGyro();
-    pigeon2.reset();
   }
 
    /**
@@ -378,7 +369,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void zeroHeading() {
-    pigeon2.reset();
+    swerveDrive.zeroGyro();
   }
 
   public Command zeroHeadingCommand() {
@@ -608,34 +599,39 @@ public class SwerveSubsystem extends SubsystemBase {
     swerveDrive.addVisionMeasurement(pose, timestamp, stdDevs);
   }
 
-  /** @return Full 3D gyro rotation from the Pigeon2 via YAGSL. */
+  /** @return Full 3D gyro rotation via YAGSL (hardware-agnostic). */
   public Rotation3d getGyroRotation3d() {
     return swerveDrive.getGyroRotation3d();
   }
 
-  /** @return Pigeon2 pitch rate in degrees per second (X-axis in device frame). */
-  public double getPigeon2PitchRateDegPerSec() {
-    return pitchSupplier.get().baseUnitMagnitude();
+  /** @return The raw NavX3 AHRS object from YAGSL's gyro wrapper. */
+  private AHRS getNavX() {
+    return (AHRS) swerveDrive.getGyro().getIMU();
   }
 
-  /** @return Pigeon2 roll rate in degrees per second (Y-axis in device frame). */
-  public double getPigeon2RollRateDegPerSec() {
-    return rollSupplier.get().baseUnitMagnitude();
+  /** @return Pitch rate in degrees per second. */
+  public double getPitchRateDegPerSec() {
+    return getNavX().getRawGyroY();
   }
 
-  /** @return Pigeon2 yaw rate in degrees per second (Z-axis in device frame). */
-  public double getPigeon2YawRateDegPerSec() {
-    return yawSupplier.get().baseUnitMagnitude();
+  /** @return Roll rate in degrees per second. */
+  public double getRollRateDegPerSec() {
+    return getNavX().getRawGyroX();
   }
 
-  /** @return Raw Pigeon2 yaw in degrees (not reset by odometry). */
-  public double getPigeonRawYawDeg() {
-    return pigeon2.getYaw().getValueAsDouble();
+  /** @return Yaw rate in degrees per second. */
+  public double getYawRateDegPerSec() {
+    return getNavX().getRate();
   }
 
-  /** @return Raw Pigeon2 pitch in degrees. */
-  public double getPigeonPitchDeg() {
-    return pigeon2.getPitch().getValueAsDouble();
+  /** @return Raw yaw in degrees (from the IMU, not odometry-corrected). */
+  public double getRawYawDeg() {
+    return getNavX().getYaw();
+  }
+
+  /** @return Raw pitch in degrees. */
+  public double getRawPitchDeg() {
+    return getNavX().getPitch();
   }
 
   /** Publish continuous values to network table */
@@ -657,9 +653,9 @@ public class SwerveSubsystem extends SubsystemBase {
       robotVelocityPublisher.set(new double[] {velocity.vxMetersPerSecond,
                                                velocity.vyMetersPerSecond,
                                                0}, 0);
-      robotAngularVelocity3dPublisher.set(new double[] {pitchSupplier.get().baseUnitMagnitude(),
-                                                        rollSupplier.get().baseUnitMagnitude(),
-                                                        yawSupplier.get().baseUnitMagnitude()}, 0);
+      robotAngularVelocity3dPublisher.set(new double[] {getPitchRateDegPerSec(),
+                                                        getRollRateDegPerSec(),
+                                                        getYawRateDegPerSec()}, 0);
     } catch (Exception e) {
       // Swallow errors from corrupted sim state (NaN Rotation2d from MapleSim)
       // to prevent cascading failures in the scheduler loop
@@ -673,18 +669,18 @@ public class SwerveSubsystem extends SubsystemBase {
     // Note: updateOdometry() runs automatically on YAGSL's internal Notifier thread.
     // Vision fusion is handled by VisionSubsystem.periodic() calling addVisionMeasurement().
 
-    // Pigeon2 yaw jump detection — catches resets/brownouts
-    double currentPigeonYaw = pigeon2.getYaw().getValueAsDouble();
-    if (!Double.isNaN(prevPigeonRawYaw)) {
-      double yawJump = Math.abs(currentPigeonYaw - prevPigeonRawYaw);
+    // Yaw jump detection — catches resets/brownouts
+    double currentRawYaw = getRawYawDeg();
+    if (!Double.isNaN(prevRawYaw)) {
+      double yawJump = Math.abs(currentRawYaw - prevRawYaw);
       if (yawJump > 180) yawJump = 360 - yawJump;
       if (yawJump > 30.0) {
-        DataLogManager.log("[PIGEON-JUMP] " + String.format("%.1f", yawJump)
-            + "° in one cycle! prev=" + String.format("%.1f", prevPigeonRawYaw)
-            + " now=" + String.format("%.1f", currentPigeonYaw));
+        DataLogManager.log("[IMU-JUMP] " + String.format("%.1f", yawJump)
+            + "° in one cycle! prev=" + String.format("%.1f", prevRawYaw)
+            + " now=" + String.format("%.1f", currentRawYaw));
       }
     }
-    prevPigeonRawYaw = currentPigeonYaw;
+    prevRawYaw = currentRawYaw;
   }
 
   /** This method will be called once per scheduler run during simulation */

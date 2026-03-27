@@ -307,16 +307,16 @@ public class VisionSubsystem extends SubsystemBase {
     Orientation3d orientation = new Orientation3d(
         feedRotation,
         new AngularVelocity3d(
-            DegreesPerSecond.of(swerveSubsystem.getPigeon2RollRateDegPerSec()),
-            DegreesPerSecond.of(swerveSubsystem.getPigeon2PitchRateDegPerSec()),
-            DegreesPerSecond.of(swerveSubsystem.getPigeon2YawRateDegPerSec())));
+            DegreesPerSecond.of(swerveSubsystem.getRollRateDegPerSec()),
+            DegreesPerSecond.of(swerveSubsystem.getPitchRateDegPerSec()),
+            DegreesPerSecond.of(swerveSubsystem.getYawRateDegPerSec())));
 
     limelightFront.getSettings().withRobotOrientation(orientation);
     limelightBack.getSettings().withRobotOrientation(orientation);
 
     // --- Limelight IMU + pitch logging for 3-way gyro analysis ---
     // LL IMU NT array: [robotYaw, roll, pitch, internalYaw, rollRate, pitchRate, yawRate, accelX, accelY, accelZ]
-    double pitchDeg = swerveSubsystem.getPigeonPitchDeg();
+    double pitchDeg = swerveSubsystem.getRawPitchDeg();
     double[] emptyImu = new double[0];
     double[] frontImu = frontLLImuEntry.getDoubleArray(emptyImu);
     double[] backImu = backLLImuEntry.getDoubleArray(emptyImu);
@@ -324,7 +324,7 @@ public class VisionSubsystem extends SubsystemBase {
     double backLLInternalYaw = backImu.length > 3 ? backImu[3] : Double.NaN;
     double frontLLRobotYaw = frontImu.length > 0 ? frontImu[0] : Double.NaN;
     double backLLRobotYaw = backImu.length > 0 ? backImu[0] : Double.NaN;
-    double pigeonYaw = swerveSubsystem.getPigeonRawYawDeg();
+    double pigeonYaw = swerveSubsystem.getRawYawDeg();
 
     frontLLImuYawEntry.setDouble(frontLLInternalYaw);
     backLLImuYawEntry.setDouble(backLLInternalYaw);
@@ -455,7 +455,7 @@ public class VisionSubsystem extends SubsystemBase {
       if (mt1Error > 180) mt1Error = 360 - mt1Error;
       if (mt1Error > 120.0) {
         rejectReason = "mt1_flip";
-        boolean pitchIsLevel = Math.abs(swerveSubsystem.getPigeonPitchDeg()) < VisionConstants.kPitchGateThresholdDeg;
+        boolean pitchIsLevel = Math.abs(swerveSubsystem.getRawPitchDeg()) < VisionConstants.kPitchGateThresholdDeg;
         if (pitchIsLevel) {
           consecutiveMT1FlipCount++;
         }
@@ -464,7 +464,7 @@ public class VisionSubsystem extends SubsystemBase {
             + " MT1 hdg=" + String.format("%.1f", lastMT1HeadingDeg)
             + " error=" + String.format("%.1f", mt1Error) + "°"
             + " consecutive=" + consecutiveMT1FlipCount
-            + " pitch=" + String.format("%.1f", swerveSubsystem.getPigeonPitchDeg()) + "°");
+            + " pitch=" + String.format("%.1f", swerveSubsystem.getRawPitchDeg()) + "°");
 
         // Auto-recovery: sustained MT1 flip while level → reset heading from MT1
         if (consecutiveMT1FlipCount >= VisionConstants.kMT1RecoveryCycles) {
@@ -668,7 +668,7 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     // 3. High yaw rate (MegaTag2 is unreliable during fast rotation)
-    double yawRate = Math.abs(swerveSubsystem.getPigeon2YawRateDegPerSec());
+    double yawRate = Math.abs(swerveSubsystem.getYawRateDegPerSec());
     if (yawRate > VisionConstants.kMaxYawRateDegPerSec) {
       return "high_yaw_rate";
     }

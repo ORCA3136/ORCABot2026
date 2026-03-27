@@ -228,7 +228,7 @@ public final class Constants {
     public static final int kRearLeftTurningCanId = 8;
 
     // Pigeon
-    public static final int kPigeonCanId = 29;
+    public static final int kNavXCanId = 28;
 
     // Shooter Vortexes
     public static final int kShooterPrimaryCanId = 11;
