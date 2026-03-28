@@ -316,6 +316,13 @@ public class SwerveSubsystem extends SubsystemBase {
     });
   }
 
+  public Command driveRobotOriented(Supplier<ChassisSpeeds> velocity)
+  {
+    return run(()->{
+      swerveDrive.drive(velocity.get());
+    });
+  }
+
   /** Locks the swerve modules into an X pattern to resist being pushed. */
   public void lockPose() {
     swerveDrive.lockPose();
