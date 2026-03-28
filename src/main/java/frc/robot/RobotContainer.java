@@ -114,6 +114,10 @@ public class RobotContainer {
   Command mediumDriveCommand = driveBase.driveFieldOriented(mediumRegularTurning);
   Command fastDriveCommand   = driveBase.driveFieldOriented(fastRegularTurning);
 
+  Command slowRobotDriveCommand   = driveBase.driveRobotOriented(slowRegularTurning);
+  Command mediumRobotDriveCommand = driveBase.driveRobotOriented(mediumRegularTurning);
+  Command fastRobotDriveCommand   = driveBase.driveRobotOriented(fastRegularTurning);
+
   Command aimAtHubCommand = driveBase.driveFieldOriented(aimAtHubStream);
   
   /**
@@ -176,6 +180,12 @@ public class RobotContainer {
     m_primaryController.back     ().and(m_primaryController.povRight     ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-2)));
     m_primaryController.back     ().and(m_primaryController.povDown      ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-1)));
 
+    
+    
+    
+    m_primaryController.povUp    ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(fastRobotDriveCommand)));
+    m_primaryController.povDown  ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
+    
     // Axis/Triggers/Sticks
 
     // m_primaryController.rightBumper().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1950)))
