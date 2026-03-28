@@ -231,6 +231,12 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterVelocityTarget = shooterSpeedOnlyMap.get(distanceToHub);
   }
 
+  public void setShooterMapOnly(double distance) {
+    double distanceToHub = Units.inchesToMeters(distance);
+    // set shooter based on distance
+    shooterVelocityTarget = shooterSpeedOnlyMap.get(distanceToHub);
+  }
+
   /**
    * Sets shooter RPM using the lead-compensated distance to the hub.
    * Accounts for robot motion so RPM matches the effective shot distance.

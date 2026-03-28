@@ -15,6 +15,7 @@ import frc.robot.Constants.FieldPositions;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.commands.DriveToPositionCommand;
+import frc.robot.commands.FixedShootCommand;
 import frc.robot.commands.AutoCommands;
 import frc.robot.commands.FuelPathCommands;
 import frc.robot.commands.RumbleCommand;
@@ -165,11 +166,18 @@ public class RobotContainer {
     m_primaryController.y().and(m_primaryController.back().negate())
         .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted)));
 
+
     // D pad
-    m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
-    m_primaryController.povLeft  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(3)));
+    // m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
+    // m_primaryController.povLeft  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(3)));
+		// m_primaryController.povRight ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
+    // m_primaryController.povDown  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
+
+    m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
+    m_primaryController.povLeft  ().and(m_primaryController.back().negate()).whileTrue(new FixedShootCommand(shooterSubsystem, 120));
 		m_primaryController.povRight ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
     m_primaryController.povDown  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
+
 
     m_primaryController.back     ().and(m_primaryController.povUp        ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-4)));
     m_primaryController.back     ().and(m_primaryController.povLeft      ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-3)));
