@@ -655,7 +655,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** @return Raw Pigeon2 pitch in degrees. */
   public double getPigeonPitchDeg() {
-    return navX3.getYaw().in(Units.Degrees); // pigeon2.getPitch().getValueAsDouble();
+    return navX3.getPitch().in(Units.Degrees); // pigeon2.getPitch().getValueAsDouble();
   }
 
   /** @return True if the Pigeon2 has detected rapid yaw jumps indicating CAN dropout. */

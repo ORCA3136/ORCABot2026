@@ -267,8 +267,8 @@ public class VisionSubsystem extends SubsystemBase {
 
     frontPoseEstimate = new PoseEstimate(limelightFront, "botpose_orb_wpiblue", true);
     backPoseEstimate = new PoseEstimate(limelightBack, "botpose_orb_wpiblue", true);
-    frontPoseMT1Estimate = new PoseEstimate(limelightFront, "botpose_wpiblue", true);
-    backPoseMT1Estimate = new PoseEstimate(limelightBack, "botpose_wpiblue", true);
+    frontPoseMT1Estimate = new PoseEstimate(limelightFront, "botpose_wpiblue", false);
+    backPoseMT1Estimate = new PoseEstimate(limelightBack, "botpose_wpiblue", false);
 
     // Initialize health timestamps so cameras aren't immediately flagged stale
     double startTime = Timer.getFPGATimestamp();
@@ -313,8 +313,8 @@ public class VisionSubsystem extends SubsystemBase {
 
     // Only feed heading when pigeon is healthy — otherwise let LL4 IMU run independently
     if (!swerveSubsystem.isPigeonUnhealthy()) {
-      limelightFront.getSettings().withRobotOrientation(orientation);
-      limelightBack.getSettings().withRobotOrientation(orientation);
+      limelightFront.getSettings().withRobotOrientation(orientation).save();
+      limelightBack.getSettings().withRobotOrientation(orientation).save();
     }
 
     // --- Limelight IMU + pitch logging for 3-way gyro analysis ---
@@ -443,10 +443,10 @@ public class VisionSubsystem extends SubsystemBase {
       // Log large MT1 vs MT2 heading divergence for post-match analysis
       double headingDiff = Math.abs(mt1Pose.getRotation().getDegrees() - visionPose.getRotation().getDegrees());
       if (headingDiff > 180) headingDiff = 360 - headingDiff;
-      if (headingDiff > 10) {
-        DataLogManager.log("Vision: MT1/MT2 heading divergence "
-            + String.format("%.1f", headingDiff) + "deg on " + (isFront ? "front" : "back"));
-      }
+      // if (headingDiff > 10) {
+      //   DataLogManager.log("Vision: MT1/MT2 heading divergence "
+      //       + String.format("%.1f", headingDiff) + "deg on " + (isFront ? "front" : "back"));
+      // }
     }
 
     // --- 4-stage rejection ---
@@ -604,9 +604,9 @@ public class VisionSubsystem extends SubsystemBase {
         dualCameraAgreed = true;
         double stdDev = getEffectiveXYStdDev(VisionConstants.kDualCameraAgreedStdDev);
         swerveSubsystem.addVisionMeasurement(
-            front.pose, front.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
+            front.pose, front.timestamp, VecBuilder.fill(stdDev, stdDev, 100.0));
         swerveSubsystem.addVisionMeasurement(
-            back.pose, back.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
+            back.pose, back.timestamp, VecBuilder.fill(stdDev, stdDev, 100.0));
         fusionModeEntry.setString("dual_agreed");
         frontFusedStdDevEntry.setDouble(stdDev);
         backFusedStdDevEntry.setDouble(stdDev);
@@ -615,9 +615,9 @@ public class VisionSubsystem extends SubsystemBase {
         double frontStd = getEffectiveXYStdDev(front.baseXYStdDev);
         double backStd = getEffectiveXYStdDev(back.baseXYStdDev);
         swerveSubsystem.addVisionMeasurement(
-            front.pose, front.timestamp, VecBuilder.fill(frontStd, frontStd, 9999.0));
+            front.pose, front.timestamp, VecBuilder.fill(frontStd, frontStd, 100.0));
         swerveSubsystem.addVisionMeasurement(
-            back.pose, back.timestamp, VecBuilder.fill(backStd, backStd, 9999.0));
+            back.pose, back.timestamp, VecBuilder.fill(backStd, backStd, 100.0));
         fusionModeEntry.setString("dual_independent");
         frontFusedStdDevEntry.setDouble(frontStd);
         backFusedStdDevEntry.setDouble(backStd);
@@ -633,8 +633,8 @@ public class VisionSubsystem extends SubsystemBase {
       boolean otherCameraStale = frontReady ? backStale : frontStale;
 
       double stdDev;
-      if (otherCameraStale
-          && single.tagCount >= VisionConstants.kSingleCameraBoostMinTags
+      if ( // otherCameraStale &&
+          single.tagCount >= VisionConstants.kSingleCameraBoostMinTags
           && single.avgTagDist < VisionConstants.kSingleCameraBoostMaxDistM) {
         // Other camera is confirmed stale, single camera has good multi-tag data
         stdDev = getEffectiveXYStdDev(VisionConstants.kSingleCameraBoostStdDev);
@@ -643,7 +643,7 @@ public class VisionSubsystem extends SubsystemBase {
       }
 
       swerveSubsystem.addVisionMeasurement(
-          single.pose, single.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
+          single.pose, single.timestamp, VecBuilder.fill(stdDev, stdDev, 100.0));
 
       fusionModeEntry.setString(frontReady ? "single_front" : "single_back");
       if (frontReady) {

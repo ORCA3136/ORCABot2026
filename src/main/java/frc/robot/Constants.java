@@ -163,7 +163,7 @@ public final class Constants {
     public static final double kBoostedXYStdDev = 0.02;
     public static final int kBoostDurationCycles = 25;    // ~500ms at 50Hz
     public static final double kHardResetThresholdM = 1.5;
-    public static final int kHardResetConfirmCycles = 25; // ~500ms at 50Hz
+    public static final int kHardResetConfirmCycles = 10; // ~200ms at 50Hz
     public static final double kDriftPoseFreshnessMaxSec = 0.2;
 
     // --- Dual-camera same-cycle agreement ---
@@ -176,7 +176,7 @@ public final class Constants {
     public static final double kSingleCameraBoostStdDev = 0.06;
     public static final int kSingleCameraHardResetMinTags = 3;
     public static final double kSingleCameraHardResetMaxDistM = 2.5;
-    public static final int kSingleCameraHardResetCycles = 50; // ~1s at 50Hz
+    public static final int kSingleCameraHardResetCycles = 20; // ~400ms at 50Hz
 
     // --- MT1 heading recovery ---
     public static final int kMT1RecoveryCycles = 50;        // ~1s of sustained MT1 flip before auto-recovery
