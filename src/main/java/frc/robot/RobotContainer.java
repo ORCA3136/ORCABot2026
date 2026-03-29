@@ -111,13 +111,14 @@ public class RobotContainer {
   SwerveInputStream mediumRegularTurning = mediumSpeedDrive.copy().withControllerRotationAxis(() -> -MathUtil.applyDeadband(m_primaryController.getRightX(), OperatorConstants.kStickDeadband));
   SwerveInputStream fastRegularTurning   = controllerInput .copy().withControllerRotationAxis(() -> -MathUtil.applyDeadband(m_primaryController.getRightX(), OperatorConstants.kStickDeadband));
 
+  SwerveInputStream robotOrientedDrive = fastRegularTurning.copy()
+            .allianceRelativeControl(false).robotRelative(true);
+
   Command slowDriveCommand   = driveBase.driveFieldOriented(slowRegularTurning);
   Command mediumDriveCommand = driveBase.driveFieldOriented(mediumRegularTurning);
   Command fastDriveCommand   = driveBase.driveFieldOriented(fastRegularTurning);
 
-  Command slowRobotDriveCommand   = driveBase.driveRobotOriented(slowRegularTurning);
-  Command mediumRobotDriveCommand = driveBase.driveRobotOriented(mediumRegularTurning);
-  Command fastRobotDriveCommand   = driveBase.driveRobotOriented(fastRegularTurning);
+  Command fastRobotDriveCommand   = driveBase.driveRobotOriented(robotOrientedDrive);
 
   Command aimAtHubCommand = driveBase.driveFieldOriented(aimAtHubStream);
   
@@ -177,22 +178,17 @@ public class RobotContainer {
 		// m_primaryController.povRight ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
     // m_primaryController.povDown  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
 
-    m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
+    m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(fastRobotDriveCommand)));
     m_primaryController.povLeft  ().and(m_primaryController.back().negate()).whileTrue(new FixedShootCommand(shooterSubsystem, 120));
-		m_primaryController.povRight ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
-    m_primaryController.povDown  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
+		// m_primaryController.povRight ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
+    m_primaryController.povDown  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
 
 
-    m_primaryController.back     ().and(m_primaryController.povUp        ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-4)));
-    m_primaryController.back     ().and(m_primaryController.povLeft      ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-3)));
-    m_primaryController.back     ().and(m_primaryController.povRight     ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-2)));
-    m_primaryController.back     ().and(m_primaryController.povDown      ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-1)));
+    // m_primaryController.back     ().and(m_primaryController.povUp        ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-4)));
+    // m_primaryController.back     ().and(m_primaryController.povLeft      ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-3)));
+    // m_primaryController.back     ().and(m_primaryController.povRight     ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-2)));
+    // m_primaryController.back     ().and(m_primaryController.povDown      ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-1)));
 
-    
-    
-    
-    m_primaryController.povUp    ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(fastRobotDriveCommand)));
-    m_primaryController.povDown  ().onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
     
     // Axis/Triggers/Sticks
 

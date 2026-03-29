@@ -234,7 +234,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public void setShooterMapOnly(double distance) {
     double distanceToHub = Units.inchesToMeters(distance);
     // set shooter based on distance
-    shooterVelocityTarget = shooterSpeedOnlyMap.get(distanceToHub);
+    shooterVelocityTarget = 2825; // shooterSpeedOnlyMap.get(distanceToHub);
   }
 
   /**

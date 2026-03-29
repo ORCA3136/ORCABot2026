@@ -707,7 +707,8 @@ public class VisionSubsystem extends SubsystemBase {
           + " avgDist=" + String.format("%.2f", estimate.avgTagDist) + "m");
     }
     wasHeadingErrorHigh = headingErrorHigh;
-    if (headingError > VisionConstants.kMaxHeadingErrorDeg) {
+    if (
+       > VisionConstants.kMaxHeadingErrorDeg) {
       DataLogManager.log("[VISION-REJECTED] heading_flip error=" + String.format("%.1f", headingError)
           + "° visionHdg=" + String.format("%.1f", visionHeadingDeg)
           + " gyroHdg=" + String.format("%.1f", gyroHeadingDeg)

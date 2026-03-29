@@ -229,7 +229,7 @@ public final class Constants {
     public static final int kRearLeftTurningCanId = 8;
 
     // Pigeon
-    public static final int kPigeonCanId = 29;
+    public static final int kPigeonCanId = 32;
 
     // Shooter Vortexes
     public static final int kShooterPrimaryCanId = 11;
@@ -274,6 +274,7 @@ public final class Constants {
       public static final String kDistanceToHubMeters = "Distance to Hub meters";
       public static final String kDistanceToHubInches = "Distance to Hub Inches";
       public static final String kDistanceToTrench = "Distance to Nearest Trench";
+      public static final String kNavxHeading = "Navx heading";
     }
 
     public static final class Vision {

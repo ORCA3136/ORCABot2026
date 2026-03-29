@@ -20,6 +20,8 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.studica.frc.Navx;
+
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -27,6 +29,7 @@ import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 import swervelib.SwerveDrive;
+import swervelib.imu.NavX3Swerve;
 import swervelib.math.SwerveMath;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -43,6 +46,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.Constants.*;
@@ -66,7 +70,8 @@ public class SwerveSubsystem extends SubsystemBase {
   
   SwerveDrive swerveDrive;
   
-  private final Pigeon2 pigeon2 = new Pigeon2(CanIdConstants.kPigeonCanId, "rio");
+  private final Navx navX3 = new Navx(0);
+  // private final Pigeon2 pigeon2 = new Pigeon2(CanIdConstants.kPigeonCanId, "rio");
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kTable);
@@ -86,9 +91,9 @@ public class SwerveSubsystem extends SubsystemBase {
   private static final int PIGEON_JUMP_WINDOW_CYCLES = 20;
 
   // Pigeon2 angular velocity suppliers — X=roll, Y=pitch, Z=yaw in device frame
-  Supplier<AngularVelocity> yawSupplier = pigeon2.getAngularVelocityZDevice().asSupplier();
-  Supplier<AngularVelocity> rollSupplier = pigeon2.getAngularVelocityXDevice().asSupplier();
-  Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityYDevice().asSupplier();
+  Supplier<AngularVelocity> yawSupplier = () -> navX3.getAngularVel()[2]; // pigeon2.getAngularVelocityZDevice().asSupplier();
+  Supplier<AngularVelocity> rollSupplier = () -> navX3.getAngularVel()[0]; // pigeon2.getAngularVelocityXDevice().asSupplier();
+  Supplier<AngularVelocity> pitchSupplier = () -> navX3.getAngularVel()[1]; // pigeon2.getAngularVelocityYDevice().asSupplier();
 
   StructPublisher<Pose2d> robotPose2dPublisher = odometryTable
       .getStructTopic(NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();
@@ -102,6 +107,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private final NetworkTableEntry hubDistanceEntryMeters = odometryTable.getEntry(NetworkTableNames.Odometry.kDistanceToHubMeters);
   private final NetworkTableEntry hubDistanceEntryInches = odometryTable.getEntry(NetworkTableNames.Odometry.kDistanceToHubInches);
   private final NetworkTableEntry trenchDistanceEntry = odometryTable.getEntry(NetworkTableNames.Odometry.kDistanceToTrench);
+  private final NetworkTableEntry navxHeadingEntry = odometryTable.getEntry(NetworkTableNames.Odometry.kNavxHeading);
 
 
   
@@ -118,6 +124,8 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Creates a new SwerveSubsystem from given json files. */
   public SwerveSubsystem(File directory) {
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.LOW;
+
+    
 
     try
     {
@@ -319,7 +327,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command driveRobotOriented(Supplier<ChassisSpeeds> velocity)
   {
     return run(()->{
-      swerveDrive.drive(velocity.get());
+      swerveDrive.drive(velocity.get(), false, new Translation2d());
     });
   }
 
@@ -371,7 +379,7 @@ public class SwerveSubsystem extends SubsystemBase {
   {
     DataLogManager.log("[GYRO-ZERO] heading was " + String.format("%.1f", getHeading().getDegrees()));
     swerveDrive.zeroGyro();
-    pigeon2.reset();
+    navX3.resetYaw(); // pigeon2.reset();
   }
 
    /**
@@ -390,7 +398,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void zeroHeading() {
-    pigeon2.reset();
+    navX3.resetYaw(); // pigeon2.reset();
   }
 
   public Command zeroHeadingCommand() {
@@ -642,12 +650,12 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** @return Raw Pigeon2 yaw in degrees (not reset by odometry). */
   public double getPigeonRawYawDeg() {
-    return pigeon2.getYaw().getValueAsDouble();
+    return navX3.getYaw().in(Units.Degrees); // pigeon2.getYaw().getValueAsDouble();
   }
 
   /** @return Raw Pigeon2 pitch in degrees. */
   public double getPigeonPitchDeg() {
-    return pigeon2.getPitch().getValueAsDouble();
+    return navX3.getYaw().in(Units.Degrees); // pigeon2.getPitch().getValueAsDouble();
   }
 
   /** @return True if the Pigeon2 has detected rapid yaw jumps indicating CAN dropout. */
@@ -674,9 +682,14 @@ public class SwerveSubsystem extends SubsystemBase {
     
     trenchDistanceEntry.setDouble(getDistanceToNearestTrench());
 
+    // navx3 heading
+    navxHeadingEntry.setDouble(getHeadingRadians());
+
     try {
       robotPose2dPublisher.set(swerveDrive.getPose());
       robotRotation3dPublisher.set(swerveDrive.getGyroRotation3d());
+
+
 
       ChassisSpeeds velocity = swerveDrive.getRobotVelocity();
       robotVelocityPublisher.set(new double[] {velocity.vxMetersPerSecond,
@@ -699,7 +712,7 @@ public class SwerveSubsystem extends SubsystemBase {
     // Vision fusion is handled by VisionSubsystem.periodic() calling addVisionMeasurement().
 
     // Pigeon2 yaw jump detection — catches resets/brownouts
-    double currentPigeonYaw = pigeon2.getYaw().getValueAsDouble();
+    double currentPigeonYaw = navX3.getYaw().in(Units.Degrees); // pigeon2.getYaw().getValueAsDouble();
     pigeonJumpWindowCycles++;
     if (!Double.isNaN(prevPigeonRawYaw)) {
       double yawJump = Math.abs(currentPigeonYaw - prevPigeonRawYaw);
