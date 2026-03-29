@@ -606,7 +606,7 @@ public class VisionSubsystem extends SubsystemBase {
         swerveSubsystem.addVisionMeasurement(
             front.pose, front.timestamp, VecBuilder.fill(stdDev, stdDev, 100.0));
         swerveSubsystem.addVisionMeasurement(
-            back.pose, back.timestamp, VecBuilder.fill(stdDev, stdDev, 100.0));
+            back.pose, back.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
         fusionModeEntry.setString("dual_agreed");
         frontFusedStdDevEntry.setDouble(stdDev);
         backFusedStdDevEntry.setDouble(stdDev);
@@ -617,7 +617,7 @@ public class VisionSubsystem extends SubsystemBase {
         swerveSubsystem.addVisionMeasurement(
             front.pose, front.timestamp, VecBuilder.fill(frontStd, frontStd, 100.0));
         swerveSubsystem.addVisionMeasurement(
-            back.pose, back.timestamp, VecBuilder.fill(backStd, backStd, 100.0));
+            back.pose, back.timestamp, VecBuilder.fill(backStd, backStd, 9999.0));
         fusionModeEntry.setString("dual_independent");
         frontFusedStdDevEntry.setDouble(frontStd);
         backFusedStdDevEntry.setDouble(backStd);
@@ -732,23 +732,22 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   private void enterActiveMode() {
-    DataLogManager.log("[VISION-IMU] -> SyncInternalImu (active), hdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees()));
-    // Stay in SyncInternalImu — LL4 maintains its own IMU, soft-synced from our heading feed.
-    // If pigeon goes bad and we stop feeding, LL4 continues independently on its own IMU.
+    DataLogManager.log("[VISION-IMU] -> ExternalImu (active), hdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees()));
+    
     limelightFront.getSettings()
-        .withImuMode(ImuMode.SyncInternalImu)
+        .withImuMode(ImuMode.ExternalImu)
         .withLimelightLEDMode(LEDMode.ForceOff)
         .save();
     limelightBack.getSettings()
-        .withImuMode(ImuMode.SyncInternalImu)
+        .withImuMode(ImuMode.ExternalImu)
         .withLimelightLEDMode(LEDMode.ForceOff)
         .save();
     ledIsOn = false;
     ledState = LedState.OFF;
     imuSettleCycleCount = 0;
     imuSettled = false;
-    currentImuModeLabel = "SyncInternalImu";
-    DataLogManager.log("Vision: entering active mode (SyncInternalImu), settling for "
+    currentImuModeLabel = "ExternalIMU";
+    DataLogManager.log("Vision: entering active mode (ExternalImu), settling for "
         + VisionConstants.kImuSettleCycles + " cycles");
   }
 
