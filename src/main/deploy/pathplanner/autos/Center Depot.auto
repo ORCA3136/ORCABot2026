@@ -95,7 +95,7 @@
       ]
     }
   },
-  "resetOdom": true,
+  "resetOdom": false,
   "folder": "Center Autos",
   "choreoAuto": false
 }

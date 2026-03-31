@@ -4,12 +4,12 @@
     {
       "anchor": {
         "x": 4.453095577746077,
-        "y": 0.48333808844507875
+        "y": 0.48299999999999965
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.452537882499252,
-        "y": 0.5411815016998464
+        "x": 7.452537676811302,
+        "y": 0.5408540781207866
       },
       "isLocked": false,
       "linkedName": null
@@ -17,47 +17,47 @@
     {
       "anchor": {
         "x": 7.66188302425107,
-        "y": 1.3114122681883031
+        "y": 1.311
       },
       "prevControl": {
-        "x": 7.56904720240926,
-        "y": 0.9801011570771911
+        "x": 7.569048732383151,
+        "y": 0.9796884601827065
       },
       "nextControl": {
-        "x": 7.801725907131379,
-        "y": 1.8104814851011912
+        "x": 7.801723602461098,
+        "y": 1.810069862692794
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 7.416048502139798,
-        "y": 3.666248216833096
+        "x": 7.416,
+        "y": 3.6660000000000004
       },
       "prevControl": {
-        "x": 8.21298229304026,
-        "y": 3.758896728004391
+        "x": 8.200867840297526,
+        "y": 3.8323420781640545
       },
       "nextControl": {
-        "x": 6.983733333333333,
-        "y": 3.6159888888888894
+        "x": 7.171432298553449,
+        "y": 3.6141671975564655
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 6.1944333333333335,
-        "y": 2.8364333333333334
+        "x": 7.144336661911555,
+        "y": 2.885
       },
       "prevControl": {
-        "x": 6.4088111111111115,
-        "y": 3.031322222222222
+        "x": 7.358713381855085,
+        "y": 3.0798900525002155
       },
       "nextControl": {
-        "x": 5.935564306588816,
-        "y": 2.601097854474682
+        "x": 6.885468912540676,
+        "y": 2.649663116038007
       },
       "isLocked": false,
       "linkedName": null
@@ -65,27 +65,27 @@
     {
       "anchor": {
         "x": 3.6121555555555567,
-        "y": 2.427166666666666
+        "y": 2.4269999999999996
       },
       "prevControl": {
-        "x": 3.871112805116513,
-        "y": 2.4820969923311105
+        "x": 3.871112932092071,
+        "y": 2.481929727061977
       },
       "nextControl": {
-        "x": 3.2905888888888892,
-        "y": 2.358955555555556
+        "x": 3.290588731213802,
+        "y": 2.3587896322185333
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.8813222222222223,
-        "y": 1.9204555555555545
+        "x": 2.443,
+        "y": 2.1929999999999996
       },
       "prevControl": {
-        "x": 2.993125621097212,
-        "y": 2.144062353305533
+        "x": 2.55480319914745,
+        "y": 2.4166068976136375
       },
       "nextControl": null,
       "isLocked": false,
@@ -95,26 +95,22 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 0.75,
-      "rotationDegrees": 89.8162715358255
+      "rotationDegrees": 89.816
     },
     {
       "waypointRelativePos": 1.6,
-      "rotationDegrees": 87.88572180475084
+      "rotationDegrees": 87.886
     },
     {
-      "waypointRelativePos": 2.665560165975111,
-      "rotationDegrees": 180.0
-    },
-    {
-      "waypointRelativePos": 3.25,
-      "rotationDegrees": 175.0
+      "waypointRelativePos": 2.6119402985074993,
+      "rotationDegrees": -145.607
     }
   ],
   "constraintZones": [
     {
       "name": "Constraints Zone",
       "minWaypointRelativePos": 0.75,
-      "maxWaypointRelativePos": 1.8312655086848681,
+      "maxWaypointRelativePos": 2.0,
       "constraints": {
         "maxVelocity": 1.0,
         "maxAcceleration": 4.0,
@@ -127,7 +123,7 @@
     {
       "name": "Constraints Zone",
       "minWaypointRelativePos": 2.5,
-      "maxWaypointRelativePos": 5.0,
+      "maxWaypointRelativePos": 4.104218362282902,
       "constraints": {
         "maxVelocity": 4.0,
         "maxAcceleration": 6.0,
@@ -150,7 +146,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -137.2906100426385
+    "rotation": -141.022
   },
   "reversed": false,
   "folder": "Right over bump Folder",

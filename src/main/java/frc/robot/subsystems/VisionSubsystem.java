@@ -298,11 +298,26 @@ public class VisionSubsystem extends SubsystemBase {
 
     // --- Feed heading to both cameras every frame ---
     // Pitch/roll from Pigeon2, yaw from odometry heading (which includes vision seed offset)
+    boolean shouldUseMT1Heading = false;
+
+    // PoseEstimate mt1Obj = frontPoseMT1Estimate;
+    // Optional<PoseEstimate> mt1Opt = mt1Obj.getPoseEstimate();
+    // Pose2d mt1Pose = null;
+    // // Check if MT1 is present
+    // if (mt1Opt.isPresent() && mt1Opt.get().hasData && mt1Opt.get().tagCount > 0) {
+    //   mt1Pose = mt1Opt.get().pose.toPose2d();
+    //   // Check if MT1 is any good
+    //   if (!isEnabled) shouldUseMT1Heading = true;
+    //   else if (mt1Opt.get().tagCount >= 2 && mt1Opt.get().avgTagDist < 3) shouldUseMT1Heading = true;
+    // }
+
     Rotation3d pigeonRotation = swerveSubsystem.getGyroRotation3d();
+    
     Rotation3d feedRotation = new Rotation3d(
         pigeonRotation.getMeasureX(),
         pigeonRotation.getMeasureY(),
         swerveSubsystem.getHeading().getMeasure());
+
 
     Orientation3d orientation = new Orientation3d(
         feedRotation,
@@ -604,7 +619,7 @@ public class VisionSubsystem extends SubsystemBase {
         dualCameraAgreed = true;
         double stdDev = getEffectiveXYStdDev(VisionConstants.kDualCameraAgreedStdDev);
         swerveSubsystem.addVisionMeasurement(
-            front.pose, front.timestamp, VecBuilder.fill(stdDev, stdDev, 100.0));
+            front.pose, front.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
         swerveSubsystem.addVisionMeasurement(
             back.pose, back.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
         fusionModeEntry.setString("dual_agreed");
@@ -615,7 +630,7 @@ public class VisionSubsystem extends SubsystemBase {
         double frontStd = getEffectiveXYStdDev(front.baseXYStdDev);
         double backStd = getEffectiveXYStdDev(back.baseXYStdDev);
         swerveSubsystem.addVisionMeasurement(
-            front.pose, front.timestamp, VecBuilder.fill(frontStd, frontStd, 100.0));
+            front.pose, front.timestamp, VecBuilder.fill(frontStd, frontStd, 9999.0));
         swerveSubsystem.addVisionMeasurement(
             back.pose, back.timestamp, VecBuilder.fill(backStd, backStd, 9999.0));
         fusionModeEntry.setString("dual_independent");
@@ -643,7 +658,7 @@ public class VisionSubsystem extends SubsystemBase {
       }
 
       swerveSubsystem.addVisionMeasurement(
-          single.pose, single.timestamp, VecBuilder.fill(stdDev, stdDev, 100.0));
+          single.pose, single.timestamp, VecBuilder.fill(stdDev, stdDev, 9999.0));
 
       fusionModeEntry.setString(frontReady ? "single_front" : "single_back");
       if (frontReady) {

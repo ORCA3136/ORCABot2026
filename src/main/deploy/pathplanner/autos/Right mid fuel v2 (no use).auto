@@ -144,7 +144,7 @@
       ]
     }
   },
-  "resetOdom": true,
+  "resetOdom": false,
   "folder": "Right Side Autos",
   "choreoAuto": false
 }
