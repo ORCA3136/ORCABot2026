@@ -225,11 +225,11 @@ public final class Constants {
     // Drive Turning 550s
     public static final int kFrontRightTurningCanId = 2;
     public static final int kFrontLeftTurningCanId = 4;
-    public static final int kRearRightTurningCanId = 26;
+    public static final int kRearRightTurningCanId = 6;
     public static final int kRearLeftTurningCanId = 8;
 
     // Pigeon
-    public static final int kPigeonCanId = 32;
+    public static final int kPigeonCanId = 9;
 
     // Shooter Vortexes
     public static final int kShooterPrimaryCanId = 11;

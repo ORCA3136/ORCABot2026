@@ -70,8 +70,8 @@ public class SwerveSubsystem extends SubsystemBase {
   
   SwerveDrive swerveDrive;
   
-  private final Navx navX3 = new Navx(0);
-  // private final Pigeon2 pigeon2 = new Pigeon2(CanIdConstants.kPigeonCanId, "rio");
+  //private final Navx navX3 = new Navx(0);
+  private final Pigeon2 pigeon2 = new Pigeon2(CanIdConstants.kPigeonCanId, "canivore");
 
   final NetworkTableInstance networkTable = NetworkTableInstance.getDefault();
   final NetworkTable odometryTable = networkTable.getTable(NetworkTableNames.Odometry.kTable);
@@ -91,9 +91,9 @@ public class SwerveSubsystem extends SubsystemBase {
   private static final int PIGEON_JUMP_WINDOW_CYCLES = 20;
 
   // Pigeon2 angular velocity suppliers — X=roll, Y=pitch, Z=yaw in device frame
-  Supplier<AngularVelocity> yawSupplier = () -> navX3.getAngularVel()[2]; // pigeon2.getAngularVelocityZDevice().asSupplier();
-  Supplier<AngularVelocity> rollSupplier = () -> navX3.getAngularVel()[0]; // pigeon2.getAngularVelocityXDevice().asSupplier();
-  Supplier<AngularVelocity> pitchSupplier = () -> navX3.getAngularVel()[1]; // pigeon2.getAngularVelocityYDevice().asSupplier();
+  Supplier<AngularVelocity> yawSupplier =  pigeon2.getAngularVelocityZDevice().asSupplier(); // () ->navX3.getAngularVel()[2];
+  Supplier<AngularVelocity> rollSupplier =  pigeon2.getAngularVelocityXDevice().asSupplier();  // () ->navX3.getAngularVel()[0];
+  Supplier<AngularVelocity> pitchSupplier = pigeon2.getAngularVelocityYDevice().asSupplier(); // () ->navX3.getAngularVel()[1];
 
   StructPublisher<Pose2d> robotPose2dPublisher = odometryTable
       .getStructTopic(NetworkTableNames.Odometry.kRobotPose2d, Pose2d.struct).publish();
@@ -379,7 +379,7 @@ public class SwerveSubsystem extends SubsystemBase {
   {
     DataLogManager.log("[GYRO-ZERO] heading was " + String.format("%.1f", getHeading().getDegrees()));
     swerveDrive.zeroGyro();
-    navX3.resetYaw(); // pigeon2.reset();
+    pigeon2.reset(); //navX3.resetYaw();
   }
 
    /**
@@ -398,7 +398,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void zeroHeading() {
-    navX3.resetYaw(); // pigeon2.reset();
+     pigeon2.reset();// navX3.resetYaw(); //
   }
 
   public Command zeroHeadingCommand() {
@@ -650,12 +650,12 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** @return Raw Pigeon2 yaw in degrees (not reset by odometry). */
   public double getPigeonRawYawDeg() {
-    return navX3.getYaw().in(Units.Degrees); // pigeon2.getYaw().getValueAsDouble();
+    return   pigeon2.getYaw().getValueAsDouble(); //navX3.getYaw().in(Units.Degrees);
   }
 
   /** @return Raw Pigeon2 pitch in degrees. */
   public double getPigeonPitchDeg() {
-    return navX3.getPitch().in(Units.Degrees); // pigeon2.getPitch().getValueAsDouble();
+    return pigeon2.getPitch().getValueAsDouble(); //navX3.getPitch().in(Units.Degrees); 
   }
 
   /** @return True if the Pigeon2 has detected rapid yaw jumps indicating CAN dropout. */
@@ -712,7 +712,7 @@ public class SwerveSubsystem extends SubsystemBase {
     // Vision fusion is handled by VisionSubsystem.periodic() calling addVisionMeasurement().
 
     // Pigeon2 yaw jump detection — catches resets/brownouts
-    double currentPigeonYaw = navX3.getYaw().in(Units.Degrees); // pigeon2.getYaw().getValueAsDouble();
+    double currentPigeonYaw =  pigeon2.getYaw().getValueAsDouble();// navX3.getYaw().in(Units.Degrees); //
     pigeonJumpWindowCycles++;
     if (!Double.isNaN(prevPigeonRawYaw)) {
       double yawJump = Math.abs(currentPigeonYaw - prevPigeonRawYaw);
