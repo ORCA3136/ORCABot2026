@@ -67,7 +67,10 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 
 public class SwerveSubsystem extends SubsystemBase {
-  
+
+  /** Set to true for per-cycle debug logging (odometry resets, etc.). */
+  private static final boolean VERBOSE_LOGGING = false;
+
   SwerveDrive swerveDrive;
   
   //private final Navx navX3 = new Navx(0);
@@ -392,8 +395,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public void resetOdometry(Pose2d initialHolonomicPose)
   {
-    DataLogManager.log("[ODOMETRY-RESET] oldHdg=" + String.format("%.1f", getPose().getRotation().getDegrees())
-        + " newHdg=" + String.format("%.1f", initialHolonomicPose.getRotation().getDegrees()));
+    if (VERBOSE_LOGGING) {
+      DataLogManager.log("[ODOMETRY-RESET] oldHdg=" + String.format("%.1f", getPose().getRotation().getDegrees())
+          + " newHdg=" + String.format("%.1f", initialHolonomicPose.getRotation().getDegrees()));
+    }
     swerveDrive.resetOdometry(initialHolonomicPose);
   }
 

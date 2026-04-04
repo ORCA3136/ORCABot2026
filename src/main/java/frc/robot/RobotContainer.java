@@ -195,6 +195,24 @@ public class RobotContainer {
     // m_primaryController.rightBumper().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1950)))
     //                                  .onFalse(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(0)));
     // Aim at hub + shoot: auto-rotate rear toward hub while spinning up shooter from distance map
+    // m_primaryController.rightTrigger()
+    //     .onTrue(Commands.runOnce(() -> {
+    //       Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+    //           ? FieldPositions.kRedFieldElements.get(0)
+    //           : FieldPositions.kBlueFieldElements.get(0);
+    //       aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+    //       Command current = driveBase.getCurrentCommand();
+    //       if (current != null) current.cancel();
+    //       driveBase.setDefaultCommand(aimAtHubCommand);
+    //     }))
+    //     .whileTrue(new ShootCommand(shooterSubsystem))
+    //     .onFalse(Commands.runOnce(() -> {
+    //       Command current = driveBase.getCurrentCommand();
+    //       if (current != null) current.cancel();
+    //       driveBase.setDefaultCommand(fastDriveCommand);
+    //       intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
+    //     }));
+     // Full shot sequence: aim at hub → lock wheels → shoot → feed → intake in
     m_primaryController.rightTrigger()
         .onTrue(Commands.runOnce(() -> {
           Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
@@ -205,13 +223,51 @@ public class RobotContainer {
           if (current != null) current.cancel();
           driveBase.setDefaultCommand(aimAtHubCommand);
         }))
-        .whileTrue(new ShootCommand(shooterSubsystem))
+        .whileTrue(
+            Commands.parallel(
+                new ShootCommand(shooterSubsystem),
+                Commands.sequence(
+                    // Wait for shooter at speed AND robot aimed at hub (2° tolerance, rear-facing)
+                    Commands.waitUntil(() -> {
+                      if (!shooterSubsystem.isShooterReady()) return false;
+                      Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+                          ? FieldPositions.kRedFieldElements.get(0)
+                          : FieldPositions.kBlueFieldElements.get(0);
+                      Translation2d robotPos = driveBase.getPose().getTranslation();
+                      double targetRad = Math.atan2(
+                          hubPos.getY() - robotPos.getY(),
+                          hubPos.getX() - robotPos.getX()) + Math.PI;
+                      double error = Math.abs(MathUtil.angleModulus(
+                          driveBase.getHeadingRadians() - targetRad));
+                      return error < Math.toRadians(2);
+                    }),
+                    Commands.parallel(
+                        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000),
+                        Commands.sequence(
+                            Commands.waitSeconds(0.5),
+                            // Swap default command from aim → lock (keeps driveBase out of this group)
+                            Commands.runOnce(() -> {
+                              Command current = driveBase.getCurrentCommand();
+                              if (current != null) current.cancel();
+                              driveBase.setDefaultCommand(
+                                  Commands.run(() -> driveBase.lockPose(), driveBase));
+                            }),
+                            Commands.runEnd(
+                                () -> intakeSubsystem.setIntakeDeployDutyCycle(-4500),
+                                () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
+                                intakeSubsystem)
+                        )
+                    )
+                )
+            )
+        )
         .onFalse(Commands.runOnce(() -> {
           Command current = driveBase.getCurrentCommand();
           if (current != null) current.cancel();
           driveBase.setDefaultCommand(fastDriveCommand);
           intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
         }));
+
     m_primaryController.rightBumper()
             .whileTrue(new ShootCommand(shooterSubsystem));
 

@@ -62,6 +62,9 @@ import limelight.results.RawFiducial;
  */
 public class VisionSubsystem extends SubsystemBase {
 
+  /** Set to true for per-cycle vision debug logging (MT1 flip details, heading rejection each cycle). */
+  private static final boolean VERBOSE_LOGGING = false;
+
   /** Result of evaluating a single camera — deferred fusion. */
   private static class CameraResult {
     Pose2d pose;
@@ -141,6 +144,7 @@ public class VisionSubsystem extends SubsystemBase {
   // --- Rate-limiting for log messages ---
   private boolean wasPitchHigh = false;
   private boolean wasHeadingErrorHigh = false;
+  private boolean wasHeadingFlipRejected = false;
 
   // --- Rejection counters ---
   private int rejectCountStale = 0;
@@ -478,11 +482,13 @@ public class VisionSubsystem extends SubsystemBase {
           consecutiveMT1FlipCount++;
         }
 
-        DataLogManager.log("[VISION-MT1-FLIP] MT2 hdg=" + String.format("%.1f", visionPose.getRotation().getDegrees())
-            + " MT1 hdg=" + String.format("%.1f", lastMT1HeadingDeg)
-            + " error=" + String.format("%.1f", mt1Error) + "°"
-            + " consecutive=" + consecutiveMT1FlipCount
-            + " pitch=" + String.format("%.1f", swerveSubsystem.getPigeonPitchDeg()) + "°");
+        if (VERBOSE_LOGGING) {
+          DataLogManager.log("[VISION-MT1-FLIP] MT2 hdg=" + String.format("%.1f", visionPose.getRotation().getDegrees())
+              + " MT1 hdg=" + String.format("%.1f", lastMT1HeadingDeg)
+              + " error=" + String.format("%.1f", mt1Error) + "°"
+              + " consecutive=" + consecutiveMT1FlipCount
+              + " pitch=" + String.format("%.1f", swerveSubsystem.getPigeonPitchDeg()) + "°");
+        }
 
         // Auto-recovery: sustained MT1 flip while level → reset heading from MT1
         // Fast path: when pigeon CAN is unhealthy, recover in 3 cycles instead of 50
@@ -544,9 +550,11 @@ public class VisionSubsystem extends SubsystemBase {
         seedPose = visionPose;
       }
 
-      DataLogManager.log("[VISION-SEED] oldHdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees())
-          + " newHdg=" + String.format("%.1f", seedPose.getRotation().getDegrees())
-          + " firstFix=" + !hasEverHadFix + " tags=" + estimate.tagCount);
+      if (VERBOSE_LOGGING) {
+        DataLogManager.log("[VISION-SEED] oldHdg=" + String.format("%.1f", swerveSubsystem.getHeading().getDegrees())
+            + " newHdg=" + String.format("%.1f", seedPose.getRotation().getDegrees())
+            + " firstFix=" + !hasEverHadFix + " tags=" + estimate.tagCount);
+      }
       swerveSubsystem.resetOdometry(seedPose);
       imuSettleCycleCount = 0;
       imuSettled = false;
@@ -723,12 +731,16 @@ public class VisionSubsystem extends SubsystemBase {
     }
     wasHeadingErrorHigh = headingErrorHigh;
     if (headingError > VisionConstants.kMaxHeadingErrorDeg) {
-      DataLogManager.log("[VISION-REJECTED] heading_flip error=" + String.format("%.1f", headingError)
-          + "° visionHdg=" + String.format("%.1f", visionHeadingDeg)
-          + " gyroHdg=" + String.format("%.1f", gyroHeadingDeg)
-          + " tags=" + estimate.tagCount);
+      if (!wasHeadingFlipRejected || VERBOSE_LOGGING) {
+        DataLogManager.log("[VISION-REJECTED] heading_flip error=" + String.format("%.1f", headingError)
+            + "° visionHdg=" + String.format("%.1f", visionHeadingDeg)
+            + " gyroHdg=" + String.format("%.1f", gyroHeadingDeg)
+            + " tags=" + estimate.tagCount);
+      }
+      wasHeadingFlipRejected = true;
       return "heading_flip";
     }
+    wasHeadingFlipRejected = false;
 
     return "";
   }
