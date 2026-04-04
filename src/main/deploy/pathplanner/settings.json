@@ -4,15 +4,17 @@
   "holonomicMode": true,
   "pathFolders": [
     "Center depot Folder",
+    "Double pass Right bump",
     "Left depot and climb Folder",
     "Left double trench",
+    "Left mid fuel Folder",
     "Left mid fuel v2 Folder",
     "Left over bump",
-    "Left mid fuel Folder",
+    "Double pass Left Bump",
     "Right double trench Folder",
     "Right human player pickup Folder",
-    "Right mid fuel v2 Folder",
     "Right mid fuel Folder",
+    "Right mid fuel v2 Folder",
     "Right over bump Folder"
   ],
   "autoFolders": [

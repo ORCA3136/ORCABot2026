@@ -336,7 +336,6 @@ public class RobotContainer {
     m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
     // Clear intake fault
     m_secondaryController.button(6).onTrue(Commands.runOnce(() -> {
-      intakeSubsystem.clearFault();
       intakeSubsystem.requestHoming();
     }));
 

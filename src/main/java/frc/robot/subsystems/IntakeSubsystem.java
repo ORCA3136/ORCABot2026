@@ -45,8 +45,7 @@ public class IntakeSubsystem extends SubsystemBase {
     TARGETING,
     SET,
     MANUAL,
-    STALL_RECOVERY,
-    FAULT
+    STALL_RECOVERY
   }
 
   public enum Setpoint {
@@ -150,28 +149,11 @@ public class IntakeSubsystem extends SubsystemBase {
    */
   public void requestHoming() {
     if (DriverStation.isDisabled()) return;
-    if (state == DeployState.FAULT) {
-      DriverStation.reportWarning("IntakeSubsystem: Requested homing when FAULTED", false);
-      return;
-    }
 
     disableSoftLimits();
     state = DeployState.ZEROING;
     homingTimer.restart();
     DriverStation.reportWarning("IntakeSubsystem: Homing requested", false);
-  }
-
-  /**
-   * Clears a fault and returns to UNHOMED. Call {@link #requestHoming()} after
-   * to re-attempt homing.
-   */
-  public void clearFault() {
-    if (state != DeployState.FAULT) return;
-    faultReason = "";
-    stallCounter = 0;
-    stallRetryCount = 0;
-    state = DeployState.UNHOMED;
-    DriverStation.reportWarning("IntakeSubsystem: Fault cleared → UNHOMED", false);
   }
 
   /** Runs each cycle during HOMING state. */
@@ -183,11 +165,6 @@ public class IntakeSubsystem extends SubsystemBase {
     if (IntakeConstants.kLimitSwitchInstalled && isLimitSwitchPressed()) {
       completeHoming();
       return;
-    }
-
-    // Timeout
-    if (homingTimer.hasElapsed(IntakeConstants.kHomingTimeoutSec)) {
-      enterFault("Homing timed out after " + IntakeConstants.kHomingTimeoutSec + "s");
     }
   }
 
@@ -245,8 +222,6 @@ public class IntakeSubsystem extends SubsystemBase {
         stallRecoveryTimer.restart();
         DriverStation.reportWarning("IntakeSubsystem: Stall recovery attempt "
             + stallRetryCount + "/" + IntakeConstants.kMaxStallRetries, false);
-      } else {
-        enterFault("Stall detected after " + IntakeConstants.kMaxStallRetries + " recovery attempts");
       }
     }
   }
@@ -274,15 +249,6 @@ public class IntakeSubsystem extends SubsystemBase {
   public boolean isDeployStallWarning() {
     if (state != DeployState.TARGETING && state != DeployState.MANUAL && state != DeployState.STALL_RECOVERY) return false;
     return intakeDeployMotor.getOutputCurrent() > IntakeConstants.kStallCurrentThreshold;
-  }
-
-  /** Enters the FAULT state — stops motor, logs reason. */
-  private void enterFault(String reason) {
-    intakeDeployMotor.set(0);
-    homingTimer.stop();
-    faultReason = reason;
-    state = DeployState.FAULT;
-    DriverStation.reportError("IntakeSubsystem FAULT: " + reason, false);
   }
 
   /** Disables soft limits on the deploy motor. Skips if already disabled. */
@@ -635,7 +601,7 @@ public class IntakeSubsystem extends SubsystemBase {
       case STALL_RECOVERY:
         updateStallRecovery();
         break;
-      case FAULT:
+      default:
         intakeDeployMotor.set(0);
         break;
     }
