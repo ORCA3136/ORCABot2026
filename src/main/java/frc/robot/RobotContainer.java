@@ -217,7 +217,7 @@ public class RobotContainer {
 
     // Feed: slow retract to pull fuel in, then shuttle pulse for remaining fuel
     m_primaryController.leftBumper  ().whileTrue(Commands.parallel(
-        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 2000, 5000),
+        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000),
         Commands.sequence(
             // Phase 1: slow retract with intake roller pulling fuel in
             Commands.runOnce(() -> intakeSubsystem.slowRetract(true)),
@@ -233,10 +233,9 @@ public class RobotContainer {
         intakeSubsystem.slowRetract(false);
         intakeSubsystem.pulse(false);
     }));
-    m_primaryController.leftTrigger ().whileTrue(Commands.parallel(
-        new RunIntakeCommand(intakeSubsystem, 6500),
-        new RunConveyorCommand(conveyorSubsystem, 1000)
-    ));
+    m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500)
+       // new RunConveyorCommand(conveyorSubsystem, 1000)
+    );
 
     m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
     // Right stick held: medium speed driving (0.8x translation)
@@ -314,17 +313,65 @@ public class RobotContainer {
     // m_secondaryController.button(10).onTrue(
     //     DriveToPositionCommand.driveToScoreTrench(driveBase, shooterSubsystem, this::driverIsOverriding));
     m_secondaryController.button(9).whileTrue(
-        Commands.runEnd(
-            () -> intakeSubsystem.setIntakeDeployDutyCycle(1500),
-            () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
-            intakeSubsystem
-        ));
-    m_secondaryController.button(10).whileTrue(
-        Commands.runEnd(
-            () -> intakeSubsystem.setIntakeDeployDutyCycle(-1000),
-            () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
-            intakeSubsystem
-        ));
+          Commands.parallel(
+         new FixedShootCommand(shooterSubsystem, 120),
+         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000)
+    ));;
+    // Full shot sequence: aim at hub → lock wheels → shoot → feed → intake in
+    m_secondaryController.button(10)
+        .onTrue(Commands.runOnce(() -> {
+          Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+              ? FieldPositions.kRedFieldElements.get(0)
+              : FieldPositions.kBlueFieldElements.get(0);
+          aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+          Command current = driveBase.getCurrentCommand();
+          if (current != null) current.cancel();
+          driveBase.setDefaultCommand(aimAtHubCommand);
+        }))
+        .whileTrue(
+            Commands.parallel(
+                new ShootCommand(shooterSubsystem),
+                Commands.sequence(
+                    // Wait for shooter at speed AND robot aimed at hub (2° tolerance, rear-facing)
+                    Commands.waitUntil(() -> {
+                      if (!shooterSubsystem.isShooterReady()) return false;
+                      Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+                          ? FieldPositions.kRedFieldElements.get(0)
+                          : FieldPositions.kBlueFieldElements.get(0);
+                      Translation2d robotPos = driveBase.getPose().getTranslation();
+                      double targetRad = Math.atan2(
+                          hubPos.getY() - robotPos.getY(),
+                          hubPos.getX() - robotPos.getX()) + Math.PI;
+                      double error = Math.abs(MathUtil.angleModulus(
+                          driveBase.getHeadingRadians() - targetRad));
+                      return error < Math.toRadians(2);
+                    }),
+                    Commands.parallel(
+                        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000),
+                        Commands.sequence(
+                            Commands.waitSeconds(0.5),
+                            // Swap default command from aim → lock (keeps driveBase out of this group)
+                            Commands.runOnce(() -> {
+                              Command current = driveBase.getCurrentCommand();
+                              if (current != null) current.cancel();
+                              driveBase.setDefaultCommand(
+                                  Commands.run(() -> driveBase.lockPose(), driveBase));
+                            }),
+                            Commands.runEnd(
+                                () -> intakeSubsystem.setIntakeDeployDutyCycle(-4500),
+                                () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
+                                intakeSubsystem)
+                        )
+                    )
+                )
+            )
+        )
+        .onFalse(Commands.runOnce(() -> {
+          Command current = driveBase.getCurrentCommand();
+          if (current != null) current.cancel();
+          driveBase.setDefaultCommand(fastDriveCommand);
+          intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
+        }));
     //known good scoring position that we like
     m_secondaryController.button(11).onTrue(
         DriveToPositionCommand.driveToScoreCustom(driveBase, shooterSubsystem, this::driverIsOverriding));
