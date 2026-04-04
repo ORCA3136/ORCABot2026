@@ -441,6 +441,8 @@ public class RobotContainer {
     NamedCommands.registerCommand("AimAndShoot",           AutoCommands.aimAndShoot(shooterSubsystem, driveBase, kickerSubsystem, conveyorSubsystem, AutoConstants.kShootTimeoutSec));
     NamedCommands.registerCommand("MeteredFeed3s",         AutoCommands.meteredFeedTimed(conveyorSubsystem, kickerSubsystem, shooterSubsystem, AutoConstants.kFeedTimeoutSec));
     NamedCommands.registerCommand("SpinUpFromDistance",    AutoCommands.spinUpFromDistance(shooterSubsystem, driveBase));
+    NamedCommands.registerCommand("ShootAndFeedWithTimeout", AutoCommands.shootAndFeed(shooterSubsystem, conveyorSubsystem, kickerSubsystem, intakeSubsystem, 5.0));
+    NamedCommands.registerCommand("ShootAndFeedUntilRetracted", AutoCommands.shootAndFeedUntilRetracted(shooterSubsystem, conveyorSubsystem, kickerSubsystem, intakeSubsystem));
 
     // Teleop-mirrored sequences (safe for parallel use in PathPlanner)
     NamedCommands.registerCommand("Shoot Sequence",       AutoCommands.shootSequence(shooterSubsystem, 6.0));

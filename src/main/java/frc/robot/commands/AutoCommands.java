@@ -209,6 +209,87 @@ public final class AutoCommands {
   }
 
   /**
+   * Shoot-and-feed sequence for auto (mirrors button 10 without lock pose or aim).
+   *
+   * 1. Spins up shooter from distance map continuously
+   * 2. Waits until shooter reports ready
+   * 3. Feeds fuel via conveyor (4000) + kicker (6000)
+   * 4. After 0.5s delay, retracts intake at -4500 duty cycle
+   * 5. Stops everything when timeout expires
+   */
+  public static Command shootAndFeed(ShooterSubsystem shooter, ConveyorSubsystem conveyor,
+                                      KickerSubsystem kicker, IntakeSubsystem intake,
+                                      double timeoutSec) {
+    return Commands.parallel(
+        Commands.run(() -> shooter.setShooterMapOnly(), shooter),
+        Commands.sequence(
+            Commands.waitUntil(() -> shooter.isShooterReady()),
+            Commands.parallel(
+                new RunConveyorAndKickerCommand(conveyor, kicker, 4000, 6000),
+                Commands.sequence(
+                    Commands.waitSeconds(0.5),
+                    Commands.runEnd(
+                        () -> intake.setIntakeDeployDutyCycle(-4500),
+                        () -> intake.setIntakeDeployDutyCycle(0),
+                        intake)
+                )
+            )
+        )
+    )
+    .withTimeout(timeoutSec)
+    .finallyDo(interrupted -> {
+        shooter.setShooterVelocityTarget(0);
+        conveyor.setConveyorDutyCycle(0);
+        kicker.setKickerDutyCycle(0);
+        intake.setIntakeDeployDutyCycle(0);
+    })
+    .withName("ShootAndFeed" + (int) timeoutSec + "s");
+  }
+
+  /**
+   * Shoot-and-feed that ends 0.75s after the intake limit switch fires.
+   *
+   * Same work as shootAndFeed (spin up, wait ready, feed, retract intake)
+   * but uses the intake limit switch as the end trigger instead of a fixed timeout.
+   * Once the switch indicates fully retracted, 0.75s grace period lets the last
+   * fuel clear the shooter before the command ends. 10s safety timeout as fallback.
+   */
+  public static Command shootAndFeedUntilRetracted(ShooterSubsystem shooter,
+      ConveyorSubsystem conveyor, KickerSubsystem kicker, IntakeSubsystem intake) {
+    return Commands.deadline(
+        // Deadline: limit switch pressed → 0.75s grace → ends everything
+        Commands.sequence(
+            Commands.waitUntil(() -> intake.isLimitSwitchPressed()),
+            Commands.waitSeconds(0.75)
+        ),
+        // Work: spin up shooter
+        Commands.run(() -> shooter.setShooterMapOnly(), shooter),
+        // Work: wait for ready → feed + retract
+        Commands.sequence(
+            Commands.waitUntil(() -> shooter.isShooterReady()),
+            Commands.parallel(
+                new RunConveyorAndKickerCommand(conveyor, kicker, 4000, 6000),
+                Commands.sequence(
+                    Commands.waitSeconds(0.5),
+                    Commands.runEnd(
+                        () -> intake.setIntakeDeployDutyCycle(-4500),
+                        () -> intake.setIntakeDeployDutyCycle(0),
+                        intake)
+                )
+            )
+        )
+    )
+    .withTimeout(7.0)
+    .finallyDo(interrupted -> {
+        shooter.setShooterVelocityTarget(0);
+        conveyor.setConveyorDutyCycle(0);
+        kicker.setKickerDutyCycle(0);
+        intake.setIntakeDeployDutyCycle(0);
+    })
+    .withName("ShootAndFeedUntilRetracted");
+  }
+
+  /**
    * Full auto cycle: deploy intake + run + retract, then aim + shoot.
    * For PathPlanner event markers that need to do everything in one command.
    */
