@@ -1,0 +1,109 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 1.425,
+        "y": 5.1
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 0.8432097004279597,
+        "y": 5.2059486447931524
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 0.49351861366865646,
+        "y": 5.98659702596932
+      },
+      "prevControl": {
+        "x": 0.4839720633091244,
+        "y": 5.451225699309633
+      },
+      "nextControl": {
+        "x": 0.5197432239657628,
+        "y": 7.4572753209700435
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.2572467902995716,
+        "y": 7.10793152639087
+      },
+      "prevControl": {
+        "x": 0.8953743905042817,
+        "y": 7.125163545428741
+      },
+      "nextControl": {
+        "x": 1.8006704707560621,
+        "y": 7.082054208273894
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.7747931526390865,
+        "y": 4.9083594864479325
+      },
+      "prevControl": {
+        "x": 2.008138373751782,
+        "y": 5.350713266761771
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.9211087420042443,
+      "rotationDegrees": 89.73110281137335
+    },
+    {
+      "waypointRelativePos": 1.8742004264392151,
+      "rotationDegrees": 100.82507717803728
+    }
+  ],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 0.34031060094529264,
+      "maxWaypointRelativePos": 1.742066171505678,
+      "constraints": {
+        "maxVelocity": 2.0,
+        "maxAcceleration": 4.0,
+        "maxAngularVelocity": 360.0,
+        "maxAngularAcceleration": 360.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 2.0,
+    "maxAcceleration": 4.0,
+    "maxAngularVelocity": 360.0,
+    "maxAngularAcceleration": 360.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 156.80140948635184
+  },
+  "reversed": false,
+  "folder": "Center Shoot then Depot",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 152.676
+  },
+  "useDefaultConstraints": false
+}

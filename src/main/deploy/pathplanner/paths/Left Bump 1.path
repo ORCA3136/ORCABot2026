@@ -8,7 +8,7 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.452537676811303,
+        "x": 7.452537676811302,
         "y": 7.459145921879213
       },
       "isLocked": false,
@@ -16,32 +16,32 @@
     },
     {
       "anchor": {
-        "x": 7.839042253534863,
-        "y": 6.776
+        "x": 7.687760342368046,
+        "y": 6.727
       },
       "prevControl": {
-        "x": 7.798505510502698,
-        "y": 7.117675744862096
+        "x": 7.647223599335881,
+        "y": 7.068675744862097
       },
       "nextControl": {
-        "x": 7.89975198994168,
-        "y": 6.2642903051505225
+        "x": 7.748470078774862,
+        "y": 6.215290305150523
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 7.682927487891812,
-        "y": 4.552
+        "x": 7.3384165477888725,
+        "y": 4.748
       },
       "prevControl": {
-        "x": 8.270540256233284,
-        "y": 4.492032695165678
+        "x": 7.926029316130347,
+        "y": 4.6880326951656786
       },
       "nextControl": {
-        "x": 7.434219243714863,
-        "y": 4.577381278108478
+        "x": 7.089708303611924,
+        "y": 4.773381278108479
       },
       "isLocked": false,
       "linkedName": null
@@ -95,11 +95,11 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 0.75,
-      "rotationDegrees": -89.816
+      "rotationDegrees": -98.576
     },
     {
       "waypointRelativePos": 1.6,
-      "rotationDegrees": -87.886
+      "rotationDegrees": -98.914
     },
     {
       "waypointRelativePos": 2.6119402985074993,
@@ -109,7 +109,7 @@
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 0.75,
+      "minWaypointRelativePos": 1.1208642808912708,
       "maxWaypointRelativePos": 2.0,
       "constraints": {
         "maxVelocity": 1.5,
@@ -122,10 +122,10 @@
     },
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 2.5,
-      "maxWaypointRelativePos": 4.104218362282902,
+      "minWaypointRelativePos": 3.497636731937815,
+      "maxWaypointRelativePos": 3.7947332883187186,
       "constraints": {
-        "maxVelocity": 4.0,
+        "maxVelocity": 2.5,
         "maxAcceleration": 6.0,
         "maxAngularVelocity": 360.0,
         "maxAngularAcceleration": 360.0,
@@ -146,7 +146,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 137.0
+    "rotation": 141.022
   },
   "reversed": false,
   "folder": "Double pass Left Bump",

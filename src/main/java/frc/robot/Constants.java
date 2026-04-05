@@ -149,7 +149,7 @@ public final class Constants {
     // --- IMU settling ---
     public static final int kImuSettleCycles = 15; // ~300ms at 50Hz
 
-    public static final double kVisionHealthyTimeoutSec = 0.5;
+    public static final double kVisionHealthyTimeoutSec = 0.2;
     public static final double kTagDistanceStaleSec = 0.08;
 
     // Minimum conditions for disabled-period odometry seeding
@@ -158,10 +158,10 @@ public final class Constants {
 
     // --- Dual-camera drift detection & trust boost ---
     public static final double kDriftDetectionThresholdM = 0.75;
-    public static final double kCameraAgreementMaxM = 0.3;
+    public static final double kCameraAgreementMaxM = 0.2;
     public static final int kDriftConfirmCycles = 10;     // ~200ms at 50Hz
     public static final double kBoostedXYStdDev = 0.02;
-    public static final int kBoostDurationCycles = 25;    // ~500ms at 50Hz
+    public static final int kBoostDurationCycles = 3;    // ~60ms at 50Hz
     public static final double kHardResetThresholdM = 1.5;
     public static final int kHardResetConfirmCycles = 10; // ~200ms at 50Hz
     public static final double kDriftPoseFreshnessMaxSec = 0.2;
@@ -194,7 +194,7 @@ public final class Constants {
     public static final int kDriverControler = 0;
     public static final int kSecondaryDriverControler = 1;
 
-    public static final double kStickDeadband = 0.08;
+    public static final double kStickDeadband = 0.04;
     public static final double kPathplannerDeadband = 0.01;
     public static final double kTriggerDeadband = 0.05;
 

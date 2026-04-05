@@ -103,7 +103,7 @@ public class RobotContainer {
                     .aimHeadingOffset(true);
 
   // Transformations for different driving commands
-  SwerveInputStream slowSpeedDrive   = controllerInput.copy().scaleTranslation(0.4);
+  SwerveInputStream slowSpeedDrive   = controllerInput.copy().scaleTranslation(0.5);
   SwerveInputStream mediumSpeedDrive = controllerInput.copy().scaleTranslation(0.8);
 
   // Rotations for controller input for different driving commands
