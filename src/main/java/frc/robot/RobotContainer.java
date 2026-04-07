@@ -242,7 +242,7 @@ public class RobotContainer {
                       return error < Math.toRadians(2);
                     }),
                     Commands.parallel(
-                        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000),
+                        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 5000, 6000),
                         Commands.sequence(
                             Commands.waitSeconds(0.5),
                             // Swap default command from aim → lock (keeps driveBase out of this group)
@@ -339,8 +339,8 @@ public class RobotContainer {
       intakeSubsystem.requestHoming();
     }));
 
-    m_secondaryController.button(6);
-    m_secondaryController.button(7);
+    m_secondaryController.button(7).onTrue(Commands.runOnce(() -> conveyorSubsystem.setConveyorDutyCycle(-2000)))
+                                          .onTrue(Commands.runOnce(() -> conveyorSubsystem.setConveyorDutyCycle(0)));
 
     // Shoot on the move: aim at lead-compensated hub + full pipeline + moving shooter map
     m_secondaryController.button(8)
