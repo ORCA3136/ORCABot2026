@@ -88,6 +88,7 @@ public class IntakeSubsystem extends SubsystemBase {
   private String faultReason = "";
   private final Timer homingTimer = new Timer();
   private final Timer PIDTimer = new Timer();
+  private boolean intakeRunning = false;
 
   private int stallCounter = 0;
   private int stallRetryCount = 0;
@@ -141,6 +142,12 @@ public class IntakeSubsystem extends SubsystemBase {
   /** @return True if the limit switch is pressed (NO switch with pull-up: pressed = get() returns false). */
   public boolean isLimitSwitchPressed() {
     return !homeLimitSwitch.get();
+  }
+
+  public void runOrStopIntakeRoller() {
+    intakeRunning = !intakeRunning;
+    if (intakeRunning) setIntakeDutyCycle(6500);
+    if (!intakeRunning) setIntakeDutyCycle(0);
   }
 
   /**

@@ -72,7 +72,11 @@ public class SwerveSubsystem extends SubsystemBase {
   private static final boolean VERBOSE_LOGGING = false;
 
   SwerveDrive swerveDrive;
-  
+
+  /** Dynamic center of rotation for teleop driving (meters, relative to robot center). */
+  private Translation2d centerOfRotation = new Translation2d();
+  private Supplier<Translation2d> centerOfRotationSupplier = Translation2d::new;
+
   //private final Navx navX3 = new Navx(0);
   private final Pigeon2 pigeon2 = new Pigeon2(CanIdConstants.kPigeonCanId, "canivore");
 
@@ -173,7 +177,8 @@ public class SwerveSubsystem extends SubsystemBase {
                               translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()), 0.8),
                           Math.pow(angularRotationX.getAsDouble(), 3) * swerveDrive.getMaximumChassisAngularVelocity(),
                           true,
-                          false);
+                          false,
+                          centerOfRotation);
       });
     }
 
@@ -186,7 +191,8 @@ public class SwerveSubsystem extends SubsystemBase {
                               translationY * swerveDrive.getMaximumChassisVelocity()), 0.8),
                           Math.pow(angularRotationX, 3) * swerveDrive.getMaximumChassisAngularVelocity(),
                           true,
-                          false);
+                          false,
+                          centerOfRotation);
       });
     }
 
@@ -209,7 +215,8 @@ public class SwerveSubsystem extends SubsystemBase {
     swerveDrive.drive(translation,
                       rotation,
                       fieldRelative,
-                      false); // Open loop is disabled since it shouldn't be used most of the time.
+                      false,
+                      centerOfRotation);
   }
 
   /**
@@ -274,7 +281,7 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public void drive(ChassisSpeeds velocity)
   {
-    swerveDrive.drive(velocity);
+    swerveDrive.drive(velocity, false, centerOfRotation);
   }
 
   /**
@@ -316,21 +323,25 @@ public class SwerveSubsystem extends SubsystemBase {
     return swerveDrive;
   }
 
+  public void setCenterOfRotationSupplier(Supplier<Translation2d> supplier) {
+    this.centerOfRotationSupplier = supplier;
+  }
+
   public void driveFieldOriented(ChassisSpeeds velocity){
-    swerveDrive.driveFieldOriented(velocity);
+    swerveDrive.driveFieldOriented(velocity, centerOfRotation);
   }
 
   public Command driveFieldOriented(Supplier<ChassisSpeeds> velocity)
   {
     return run(()->{
-      swerveDrive.driveFieldOriented(velocity.get());
+      swerveDrive.driveFieldOriented(velocity.get(), centerOfRotation);
     });
   }
 
   public Command driveRobotOriented(Supplier<ChassisSpeeds> velocity)
   {
     return run(()->{
-      swerveDrive.drive(velocity.get(), false, new Translation2d());
+      swerveDrive.drive(velocity.get(), false, centerOfRotation);
     });
   }
 
@@ -712,6 +723,12 @@ public class SwerveSubsystem extends SubsystemBase {
   /** This method will be called once per scheduler run */
   @Override
   public void periodic() {
+    if (DriverStation.isTeleopEnabled()) {
+      centerOfRotation = centerOfRotationSupplier.get();
+    } else {
+      centerOfRotation = new Translation2d();
+    }
+
     updateNetworkTable();
     // Note: updateOdometry() runs automatically on YAGSL's internal Notifier thread.
     // Vision fusion is handled by VisionSubsystem.periodic() calling addVisionMeasurement().

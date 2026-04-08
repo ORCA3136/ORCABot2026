@@ -13,6 +13,7 @@ import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.FuelPathConstants;
 import frc.robot.Constants.FieldPositions;
 import frc.robot.Constants.OperatorConstants;
+import frc.robot.Constants.IntakeConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.commands.FixedShootCommand;
@@ -41,6 +42,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -88,6 +91,13 @@ public class RobotContainer {
 
     autoChooser = AutoBuilder.buildAutoChooser(); //pick a default
     SmartDashboard.putData("Auto Chooser", autoChooser);
+
+    // Shift center of rotation forward as intake extends (teleop only, gated in SwerveSubsystem.periodic)
+    driveBase.setCenterOfRotationSupplier(() -> {
+      double pos = intakeSubsystem.getIntakeDeployPosition();
+      double t = MathUtil.clamp(pos / IntakeConstants.kExtendedPosition, 0.0, 1.0);
+      return new Translation2d(t * IntakeConstants.kCenterOfRotationMaxForwardMeters, 0.0);
+    });
 
   }
 
@@ -289,13 +299,14 @@ public class RobotContainer {
         intakeSubsystem.slowRetract(false);
         intakeSubsystem.pulse(false);
     }));
-    m_primaryController.leftTrigger ().whileTrue(new RunIntakeCommand(intakeSubsystem, 6500)
+    m_primaryController.leftTrigger ().onTrue(Commands.runOnce(() -> intakeSubsystem.runOrStopIntakeRoller())
        // new RunConveyorCommand(conveyorSubsystem, 1000)
     );
 
-    m_primaryController.leftStick   ().onTrue(Commands.runOnce(driveBase::zeroGyro));
-    // Right stick held: medium speed driving (0.8x translation)
-    m_primaryController.rightStick  ().whileTrue(Commands.runOnce(() -> {
+    m_primaryController.start       ().onTrue(Commands.runOnce(driveBase::zeroGyro));
+
+    // Left stick held: slow speed driving (0.5x translation)
+    m_primaryController.leftStick   ().whileTrue(Commands.runOnce(() -> {
                                         Command current = driveBase.getCurrentCommand();
                                         if (current != null) current.cancel();
                                         driveBase.setDefaultCommand(slowDriveCommand);
@@ -305,6 +316,27 @@ public class RobotContainer {
                                         if (current != null) current.cancel();
                                         driveBase.setDefaultCommand(fastDriveCommand);
                                      }));
+
+    // Right stick: snap-align downfield while driving (front or back, whichever is closer)
+    PIDController alignPID = new PIDController(5.0, 0, 0.3);
+    alignPID.enableContinuousInput(-Math.PI, Math.PI);
+    alignPID.setTolerance(Math.toRadians(2));
+    m_primaryController.rightStick().whileTrue(
+        Commands.run(() -> {
+          // Downfield = 0 rad for blue, π for red
+          double downfield = driveBase.getAlliance() == DriverStation.Alliance.Red ? Math.PI : 0.0;
+          double heading = driveBase.getHeadingRadians();
+          // Pick front-facing or back-facing, whichever is closer
+          double errorFront = Math.abs(MathUtil.angleModulus(heading - downfield));
+          double errorBack  = Math.abs(MathUtil.angleModulus(heading - (downfield + Math.PI)));
+          double target = errorFront <= errorBack ? downfield : MathUtil.angleModulus(downfield + Math.PI);
+          double omega = alignPID.calculate(heading, target);
+          // Preserve driver translation input while overriding rotation
+          double flip = driveBase.getAllianceFlip();
+          double vx = flip * -m_primaryController.getLeftY() * driveBase.getSwerveDrive().getMaximumChassisVelocity();
+          double vy = flip * -m_primaryController.getLeftX() * driveBase.getSwerveDrive().getMaximumChassisVelocity();
+          driveBase.driveFieldOriented(new ChassisSpeeds(vx, vy, omega));
+        }, driveBase));
 
     // Toggled button options (active while holding back button)
     m_primaryController.back().and(m_primaryController.a())           .onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));  // Shooter - by 50

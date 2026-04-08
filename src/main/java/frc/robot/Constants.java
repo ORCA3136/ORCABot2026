@@ -81,12 +81,15 @@ public final class Constants {
     public static final double kExtendedPosition = 25.0;
     public static final double kMaxExtension = 26.0;
 
+    // Dynamic center of rotation — shifts forward as intake extends
+    public static final double kCenterOfRotationMaxForwardMeters = 0.3048; // 12 inches
+
     public static final double kTargetTolerance = 0.25;
 
     // Deploy position ramp rates (motor rotations per 20ms cycle)
     // Bumped for longer travel distance
     public static final double kExtendRampRate = 1.0;
-    public static final double kRetractRampRate = 1.1;
+    public static final double kRetractRampRate = 1.859;
 
     // Slow retract for feeding: motor rotations per 20ms cycle
     // Gradually pulls intake in to feed fuel toward conveyor
