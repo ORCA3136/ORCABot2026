@@ -30,6 +30,7 @@ import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 // import frc.robot.subsystems.TeleopPathplanner;
+import frc.robot.subsystems.UltraShooterSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import swervelib.SwerveInputStream;
 import edu.wpi.first.wpilibj.Filesystem;
@@ -63,6 +64,7 @@ public class RobotContainer {
   // private final TeleopPathplanner teleopPathplanner = new TeleopPathplanner(driveBase);
   private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveBase);
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem(driveBase);
+  private final UltraShooterSubsystem ultraShooterSubsystem = new UltraShooterSubsystem(driveBase);
   private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem(driveBase);
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   private final KickerSubsystem kickerSubsystem = new KickerSubsystem();
@@ -76,6 +78,9 @@ public class RobotContainer {
   public RobotContainer() {
 
     DriverStation.silenceJoystickConnectionWarning(true);
+
+    // Wire UltraShooter physics solver into the existing shooter
+    shooterSubsystem.setUltraShooterReference(ultraShooterSubsystem);
 
     // Configure the trigger bindings (set to false for test bindings)
     boolean useProductionBindings = true;
@@ -278,27 +283,88 @@ public class RobotContainer {
           intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
         }));
 
+    // Right bumper: spin flywheel from map + wait for ready then feed
     m_primaryController.rightBumper()
-            .whileTrue(new ShootCommand(shooterSubsystem));
+            .whileTrue(Commands.parallel(
+                new ShootCommand(shooterSubsystem),
+                Commands.sequence(
+                    Commands.waitUntil(() -> shooterSubsystem.isShooterReady()),
+                    new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 5000, 6000)
+                )
+            ));
 
-    // Feed: slow retract to pull fuel in, then shuttle pulse for remaining fuel
-    m_primaryController.leftBumper  ().whileTrue(Commands.parallel(
-        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000),
-        Commands.sequence(
-            // Phase 1: slow retract with intake roller pulling fuel in
-            Commands.runOnce(() -> intakeSubsystem.slowRetract(true)),
-            new RunIntakeCommand(intakeSubsystem, 4000).withTimeout(2),
-            // Phase 2: shuttle pulse to clear remaining fuel
-            Commands.runOnce(() -> intakeSubsystem.slowRetract(false)),
-            FuelPathCommands.intakeShuttlePulse(intakeSubsystem).withTimeout(3),
-            // Phase 3: reverse pulses to dislodge stuck fuel once intake is mostly in
-            FuelPathCommands.intakeWithReversePulse(intakeSubsystem, 4000).withTimeout(2),
-            Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted))
+    // Left bumper: full shot sequence using physics solver (UltraShooter)
+    m_primaryController.leftBumper()
+        .onTrue(Commands.runOnce(() -> {
+          Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+              ? FieldPositions.kRedFieldElements.get(0)
+              : FieldPositions.kBlueFieldElements.get(0);
+          aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+          Command current = driveBase.getCurrentCommand();
+          if (current != null) current.cancel();
+          driveBase.setDefaultCommand(aimAtHubCommand);
+        }))
+        .whileTrue(
+            Commands.parallel(
+                Commands.run(() -> shooterSubsystem.setShooterPhysics(), shooterSubsystem),
+                Commands.sequence(
+                    // Wait for shooter at speed AND robot aimed at hub (2° tolerance, rear-facing)
+                    Commands.waitUntil(() -> {
+                      if (!shooterSubsystem.isShooterReady()) return false;
+                      Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+                          ? FieldPositions.kRedFieldElements.get(0)
+                          : FieldPositions.kBlueFieldElements.get(0);
+                      Translation2d robotPos = driveBase.getPose().getTranslation();
+                      double targetRad = Math.atan2(
+                          hubPos.getY() - robotPos.getY(),
+                          hubPos.getX() - robotPos.getX()) + Math.PI;
+                      double error = Math.abs(MathUtil.angleModulus(
+                          driveBase.getHeadingRadians() - targetRad));
+                      return error < Math.toRadians(2);
+                    }),
+                    // If stationary, lock wheels before feeding (like right trigger)
+                    Commands.either(
+                        // Stationary: lock wheels, then feed
+                        Commands.parallel(
+                            new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 5000, 6000),
+                            Commands.sequence(
+                                Commands.waitSeconds(0.5),
+                                Commands.runOnce(() -> {
+                                  Command current = driveBase.getCurrentCommand();
+                                  if (current != null) current.cancel();
+                                  driveBase.setDefaultCommand(
+                                      Commands.run(() -> driveBase.lockPose(), driveBase));
+                                }),
+                                Commands.runEnd(
+                                    () -> intakeSubsystem.setIntakeDeployDutyCycle(-4500),
+                                    () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
+                                    intakeSubsystem)
+                            )
+                        ),
+                        // Moving: feed without locking
+                        Commands.parallel(
+                            new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 5000, 6000),
+                            Commands.runEnd(
+                                () -> intakeSubsystem.setIntakeDeployDutyCycle(-4500),
+                                () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
+                                intakeSubsystem)
+                        ),
+                        // Condition: stationary if speed < 0.1 m/s
+                        () -> {
+                          ChassisSpeeds vel = driveBase.getFieldVelocity();
+                          double speed = Math.hypot(vel.vxMetersPerSecond, vel.vyMetersPerSecond);
+                          return speed < 0.1;
+                        }
+                    )
+                )
+            )
         )
-    ).finallyDo(interrupted -> {
-        intakeSubsystem.slowRetract(false);
-        intakeSubsystem.pulse(false);
-    }));
+        .onFalse(Commands.runOnce(() -> {
+          Command current = driveBase.getCurrentCommand();
+          if (current != null) current.cancel();
+          driveBase.setDefaultCommand(fastDriveCommand);
+          intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
+        }));
     m_primaryController.leftTrigger ().onTrue(Commands.runOnce(() -> intakeSubsystem.runOrStopIntakeRoller())
        // new RunConveyorCommand(conveyorSubsystem, 1000)
     );

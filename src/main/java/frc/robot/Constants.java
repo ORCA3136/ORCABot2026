@@ -342,6 +342,15 @@ public final class Constants {
       public static final String kCountNoData = "NoData";
     }
 
+    public static final class UltraShooter {
+      public static final String kTable = "UltraShooter";
+      public static final String kPhysicsRPM = "Physics RPM";
+      public static final String kTunedRPM = "Tuned RPM";
+      public static final String kTimeOfFlightSec = "Time of Flight Sec";
+      public static final String kDistanceM = "Distance M";
+      public static final String kDeltaRPM = "Delta RPM";
+    }
+
     public static final class Shooter {
       public static final String kTable = "Shooter";
       public static final String kVelocityRPM = "Velocity RPM";
