@@ -66,9 +66,9 @@ public class PhysicsShooterSolver {
     // Three anchor points define a parabola added as a % on top of the
     // physics speed. Tune independently on the field. Positive = spin faster.
 
-    private static final double CLOSE_ANCHOR_FT      = 3.0;   // distance (ft)
-    private static final double MID_ANCHOR_FT        = 12.0;
-    private static final double FAR_ANCHOR_FT        = 20.0;
+    private static final double CLOSE_ANCHOR_FT      = 6.0;   // distance (ft)
+    private static final double MID_ANCHOR_FT        = 10.5;  // midpoint of 6–15
+    private static final double FAR_ANCHOR_FT        = 15.0;  // 180 inches
 
     private static final double CLOSE_OFFSET_PERCENT = 0.0;   // % at close
     private static final double MID_OFFSET_PERCENT   = 0.0;   // % at mid
