@@ -99,6 +99,7 @@ public class IntakeSubsystem extends SubsystemBase {
   private int     fuelDetectCounter = 0;
   private boolean fuelDetected      = false;
   private boolean fuelDetectArmed   = true;
+  private final Timer noFuelTimer   = new Timer();
 
   private boolean pulseActive = false;
   private boolean hardwareSoftLimitsActive = false;
@@ -146,8 +147,33 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public void runOrStopIntakeRoller() {
     intakeRunning = !intakeRunning;
-    if (intakeRunning) setIntakeDutyCycle(6500);
-    if (!intakeRunning) setIntakeDutyCycle(0);
+    if (intakeRunning) {
+      setIntakeDutyCycle(6500);
+      noFuelTimer.restart();
+    }
+    if (!intakeRunning) {
+      setIntakeDutyCycle(0);
+      noFuelTimer.stop();
+      noFuelTimer.reset();
+    }
+  }
+
+  /** Stops the intake roller and resets the running flag. */
+  public void stopIntakeRoller() {
+    intakeRunning = false;
+    setIntakeDutyCycle(0);
+    noFuelTimer.stop();
+    noFuelTimer.reset();
+  }
+
+  /** @return true if the intake roller is currently running. */
+  public boolean isIntakeRunning() {
+    return intakeRunning;
+  }
+
+  /** @return seconds since the roller started or since last fuel detection. */
+  public double getNoFuelElapsedSeconds() {
+    return noFuelTimer.get();
   }
 
   /**
@@ -548,6 +574,7 @@ public class IntakeSubsystem extends SubsystemBase {
     if (fuelDetectCounter >= IntakeConstants.kFuelDetectDebounceCycles && fuelDetectArmed) {
       fuelDetected = true;
       fuelDetectArmed = false;
+      noFuelTimer.restart(); // reset the no-fuel timeout
     } else {
       fuelDetected = false;
     }

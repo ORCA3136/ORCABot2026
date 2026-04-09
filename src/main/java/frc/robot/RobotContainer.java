@@ -93,6 +93,7 @@ public class RobotContainer {
     configureNamedCommands();
     configureFuelDetectionRumble();
     configureStallWarningRumble();
+    configureIntakeAutoStop();
 
     autoChooser = AutoBuilder.buildAutoChooser(); //pick a default
     SmartDashboard.putData("Auto Chooser", autoChooser);
@@ -230,6 +231,7 @@ public class RobotContainer {
      // Full shot sequence: aim at hub → lock wheels → shoot → feed → intake in
     m_primaryController.rightTrigger()
         .onTrue(Commands.runOnce(() -> {
+          intakeSubsystem.stopIntakeRoller();
           Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
               ? FieldPositions.kRedFieldElements.get(0)
               : FieldPositions.kBlueFieldElements.get(0);
@@ -285,6 +287,7 @@ public class RobotContainer {
 
     // Right bumper: spin flywheel from map + wait for ready then feed
     m_primaryController.rightBumper()
+            .onTrue(Commands.runOnce(() -> intakeSubsystem.stopIntakeRoller()))
             .whileTrue(Commands.parallel(
                 new ShootCommand(shooterSubsystem),
                 Commands.sequence(
@@ -296,6 +299,7 @@ public class RobotContainer {
     // Left bumper: full shot sequence using physics solver (UltraShooter)
     m_primaryController.leftBumper()
         .onTrue(Commands.runOnce(() -> {
+          intakeSubsystem.stopIntakeRoller();
           Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
               ? FieldPositions.kRedFieldElements.get(0)
               : FieldPositions.kBlueFieldElements.get(0);
@@ -617,6 +621,19 @@ public class RobotContainer {
    * When IntakeSubsystem detects a current spike (fuel pickup), the controller
    * rumbles for a configurable duration then auto-stops.
    */
+  /**
+   * Stops the intake roller automatically if it runs for 7 seconds without detecting fuel.
+   * The timer resets each time fuel is detected.
+   */
+  private void configureIntakeAutoStop() {
+    new Trigger(() -> intakeSubsystem.isIntakeRunning()
+                   && intakeSubsystem.getNoFuelElapsedSeconds() >= 7.0)
+        .onTrue(Commands.sequence(
+            Commands.runOnce(() -> intakeSubsystem.stopIntakeRoller()),
+            new RumbleCommand(m_primaryController, 1.0, 1.0)
+        ));
+  }
+
   private void configureFuelDetectionRumble() {
     new Trigger(intakeSubsystem::isFuelDetected)
         .onTrue(new RumbleCommand(
