@@ -30,7 +30,6 @@ import frc.robot.subsystems.KickerSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 // import frc.robot.subsystems.TeleopPathplanner;
-import frc.robot.subsystems.UltraShooterSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import swervelib.SwerveInputStream;
 import edu.wpi.first.wpilibj.Filesystem;
@@ -64,7 +63,6 @@ public class RobotContainer {
   // private final TeleopPathplanner teleopPathplanner = new TeleopPathplanner(driveBase);
   private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveBase);
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem(driveBase);
-  private final UltraShooterSubsystem ultraShooterSubsystem = new UltraShooterSubsystem(driveBase);
   private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem(driveBase);
   private final ConveyorSubsystem conveyorSubsystem = new ConveyorSubsystem();
   private final KickerSubsystem kickerSubsystem = new KickerSubsystem();
@@ -79,9 +77,6 @@ public class RobotContainer {
 
     DriverStation.silenceJoystickConnectionWarning(true);
 
-    // Wire UltraShooter physics solver into the existing shooter
-    shooterSubsystem.setUltraShooterReference(ultraShooterSubsystem);
-
     // Configure the trigger bindings (set to false for test bindings)
     boolean useProductionBindings = true;
     if (useProductionBindings) {
@@ -93,7 +88,6 @@ public class RobotContainer {
     configureNamedCommands();
     configureFuelDetectionRumble();
     configureStallWarningRumble();
-    configureIntakeAutoStop();
 
     autoChooser = AutoBuilder.buildAutoChooser(); //pick a default
     SmartDashboard.putData("Auto Chooser", autoChooser);
@@ -231,7 +225,6 @@ public class RobotContainer {
      // Full shot sequence: aim at hub → lock wheels → shoot → feed → intake in
     m_primaryController.rightTrigger()
         .onTrue(Commands.runOnce(() -> {
-          intakeSubsystem.stopIntakeRoller();
           Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
               ? FieldPositions.kRedFieldElements.get(0)
               : FieldPositions.kBlueFieldElements.get(0);
@@ -259,7 +252,7 @@ public class RobotContainer {
                       return error < Math.toRadians(2);
                     }),
                     Commands.parallel(
-                        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 5000, 6000),
+                        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000),
                         Commands.sequence(
                             Commands.waitSeconds(0.5),
                             // Swap default command from aim → lock (keeps driveBase out of this group)
@@ -285,90 +278,9 @@ public class RobotContainer {
           intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
         }));
 
-    // Right bumper: spin flywheel from map + wait for ready then feed
     m_primaryController.rightBumper()
-            .onTrue(Commands.runOnce(() -> intakeSubsystem.stopIntakeRoller()))
-            .whileTrue(Commands.parallel(
-                new ShootCommand(shooterSubsystem),
-                Commands.sequence(
-                    Commands.waitUntil(() -> shooterSubsystem.isShooterReady()),
-                    new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 5000, 6000)
-                )
-            ));
+            .whileTrue(new ShootCommand(shooterSubsystem));
 
-    // Left bumper: full shot sequence using physics solver (UltraShooter)
-    m_primaryController.leftBumper()
-        .onTrue(Commands.runOnce(() -> {
-          intakeSubsystem.stopIntakeRoller();
-          Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
-              ? FieldPositions.kRedFieldElements.get(0)
-              : FieldPositions.kBlueFieldElements.get(0);
-          aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
-          Command current = driveBase.getCurrentCommand();
-          if (current != null) current.cancel();
-          driveBase.setDefaultCommand(aimAtHubCommand);
-        }))
-        .whileTrue(
-            Commands.parallel(
-                Commands.run(() -> shooterSubsystem.setShooterPhysics(), shooterSubsystem),
-                Commands.sequence(
-                    // Wait for shooter at speed AND robot aimed at hub (2° tolerance, rear-facing)
-                    Commands.waitUntil(() -> {
-                      if (!shooterSubsystem.isShooterReady()) return false;
-                      Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
-                          ? FieldPositions.kRedFieldElements.get(0)
-                          : FieldPositions.kBlueFieldElements.get(0);
-                      Translation2d robotPos = driveBase.getPose().getTranslation();
-                      double targetRad = Math.atan2(
-                          hubPos.getY() - robotPos.getY(),
-                          hubPos.getX() - robotPos.getX()) + Math.PI;
-                      double error = Math.abs(MathUtil.angleModulus(
-                          driveBase.getHeadingRadians() - targetRad));
-                      return error < Math.toRadians(2);
-                    }),
-                    // If stationary, lock wheels before feeding (like right trigger)
-                    Commands.either(
-                        // Stationary: lock wheels, then feed
-                        Commands.parallel(
-                            new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 5000, 6000),
-                            Commands.sequence(
-                                Commands.waitSeconds(0.5),
-                                Commands.runOnce(() -> {
-                                  Command current = driveBase.getCurrentCommand();
-                                  if (current != null) current.cancel();
-                                  driveBase.setDefaultCommand(
-                                      Commands.run(() -> driveBase.lockPose(), driveBase));
-                                }),
-                                Commands.runEnd(
-                                    () -> intakeSubsystem.setIntakeDeployDutyCycle(-4500),
-                                    () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
-                                    intakeSubsystem)
-                            )
-                        ),
-                        // Moving: feed without locking
-                        Commands.parallel(
-                            new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 5000, 6000),
-                            Commands.runEnd(
-                                () -> intakeSubsystem.setIntakeDeployDutyCycle(-4500),
-                                () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
-                                intakeSubsystem)
-                        ),
-                        // Condition: stationary if speed < 0.1 m/s
-                        () -> {
-                          ChassisSpeeds vel = driveBase.getFieldVelocity();
-                          double speed = Math.hypot(vel.vxMetersPerSecond, vel.vyMetersPerSecond);
-                          return speed < 0.1;
-                        }
-                    )
-                )
-            )
-        )
-        .onFalse(Commands.runOnce(() -> {
-          Command current = driveBase.getCurrentCommand();
-          if (current != null) current.cancel();
-          driveBase.setDefaultCommand(fastDriveCommand);
-          intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
-        }));
     m_primaryController.leftTrigger ().onTrue(Commands.runOnce(() -> intakeSubsystem.runOrStopIntakeRoller())
        // new RunConveyorCommand(conveyorSubsystem, 1000)
     );
@@ -621,19 +533,6 @@ public class RobotContainer {
    * When IntakeSubsystem detects a current spike (fuel pickup), the controller
    * rumbles for a configurable duration then auto-stops.
    */
-  /**
-   * Stops the intake roller automatically if it runs for 7 seconds without detecting fuel.
-   * The timer resets each time fuel is detected.
-   */
-  private void configureIntakeAutoStop() {
-    new Trigger(() -> intakeSubsystem.isIntakeRunning()
-                   && intakeSubsystem.getNoFuelElapsedSeconds() >= 7.0)
-        .onTrue(Commands.sequence(
-            Commands.runOnce(() -> intakeSubsystem.stopIntakeRoller()),
-            new RumbleCommand(m_primaryController, 1.0, 1.0)
-        ));
-  }
-
   private void configureFuelDetectionRumble() {
     new Trigger(intakeSubsystem::isFuelDetected)
         .onTrue(new RumbleCommand(
