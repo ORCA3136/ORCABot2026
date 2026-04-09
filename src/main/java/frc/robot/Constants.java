@@ -342,15 +342,6 @@ public final class Constants {
       public static final String kCountNoData = "NoData";
     }
 
-    public static final class UltraShooter {
-      public static final String kTable = "UltraShooter";
-      public static final String kPhysicsRPM = "Physics RPM";
-      public static final String kTunedRPM = "Tuned RPM";
-      public static final String kTimeOfFlightSec = "Time of Flight Sec";
-      public static final String kDistanceM = "Distance M";
-      public static final String kDeltaRPM = "Delta RPM";
-    }
-
     public static final class Shooter {
       public static final String kTable = "Shooter";
       public static final String kVelocityRPM = "Velocity RPM";
@@ -493,8 +484,11 @@ public final class Constants {
 
    public final static class CurrentConstants {
   
+    public static final int AMP100 = 100;
     public static final int AMP80 = 80;
     public static final int AMP60 = 60;
+    public static final int AMP55 = 55;
+    public static final int AMP50 = 50;
     public static final int AMP40 = 40;
     public static final int AMP30 = 30;
     public static final int AMP25 = 25;

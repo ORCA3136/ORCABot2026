@@ -86,10 +86,6 @@ public class ShooterSubsystem extends SubsystemBase {
   private static final double kMinShootDistanceM = Units.inchesToMeters(70);
   private static final double kMaxShootDistanceM = Units.inchesToMeters(170);
 
-  // Physics-based solver toggle (UltraShooter)
-  private UltraShooterSubsystem ultraShooterRef = null;
-  private boolean usePhysicsSolver = false;
-
   private InterpolatingDoubleTreeMap shooterSpeedOnlyMap = new InterpolatingDoubleTreeMap();
   private InterpolatingDoubleTreeMap fuelAirTimeMap = new InterpolatingDoubleTreeMap();
 
@@ -164,21 +160,6 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterVelocityTarget = target;
   }
 
-  /** Sets the UltraShooter reference for physics-based RPM. */
-  public void setUltraShooterReference(UltraShooterSubsystem ultra) {
-    this.ultraShooterRef = ultra;
-  }
-
-  /** Toggles between lookup-table and physics-based RPM source. */
-  public void togglePhysicsSolver() {
-    usePhysicsSolver = !usePhysicsSolver;
-  }
-
-  /** @return true if the physics solver is the active RPM source. */
-  public boolean isPhysicsSolverActive() {
-    return usePhysicsSolver;
-  }
-
   /** @return The final target velocity (before ramping) */
   public double getShooterTarget() {
     return shooterVelocityTarget;
@@ -246,18 +227,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void setShooterMapOnly() {
     double distanceToHub = m_swerveSubsystem.getDistanceToHubMeters();
-    if (usePhysicsSolver && ultraShooterRef != null) {
-      shooterVelocityTarget = ultraShooterRef.getPhysicsTargetRPM();
-    } else {
-      shooterVelocityTarget = shooterSpeedOnlyMap.get(distanceToHub);
-    }
-  }
-
-  /** Sets shooter RPM using the physics solver (UltraShooter), ignoring the toggle. */
-  public void setShooterPhysics() {
-    if (ultraShooterRef != null) {
-      shooterVelocityTarget = ultraShooterRef.getPhysicsTargetRPM();
-    }
+    // set shooter based on distance
+    shooterVelocityTarget = shooterSpeedOnlyMap.get(distanceToHub);
   }
 
   public void setShooterMapOnly(double distance) {
@@ -279,11 +250,7 @@ public class ShooterSubsystem extends SubsystemBase {
     // RPM: use ACTUAL distance to hub (not compensated) — RPM map was tuned stationary
     double actualDistance = MathUtil.clamp(
         m_swerveSubsystem.getDistanceToHubMeters(), kMinShootDistanceM, kMaxShootDistanceM);
-    if (usePhysicsSolver && ultraShooterRef != null) {
-      shooterVelocityTarget = ultraShooterRef.getPhysicsTargetRPM();
-    } else {
-      shooterVelocityTarget = shooterSpeedOnlyMap.get(actualDistance);
-    }
+    shooterVelocityTarget = shooterSpeedOnlyMap.get(actualDistance);
 
     // Cache compensated position for the aim stream (heading only)
     lastLeadCompHubTranslation = compensatedHub;
@@ -308,12 +275,7 @@ public class ShooterSubsystem extends SubsystemBase {
    */
   public Translation2d getLeadCompensatedHubPosition(Translation2d hubPos) {
     double distance = m_swerveSubsystem.getDistanceToHubMeters();
-    double airTime;
-    if (usePhysicsSolver && ultraShooterRef != null) {
-      airTime = ultraShooterRef.getTimeOfFlightSeconds();
-    } else {
-      airTime = fuelAirTimeMap.get(distance);
-    }
+    double airTime = fuelAirTimeMap.get(distance);
     lastAirTimeSec = airTime;
     ChassisSpeeds fieldVel = m_swerveSubsystem.getFieldVelocity();
     double gain = ShooterConstants.kLeadCompGain;

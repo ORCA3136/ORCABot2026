@@ -232,6 +232,7 @@ public class RobotContainer {
           Command current = driveBase.getCurrentCommand();
           if (current != null) current.cancel();
           driveBase.setDefaultCommand(aimAtHubCommand);
+          intakeSubsystem.setIntakeDutyCycle(3500);
         }))
         .whileTrue(
             Commands.parallel(
@@ -276,6 +277,7 @@ public class RobotContainer {
           if (current != null) current.cancel();
           driveBase.setDefaultCommand(fastDriveCommand);
           intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
+          intakeSubsystem.setIntakeDutyCycle(0);
         }));
 
     m_primaryController.rightBumper()

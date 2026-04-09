@@ -96,7 +96,7 @@ public class Configs {
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
                 .voltageCompensation(12)
-                .smartCurrentLimit(CurrentConstants.AMP40, CurrentConstants.AMP40);
+                .smartCurrentLimit(CurrentConstants.AMP55, CurrentConstants.AMP100);
             // Disable soft limits at boot — they are applied dynamically after homing
             intakeDeployMotorConfig.softLimit
                 .forwardSoftLimitEnabled(false)
