@@ -251,9 +251,12 @@ public class RobotContainer {
                       return error < Math.toRadians(2);
                     }),
                     Commands.parallel(
-                        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000),
                         Commands.sequence(
-                            Commands.waitSeconds(0.25),
+                            Commands.waitSeconds(0.5),
+                            new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000)
+                        ),
+                        Commands.sequence(
+                            Commands.waitSeconds(0.5),
                             // Swap default command from aim → lock (keeps driveBase out of this group)
                             Commands.runOnce(() -> {
                               Command current = driveBase.getCurrentCommand();
@@ -428,7 +431,7 @@ public class RobotContainer {
                     Commands.parallel(
                         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000),
                         Commands.sequence(
-                            Commands.waitSeconds(0.25),
+                            Commands.waitSeconds(0.5),
                             // Swap default command from aim → lock (keeps driveBase out of this group)
                             Commands.runOnce(() -> {
                               Command current = driveBase.getCurrentCommand();
