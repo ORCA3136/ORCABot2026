@@ -33,7 +33,6 @@ import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import swervelib.SwerveInputStream;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -86,8 +85,7 @@ public class RobotContainer {
     }
     configureOperatorBindings();
     configureNamedCommands();
-    configureFuelDetectionRumble();
-    configureStallWarningRumble();
+    configureRumbleFeedback();
 
     autoChooser = AutoBuilder.buildAutoChooser(); //pick a default
     SmartDashboard.putData("Auto Chooser", autoChooser);
@@ -286,6 +284,12 @@ public class RobotContainer {
     m_primaryController.leftTrigger ().onTrue(Commands.runOnce(() -> intakeSubsystem.runOrStopIntakeRoller())
        // new RunConveyorCommand(conveyorSubsystem, 1000)
     );
+
+    // Reverse fuel path: vomit fuel out at 70% of feed speeds
+    m_primaryController.leftBumper().whileTrue(Commands.parallel(
+        new RunIntakeCommand(intakeSubsystem, -2450),
+        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, -2800, -4200)
+    ));
 
     m_primaryController.start       ().onTrue(Commands.runOnce(driveBase::zeroGyro));
 
@@ -531,33 +535,18 @@ public class RobotContainer {
   }
 
   /**
-   * Wires intake fuel detection to driver controller rumble.
-   * When IntakeSubsystem detects a current spike (fuel pickup), the controller
-   * rumbles for a configurable duration then auto-stops.
+   * Wires rumble feedback to driver controller:
+   * - Double rumble when intake roller starts
+   * - Earthquake rumble when intake auto-cuts off (no fuel timeout)
    */
-  private void configureFuelDetectionRumble() {
-    new Trigger(intakeSubsystem::isFuelDetected)
-        .onTrue(new RumbleCommand(
-            m_primaryController,
-            OperatorConstants.kFuelRumbleIntensity,
-            OperatorConstants.kFuelRumbleDurationSec));
-  }
+  private void configureRumbleFeedback() {
+    // Double rumble when roller toggles on
+    new Trigger(intakeSubsystem::isIntakeRunning)
+        .onTrue(RumbleCommand.doubleRumble(m_primaryController));
 
-  /**
-   * Wires intake deploy stall detection to a pulsing rumble pattern.
-   * Pulses 1s on / 0.3s off while the deploy motor current exceeds stall threshold.
-   */
-  private void configureStallWarningRumble() {
-    new Trigger(intakeSubsystem::isDeployStallWarning)
-        .whileTrue(Commands.repeatingSequence(
-            Commands.runOnce(() -> m_primaryController.getHID().setRumble(
-                GenericHID.RumbleType.kBothRumble, OperatorConstants.kStallRumbleIntensity)),
-            Commands.waitSeconds(OperatorConstants.kStallRumblePulseSec),
-            Commands.runOnce(() -> m_primaryController.getHID().setRumble(
-                GenericHID.RumbleType.kBothRumble, 0.0)),
-            Commands.waitSeconds(OperatorConstants.kStallRumblePauseSec)
-        ).finallyDo(() -> m_primaryController.getHID().setRumble(
-            GenericHID.RumbleType.kBothRumble, 0.0)));
+    // Earthquake when roller auto-stops due to no-fuel timeout
+    new Trigger(intakeSubsystem::wasAutoStopped)
+        .onTrue(RumbleCommand.earthquake(m_primaryController));
   }
 
   /** Returns true if the driver is actively pushing sticks (wants manual control). */

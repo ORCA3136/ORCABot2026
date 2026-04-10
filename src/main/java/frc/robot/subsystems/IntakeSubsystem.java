@@ -101,6 +101,8 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean fuelDetectArmed   = true;
   private final Timer noFuelTimer   = new Timer();
 
+  private boolean autoStopped       = false;
+
   private boolean pulseActive = false;
   private boolean hardwareSoftLimitsActive = false;
   private Setpoint intakeDeployTarget = Setpoint.kRetracted;
@@ -174,6 +176,14 @@ public class IntakeSubsystem extends SubsystemBase {
   /** @return seconds since the roller started or since last fuel detection. */
   public double getNoFuelElapsedSeconds() {
     return noFuelTimer.get();
+  }
+
+  /**
+   * Returns true for exactly one scheduler cycle when the roller
+   * is automatically stopped due to the no-fuel timeout.
+   */
+  public boolean wasAutoStopped() {
+    return autoStopped;
   }
 
   /**
@@ -276,8 +286,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /**
    * Returns true when the deploy motor current exceeds the stall threshold
-   * and the motor is actively being driven. Used by RobotContainer to
-   * trigger pulsing rumble feedback warning the driver of an impending fault.
+   * and the motor is actively being driven.
    */
   public boolean isDeployStallWarning() {
     if (state != DeployState.TARGETING && state != DeployState.MANUAL && state != DeployState.STALL_RECOVERY) return false;
@@ -588,6 +597,19 @@ public class IntakeSubsystem extends SubsystemBase {
     return fuelDetected;
   }
 
+  /**
+   * Auto-stops the intake roller if it has been running for
+   * {@link IntakeConstants#kNoFuelTimeoutSec} without detecting fuel.
+   * Sets {@code autoStopped} for one cycle so RobotContainer can trigger feedback.
+   */
+  private void checkNoFuelTimeout() {
+    autoStopped = false;
+    if (intakeRunning && noFuelTimer.hasElapsed(IntakeConstants.kNoFuelTimeoutSec)) {
+      stopIntakeRoller();
+      autoStopped = true;
+    }
+  }
+
   // ── Limit switch re-zero ───────────────────────────────────────────
 
   /**
@@ -641,6 +663,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
     checkIntakeDeployStall();
     checkFuelDetection();
+    checkNoFuelTimeout();
     updateNetworkTable();
   }
 

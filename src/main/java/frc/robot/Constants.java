@@ -124,6 +124,9 @@ public final class Constants {
     // the deploy stall threshold (38A). Tune with URCL current data.
     public static final double kFuelDetectCurrentAmps    = 17.0; // Amps — spike threshold
     public static final int    kFuelDetectDebounceCycles = 2;    // Consecutive cycles above threshold (~40ms at 50Hz)
+
+    // No-fuel auto-cutoff — stops roller if no fuel detected for this long
+    public static final double kNoFuelTimeoutSec = 7.0;
   }
 
   public static final class VisionConstants {
@@ -205,16 +208,16 @@ public final class Constants {
     // Rumble provides tactile feedback through the Xbox controller.
     // Intensity ranges from 0.0 (off) to 1.0 (max vibration).
 
-    // Fuel detection — single pulse when intake roller picks up fuel
-    public static final double kFuelRumbleIntensity   = 0.5; // Rumble strength (0.0 – 1.0)
-    public static final double kFuelRumbleDurationSec = 0.5; // Duration of each pulse
+    // Double rumble — medium pulse ×2 when intake roller starts
+    public static final double kDoubleRumbleIntensity = 0.5;  // 50% strength
+    public static final double kDoubleRumbleOnSec     = 0.15; // Each pulse duration
+    public static final double kDoubleRumbleGapSec    = 0.10; // Gap between pulses
 
-    // Deploy stall warning — repeating pulse while deploy motor is near stall
-    // Pattern: ON for kStallRumblePulseSec → OFF for kStallRumblePauseSec → repeat
-    // Tied to IntakeConstants.kStallCurrentThreshold (35A)
-    public static final double kStallRumbleIntensity  = 1.0; // Rumble strength (0.0 – 1.0)
-    public static final double kStallRumblePulseSec   = 1.0; // Rumble ON duration per pulse
-    public static final double kStallRumblePauseSec   = 0.3; // Gap between pulses
+    // Earthquake — intense rapid pulsing when intake auto-cuts off (no fuel timeout)
+    public static final double kEarthquakeIntensity   = 1.0;  // 100% strength
+    public static final double kEarthquakeOnSec       = 0.10; // Pulse ON duration
+    public static final double kEarthquakeOffSec      = 0.02; // Pulse OFF duration
+    public static final double kEarthquakeTotalSec    = 0.50; // Total pattern duration
   }
 
   public static final class CanIdConstants {
