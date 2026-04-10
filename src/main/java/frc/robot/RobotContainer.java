@@ -351,123 +351,123 @@ public class RobotContainer {
   /** Operator button board bindings for drive-to-position commands. */
   private void configureOperatorBindings() {
     // Experimental fuel throughput methods (test and compare)
-    m_secondaryController.button(1).whileTrue(
-        FuelPathCommands.experimentBruteForce(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
-    m_secondaryController.button(2).whileTrue(
-        FuelPathCommands.experimentOscillateFromStart(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
-    m_secondaryController.button(3).whileTrue(
-        FuelPathCommands.experimentStagedRamp(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
-    m_secondaryController.button(4).whileTrue(
-        FuelPathCommands.experimentConveyorJog(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+  //  m_secondaryController.button(1).whileTrue(
+  //      FuelPathCommands.experimentBruteForce(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+    // m_secondaryController.button(2).whileTrue(
+    //     FuelPathCommands.experimentOscillateFromStart(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+    // m_secondaryController.button(3).whileTrue(
+    //     FuelPathCommands.experimentStagedRamp(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
+    // m_secondaryController.button(4).whileTrue(
+    //     FuelPathCommands.experimentConveyorJog(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
 
-    m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
-    // Clear intake fault
-    m_secondaryController.button(6).onTrue(Commands.runOnce(() -> {
-      intakeSubsystem.requestHoming();
-    }));
+    // m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
+    // // Clear intake fault
+    // m_secondaryController.button(6).onTrue(Commands.runOnce(() -> {
+    //   intakeSubsystem.requestHoming();
+    // }));
 
-    m_secondaryController.button(7).onTrue(Commands.runOnce(() -> conveyorSubsystem.setConveyorDutyCycle(-2000)))
-                                          .onTrue(Commands.runOnce(() -> conveyorSubsystem.setConveyorDutyCycle(0)));
+    // m_secondaryController.button(7).onTrue(Commands.runOnce(() -> conveyorSubsystem.setConveyorDutyCycle(-2000)))
+    //                                       .onTrue(Commands.runOnce(() -> conveyorSubsystem.setConveyorDutyCycle(0)));
 
     // Shoot on the move: aim at lead-compensated hub + full pipeline + moving shooter map
-    m_secondaryController.button(8)
-        .onTrue(Commands.runOnce(() -> {
-          // Seed the lead compensation with an initial computation so the
-          // aim supplier returns the real hub position on the first cycle
-          shooterSubsystem.setShooterMapLeadCompensated();
-          aimAtHubStream.aim(() -> new Pose2d(
-              shooterSubsystem.getLeadCompensatedHubTranslation(), new Rotation2d()));
-          Command current = driveBase.getCurrentCommand();
-          if (current != null) current.cancel();
-          driveBase.setDefaultCommand(aimAtHubCommand);
-        }))
-        .whileTrue(FuelPathCommands.shootOnMove(
-            intakeSubsystem, conveyorSubsystem, kickerSubsystem, shooterSubsystem))
-        .onFalse(Commands.runOnce(() -> {
-          Command current = driveBase.getCurrentCommand();
-          if (current != null) current.cancel();
-          driveBase.setDefaultCommand(fastDriveCommand);
-        }));
+  //   m_secondaryController.button(8)
+  //       .onTrue(Commands.runOnce(() -> {
+  //         // Seed the lead compensation with an initial computation so the
+  //         // aim supplier returns the real hub position on the first cycle
+  //         shooterSubsystem.setShooterMapLeadCompensated();
+  //         aimAtHubStream.aim(() -> new Pose2d(
+  //             shooterSubsystem.getLeadCompensatedHubTranslation(), new Rotation2d()));
+  //         Command current = driveBase.getCurrentCommand();
+  //         if (current != null) current.cancel();
+  //         driveBase.setDefaultCommand(aimAtHubCommand);
+  //       }))
+  //       .whileTrue(FuelPathCommands.shootOnMove(
+  //           intakeSubsystem, conveyorSubsystem, kickerSubsystem, shooterSubsystem))
+  //       .onFalse(Commands.runOnce(() -> {
+  //         Command current = driveBase.getCurrentCommand();
+  //         if (current != null) current.cancel();
+  //         driveBase.setDefaultCommand(fastDriveCommand);
+  //       }));
 
-    // Scoring position buttons — operator taps to send robot, driver overrides with sticks
-    // m_secondaryController.button(9).onTrue(
-    //     DriveToPositionCommand.driveToScoreClose(driveBase, shooterSubsystem, this::driverIsOverriding));
-    // m_secondaryController.button(10).onTrue(
-    //     DriveToPositionCommand.driveToScoreTrench(driveBase, shooterSubsystem, this::driverIsOverriding));
-    m_secondaryController.button(9).whileTrue(
-          Commands.parallel(
-         new FixedShootCommand(shooterSubsystem, 120),
-         new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000)
-    ));;
-    // Full shot sequence: aim at hub → lock wheels → shoot → feed → intake in
-    m_secondaryController.button(10)
-        .onTrue(Commands.runOnce(() -> {
-          Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
-              ? FieldPositions.kRedFieldElements.get(0)
-              : FieldPositions.kBlueFieldElements.get(0);
-          aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
-          Command current = driveBase.getCurrentCommand();
-          if (current != null) current.cancel();
-          driveBase.setDefaultCommand(aimAtHubCommand);
-        }))
-        .whileTrue(
-            Commands.parallel(
-                new ShootCommand(shooterSubsystem),
-                Commands.sequence(
-                    // Wait for shooter at speed AND robot aimed at hub (2° tolerance, rear-facing)
-                    Commands.waitUntil(() -> {
-                      if (!shooterSubsystem.isShooterReady()) return false;
-                      Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
-                          ? FieldPositions.kRedFieldElements.get(0)
-                          : FieldPositions.kBlueFieldElements.get(0);
-                      Translation2d robotPos = driveBase.getPose().getTranslation();
-                      double targetRad = Math.atan2(
-                          hubPos.getY() - robotPos.getY(),
-                          hubPos.getX() - robotPos.getX()) + Math.PI;
-                      double error = Math.abs(MathUtil.angleModulus(
-                          driveBase.getHeadingRadians() - targetRad));
-                      return error < Math.toRadians(2);
-                    }),
-                    Commands.parallel(
-                        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000),
-                        Commands.sequence(
-                            Commands.waitSeconds(0.5),
-                            // Swap default command from aim → lock (keeps driveBase out of this group)
-                            Commands.runOnce(() -> {
-                              Command current = driveBase.getCurrentCommand();
-                              if (current != null) current.cancel();
-                              driveBase.setDefaultCommand(
-                                  Commands.run(() -> driveBase.lockPose(), driveBase));
-                            }),
-                            Commands.runEnd(
-                                () -> intakeSubsystem.setIntakeDeployDutyCycle(-4500),
-                                () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
-                                intakeSubsystem)
-                        )
-                    )
-                )
-            )
-        )
-        .onFalse(Commands.runOnce(() -> {
-          Command current = driveBase.getCurrentCommand();
-          if (current != null) current.cancel();
-          driveBase.setDefaultCommand(fastDriveCommand);
-          intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
-        }));
-    //known good scoring position that we like
-    m_secondaryController.button(11).onTrue(
-        DriveToPositionCommand.driveToScoreCustom(driveBase, shooterSubsystem, this::driverIsOverriding));
-  // m_secondaryController.button(12).whileTrue(                                                                                                                                     
-  //           Commands.sequence(                                                                                                                                                   
-  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted)),                                                                     
-  //                Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kMaxDeployPosition) < 0.02),                                       
-  //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)),                                                                   
-  //                Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kSafeDeployPosition) < 0.02)                                       
-  //          ).repeatedly()                                                                                                                                                       
-  //      );       
-    m_secondaryController.button(12).onTrue(
-        Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended), intakeSubsystem));
-  }
+  //   // Scoring position buttons — operator taps to send robot, driver overrides with sticks
+  //   // m_secondaryController.button(9).onTrue(
+  //   //     DriveToPositionCommand.driveToScoreClose(driveBase, shooterSubsystem, this::driverIsOverriding));
+  //   // m_secondaryController.button(10).onTrue(
+  //   //     DriveToPositionCommand.driveToScoreTrench(driveBase, shooterSubsystem, this::driverIsOverriding));
+  //   m_secondaryController.button(9).whileTrue(
+  //         Commands.parallel(
+  //        new FixedShootCommand(shooterSubsystem, 120),
+  //        new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000)
+  //   ));;
+  //   // Full shot sequence: aim at hub → lock wheels → shoot → feed → intake in
+  //   m_secondaryController.button(10)
+  //       .onTrue(Commands.runOnce(() -> {
+  //         Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+  //             ? FieldPositions.kRedFieldElements.get(0)
+  //             : FieldPositions.kBlueFieldElements.get(0);
+  //         aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
+  //         Command current = driveBase.getCurrentCommand();
+  //         if (current != null) current.cancel();
+  //         driveBase.setDefaultCommand(aimAtHubCommand);
+  //       }))
+  //       .whileTrue(
+  //           Commands.parallel(
+  //               new ShootCommand(shooterSubsystem),
+  //               Commands.sequence(
+  //                   // Wait for shooter at speed AND robot aimed at hub (2° tolerance, rear-facing)
+  //                   Commands.waitUntil(() -> {
+  //                     if (!shooterSubsystem.isShooterReady()) return false;
+  //                     Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
+  //                         ? FieldPositions.kRedFieldElements.get(0)
+  //                         : FieldPositions.kBlueFieldElements.get(0);
+  //                     Translation2d robotPos = driveBase.getPose().getTranslation();
+  //                     double targetRad = Math.atan2(
+  //                         hubPos.getY() - robotPos.getY(),
+  //                         hubPos.getX() - robotPos.getX()) + Math.PI;
+  //                     double error = Math.abs(MathUtil.angleModulus(
+  //                         driveBase.getHeadingRadians() - targetRad));
+  //                     return error < Math.toRadians(2);
+  //                   }),
+  //                   Commands.parallel(
+  //                       new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000),
+  //                       Commands.sequence(
+  //                           Commands.waitSeconds(0.5),
+  //                           // Swap default command from aim → lock (keeps driveBase out of this group)
+  //                           Commands.runOnce(() -> {
+  //                             Command current = driveBase.getCurrentCommand();
+  //                             if (current != null) current.cancel();
+  //                             driveBase.setDefaultCommand(
+  //                                 Commands.run(() -> driveBase.lockPose(), driveBase));
+  //                           }),
+  //                           Commands.runEnd(
+  //                               () -> intakeSubsystem.setIntakeDeployDutyCycle(-4500),
+  //                               () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
+  //                               intakeSubsystem)
+  //                       )
+  //                   )
+  //               )
+  //           )
+  //       )
+  //       .onFalse(Commands.runOnce(() -> {
+  //         Command current = driveBase.getCurrentCommand();
+  //         if (current != null) current.cancel();
+  //         driveBase.setDefaultCommand(fastDriveCommand);
+  //         intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
+  //       }));
+  //   //known good scoring position that we like
+  //   m_secondaryController.button(11).onTrue(
+  //       DriveToPositionCommand.driveToScoreCustom(driveBase, shooterSubsystem, this::driverIsOverriding));
+  // // m_secondaryController.button(12).whileTrue(                                                                                                                                     
+  // //           Commands.sequence(                                                                                                                                                   
+  // //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted)),                                                                     
+  // //                Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kMaxDeployPosition) < 0.02),                                       
+  // //                Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)),                                                                   
+  // //                Commands.waitUntil(() -> Math.abs(intakeSubsystem.getIntakeDeployPosition() - IntakeConstants.kSafeDeployPosition) < 0.02)                                       
+  // //          ).repeatedly()                                                                                                                                                       
+  // //      );       
+  //   m_secondaryController.button(12).onTrue(
+  //       Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended), intakeSubsystem));
+ }
 
   private void configureNamedCommands() {
     // Pathplanner commands
