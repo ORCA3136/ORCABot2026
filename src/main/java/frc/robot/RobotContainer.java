@@ -230,7 +230,7 @@ public class RobotContainer {
           Command current = driveBase.getCurrentCommand();
           if (current != null) current.cancel();
           driveBase.setDefaultCommand(aimAtHubCommand);
-          intakeSubsystem.setIntakeDutyCycle(3500);
+          intakeSubsystem.setIntakeDutyCycle(1500);
         }))
         .whileTrue(
             Commands.parallel(
@@ -270,13 +270,17 @@ public class RobotContainer {
                 )
             )
         )
-        .onFalse(Commands.runOnce(() -> {
-          Command current = driveBase.getCurrentCommand();
-          if (current != null) current.cancel();
-          driveBase.setDefaultCommand(fastDriveCommand);
-          intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
-          intakeSubsystem.setIntakeDutyCycle(0);
-        }));
+        .onFalse(Commands.sequence(
+          Commands.runOnce(() -> {
+            Command current = driveBase.getCurrentCommand();
+            if (current != null) current.cancel();
+            driveBase.setDefaultCommand(fastDriveCommand);
+            intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
+            intakeSubsystem.setIntakeDutyCycle(6500);
+          }),
+          Commands.waitSeconds(3.0),
+          Commands.runOnce(() -> intakeSubsystem.startNoFuelTimer())
+        ));
 
     m_primaryController.rightBumper()
             .whileTrue(new ShootCommand(shooterSubsystem));

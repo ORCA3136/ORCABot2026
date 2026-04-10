@@ -160,6 +160,12 @@ public class IntakeSubsystem extends SubsystemBase {
     }
   }
 
+  /** Starts the no-fuel timer without changing roller speed. */
+  public void startNoFuelTimer() {
+    intakeRunning = true;
+    noFuelTimer.restart();
+  }
+
   /** Stops the intake roller and resets the running flag. */
   public void stopIntakeRoller() {
     intakeRunning = false;
