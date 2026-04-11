@@ -254,9 +254,8 @@ public class RobotContainer {
             driveBase.setDefaultCommand(fastDriveCommand);
             intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
             intakeSubsystem.setIntakeDutyCycle(6500);
-          }),
-          //Commands.waitSeconds(3.0),
-          Commands.runOnce(() -> intakeSubsystem.startNoFuelTimer())
+            intakeSubsystem.startNoFuelTimer();
+          })
         ));
 
     m_primaryController.rightBumper()
