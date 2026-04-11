@@ -16,11 +16,11 @@ public class Configs {
             primaryShooterConfig
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP80);
             secondaryShooterConfig
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP80);
             primaryShooterConfig.closedLoop
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
                 .pid(ShooterConstants.kP, ShooterConstants.kI, ShooterConstants.kD);
@@ -49,7 +49,7 @@ public class Configs {
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
                 .voltageCompensation(12)
-                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP80);
             conveyorMotorConfig.signals
                 .primaryEncoderPositionPeriodMs(500)
                 .primaryEncoderVelocityPeriodMs(200)
@@ -66,7 +66,7 @@ public class Configs {
                 .inverted(false)
                 .idleMode(IdleMode.kCoast)
                 .voltageCompensation(12)
-                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP80);
             kickerMotorConfig.signals
                 .primaryEncoderPositionPeriodMs(500)
                 .primaryEncoderVelocityPeriodMs(40)
@@ -85,7 +85,7 @@ public class Configs {
                 .inverted(true)
                 .idleMode(IdleMode.kCoast)
                 .voltageCompensation(12)
-                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP40);
+                .smartCurrentLimit(CurrentConstants.AMP60, CurrentConstants.AMP80);
             intakeMotorConfig.signals
                 .primaryEncoderPositionPeriodMs(500)
                 .primaryEncoderVelocityPeriodMs(200)
