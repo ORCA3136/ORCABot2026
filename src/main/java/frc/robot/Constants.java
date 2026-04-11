@@ -218,6 +218,9 @@ public final class Constants {
     public static final double kEarthquakeOnSec       = 0.10; // Pulse ON duration
     public static final double kEarthquakeOffSec      = 0.02; // Pulse OFF duration
     public static final double kEarthquakeTotalSec    = 0.50; // Total pattern duration
+
+    // Idle rumble — very light constant rumble while intake roller is running
+    public static final double kIntakeIdleRumbleIntensity = 0.08; // 8% strength
   }
 
   public static final class CanIdConstants {

@@ -47,6 +47,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.GenericHID;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -518,13 +519,17 @@ public class RobotContainer {
 
   /**
    * Wires rumble feedback to driver controller:
-   * - Double rumble when intake roller starts
+   * - Light constant rumble while intake roller is running
    * - Earthquake rumble when intake auto-cuts off (no fuel timeout)
    */
   private void configureRumbleFeedback() {
-    // Double rumble when roller toggles on
+    // Constant light rumble while the roller is running
     new Trigger(intakeSubsystem::isIntakeRunning)
-        .onTrue(RumbleCommand.doubleRumble(m_primaryController));
+        .whileTrue(Commands.run(() -> m_primaryController.getHID()
+                .setRumble(GenericHID.RumbleType.kBothRumble,
+                    OperatorConstants.kIntakeIdleRumbleIntensity))
+            .finallyDo(() -> m_primaryController.getHID()
+                .setRumble(GenericHID.RumbleType.kBothRumble, 0.0)));
 
     // Earthquake when roller auto-stops due to no-fuel timeout
     new Trigger(intakeSubsystem::wasAutoStopped)
