@@ -157,47 +157,20 @@ public class RobotContainer {
             () -> intakeSubsystem.setIntakeDeployDutyCycle(0),
             intakeSubsystem
         ));
-    // m_primaryController.b().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> {
-    //                                     Translation2d hubPos = driveBase.getAlliance() == DriverStation.Alliance.Red
-    //                                         ? FieldPositions.kRedFieldElements.get(0)
-    //                                         : FieldPositions.kBlueFieldElements.get(0);
-    //                                     aimAtHubStream.aim(new Pose2d(hubPos, new Rotation2d()));
-    //                                     Command current = driveBase.getCurrentCommand();
-    //                                     if (current != null) current.cancel();
-    //                                     driveBase.setDefaultCommand(aimAtHubCommand);
-    //                                  }))
-    //                                  .onFalse(Commands.runOnce(() -> {
-    //                                     Command current = driveBase.getCurrentCommand();
-    //                                     if (current != null) current.cancel();
-    //                                     driveBase.setDefaultCommand(fastDriveCommand);
-    //                                  }));
     // Intake deploy setpoint out
     m_primaryController.x().and(m_primaryController.back().negate())
         .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended)));
-    // m_primaryController.x().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kPartial)));
     // Intake deploy setpoint in
     m_primaryController.y().and(m_primaryController.back().negate())
         .onTrue(Commands.runOnce(() -> intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kRetracted)));
 
 
     // D pad
-    // m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(4)));
-    // m_primaryController.povLeft  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(3)));
-		// m_primaryController.povRight ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
-    // m_primaryController.povDown  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
-
     m_primaryController.povUp    ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(fastRobotDriveCommand)));
     m_primaryController.povLeft  ().and(m_primaryController.back().negate()).whileTrue(new FixedShootCommand(shooterSubsystem, 120));
 		// m_primaryController.povRight ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
     m_primaryController.povDown  ().and(m_primaryController.back().negate()).onTrue(Commands.runOnce(() -> driveBase.setDefaultCommand(fastDriveCommand)));
 
-
-    // m_primaryController.back     ().and(m_primaryController.povUp        ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-4)));
-    // m_primaryController.back     ().and(m_primaryController.povLeft      ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-3)));
-    // m_primaryController.back     ().and(m_primaryController.povRight     ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-2)));
-    // m_primaryController.back     ().and(m_primaryController.povDown      ()).onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(-1)));
-
-    
     // Axis/Triggers/Sticks
 
     // m_primaryController.rightBumper().onTrue(Commands.runOnce(() -> shooterSubsystem.setShooterVelocityTarget(1950)))
@@ -252,7 +225,7 @@ public class RobotContainer {
                     }),
                     Commands.parallel(
                         Commands.sequence(
-                            Commands.waitSeconds(0.5),
+                            Commands.waitSeconds(0.02),
                             new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000)
                         ),
                         Commands.sequence(
@@ -281,12 +254,13 @@ public class RobotContainer {
             intakeSubsystem.setIntakeDeployTarget(IntakeSubsystem.Setpoint.kExtended);
             intakeSubsystem.setIntakeDutyCycle(6500);
           }),
-          Commands.waitSeconds(3.0),
+          //Commands.waitSeconds(3.0),
           Commands.runOnce(() -> intakeSubsystem.startNoFuelTimer())
         ));
 
     m_primaryController.rightBumper()
-            .whileTrue(new ShootCommand(shooterSubsystem));
+            .whileTrue( Commands.parallel(new ShootCommand(shooterSubsystem), new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000)
+));
 
     m_primaryController.leftTrigger ().onTrue(Commands.runOnce(() -> intakeSubsystem.runOrStopIntakeRoller())
        // new RunConveyorCommand(conveyorSubsystem, 1000)
@@ -313,25 +287,25 @@ public class RobotContainer {
                                      }));
 
     // Right stick: snap-align downfield while driving (front or back, whichever is closer)
-    PIDController alignPID = new PIDController(5.0, 0, 0.3);
-    alignPID.enableContinuousInput(-Math.PI, Math.PI);
-    alignPID.setTolerance(Math.toRadians(2));
-    m_primaryController.rightStick().whileTrue(
-        Commands.run(() -> {
-          // Downfield = 0 rad for blue, π for red
-          double downfield = driveBase.getAlliance() == DriverStation.Alliance.Red ? Math.PI : 0.0;
-          double heading = driveBase.getHeadingRadians();
-          // Pick front-facing or back-facing, whichever is closer
-          double errorFront = Math.abs(MathUtil.angleModulus(heading - downfield));
-          double errorBack  = Math.abs(MathUtil.angleModulus(heading - (downfield + Math.PI)));
-          double target = errorFront <= errorBack ? downfield : MathUtil.angleModulus(downfield + Math.PI);
-          double omega = alignPID.calculate(heading, target);
-          // Preserve driver translation input while overriding rotation
-          double flip = driveBase.getAllianceFlip();
-          double vx = flip * -m_primaryController.getLeftY() * driveBase.getSwerveDrive().getMaximumChassisVelocity();
-          double vy = flip * -m_primaryController.getLeftX() * driveBase.getSwerveDrive().getMaximumChassisVelocity();
-          driveBase.driveFieldOriented(new ChassisSpeeds(vx, vy, omega));
-        }, driveBase));
+    // PIDController alignPID = new PIDController(5.0, 0, 0.3);
+    // alignPID.enableContinuousInput(-Math.PI, Math.PI);
+    // alignPID.setTolerance(Math.toRadians(2));
+    // m_primaryController.rightStick().whileTrue(
+    //     Commands.run(() -> {
+    //       Downfield = 0 rad for blue, π for red
+    //       double downfield = driveBase.getAlliance() == DriverStation.Alliance.Red ? Math.PI : 0.0;
+    //       double heading = driveBase.getHeadingRadians();
+    //       // Pick front-facing or back-facing, whichever is closer
+    //       double errorFront = Math.abs(MathUtil.angleModulus(heading - downfield));
+    //       double errorBack  = Math.abs(MathUtil.angleModulus(heading - (downfield + Math.PI)));
+    //       double target = errorFront <= errorBack ? downfield : MathUtil.angleModulus(downfield + Math.PI);
+    //       double omega = alignPID.calculate(heading, target);
+    //       // Preserve driver translation input while overriding rotation
+    //       double flip = driveBase.getAllianceFlip();
+    //       double vx = flip * -m_primaryController.getLeftY() * driveBase.getSwerveDrive().getMaximumChassisVelocity();
+    //       double vy = flip * -m_primaryController.getLeftX() * driveBase.getSwerveDrive().getMaximumChassisVelocity();
+    //       driveBase.driveFieldOriented(new ChassisSpeeds(vx, vy, omega));
+    //     }, driveBase));
 
     // Toggled button options (active while holding back button)
     m_primaryController.back().and(m_primaryController.a())           .onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));  // Shooter - by 50
@@ -360,8 +334,9 @@ public class RobotContainer {
     // m_secondaryController.button(4).whileTrue(
     //     FuelPathCommands.experimentConveyorJog(intakeSubsystem, conveyorSubsystem, kickerSubsystem));
 
-    // m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
-    // // Clear intake fault
+    // Puts wheels into X-mode
+    m_secondaryController.button(5).whileTrue(Commands.run(() -> driveBase.lockPose(), driveBase));
+    // Clear intake fault
     // m_secondaryController.button(6).onTrue(Commands.runOnce(() -> {
     //   intakeSubsystem.requestHoming();
     // }));
@@ -585,6 +560,7 @@ public class RobotContainer {
   private void configureTestBindings() {
   	driveBase.setDefaultCommand(fastDriveCommand);
     
+    // Use negative levels to decrease flywheel speed
     m_primaryController.a           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(1)));
     m_primaryController.b           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(2)));
     m_primaryController.x           ().onTrue(Commands.runOnce(() -> shooterSubsystem.increaseShooterVelocity(3)));
