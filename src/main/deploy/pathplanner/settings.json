@@ -3,6 +3,7 @@
   "robotLength": 0.879,
   "holonomicMode": true,
   "pathFolders": [
+    "Center Shoot then Depot",
     "Center depot Folder",
     "Double pass Left Bump",
     "Double pass Right bump",
@@ -11,12 +12,12 @@
     "Left mid fuel Folder",
     "Left mid fuel v2 Folder",
     "Left over bump",
-    "Center Shoot then Depot",
     "Right double trench Folder",
     "Right human player pickup Folder",
     "Right mid fuel Folder",
     "Right mid fuel v2 Folder",
-    "Right over bump Folder"
+    "Right over bump Folder",
+    "Stay out right Folder"
   ],
   "autoFolders": [
     "Center Autos",

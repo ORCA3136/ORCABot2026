@@ -112,7 +112,7 @@ public class RobotContainer {
                     .aimHeadingOffset(true);
 
   // Transformations for different driving commands
-  SwerveInputStream slowSpeedDrive   = controllerInput.copy().scaleTranslation(0.5);
+  SwerveInputStream slowSpeedDrive   = controllerInput.copy().scaleTranslation(0.3);
   SwerveInputStream mediumSpeedDrive = controllerInput.copy().scaleTranslation(0.8);
 
   // Rotations for controller input for different driving commands
@@ -262,9 +262,12 @@ public class RobotContainer {
             .whileTrue( Commands.parallel(new ShootCommand(shooterSubsystem), new RunConveyorAndKickerCommand(conveyorSubsystem, kickerSubsystem, 4000, 6000)
 ));
 
-    m_primaryController.leftTrigger ().onTrue(Commands.runOnce(() -> intakeSubsystem.runOrStopIntakeRoller())
-       // new RunConveyorCommand(conveyorSubsystem, 1000)
-    );
+    m_primaryController.leftTrigger().onTrue(Commands.runOnce(() -> {
+        intakeSubsystem.runOrStopIntakeRoller();
+        if (!intakeSubsystem.isIntakeRunning()) {
+            RumbleCommand.earthquake(m_primaryController).schedule();
+        }
+    }));
 
     // Reverse fuel path: vomit fuel out at 70% of feed speeds
     m_primaryController.leftBumper().whileTrue(Commands.parallel(
@@ -498,7 +501,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("AimAndShoot",           AutoCommands.aimAndShoot(shooterSubsystem, driveBase, kickerSubsystem, conveyorSubsystem, AutoConstants.kShootTimeoutSec));
     NamedCommands.registerCommand("MeteredFeed3s",         AutoCommands.meteredFeedTimed(conveyorSubsystem, kickerSubsystem, shooterSubsystem, AutoConstants.kFeedTimeoutSec));
     NamedCommands.registerCommand("SpinUpFromDistance",    AutoCommands.spinUpFromDistance(shooterSubsystem, driveBase));
-    NamedCommands.registerCommand("ShootAndFeedWithTimeout", AutoCommands.shootAndFeed(shooterSubsystem, conveyorSubsystem, kickerSubsystem, intakeSubsystem, 5.0));
+    NamedCommands.registerCommand("ShootAndFeedWithTimeout", AutoCommands.shootAndFeed(shooterSubsystem, conveyorSubsystem, kickerSubsystem, intakeSubsystem, 6.0));
     NamedCommands.registerCommand("ShootAndFeedUntilRetracted", AutoCommands.shootAndFeedUntilRetracted(shooterSubsystem, conveyorSubsystem, kickerSubsystem, intakeSubsystem));
 
     // Teleop-mirrored sequences (safe for parallel use in PathPlanner)

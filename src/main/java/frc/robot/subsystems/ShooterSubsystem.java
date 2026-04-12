@@ -117,6 +117,10 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(170)), Double.valueOf(3350));
     shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(180)), Double.valueOf(3500));
     shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(200)), Double.valueOf(3875));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(240)), Double.valueOf(4500)); // Values beyond this point are for passing, not shooting into the hub
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(280)), Double.valueOf(5000));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(320)), Double.valueOf(6000));
+    shooterSpeedOnlyMap.put(Double.valueOf(Units.inchesToMeters(400)), Double.valueOf(6500));
 
     fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(70 )), Double.valueOf(0.78)); // Value is in seconds
     fuelAirTimeMap.put(Double.valueOf(Units.inchesToMeters(80 )), Double.valueOf(0.79));

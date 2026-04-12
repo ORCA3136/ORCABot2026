@@ -21,6 +21,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs.IntakeConfigs;
 import frc.robot.Constants.*;
@@ -148,6 +149,7 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void runOrStopIntakeRoller() {
+
     intakeRunning = !intakeRunning;
     if (intakeRunning) {
       setIntakeDutyCycle(6500);
@@ -157,6 +159,7 @@ public class IntakeSubsystem extends SubsystemBase {
       setIntakeDutyCycle(0);
       noFuelTimer.stop();
       noFuelTimer.reset();
+
     }
   }
 

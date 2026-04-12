@@ -11,7 +11,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Left bump 1"
+                  "pathName": "Right trench 1"
                 }
               },
               {
@@ -21,16 +21,9 @@
                 }
               },
               {
-                "type": "sequential",
+                "type": "named",
                 "data": {
-                  "commands": [
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "Deploy Intake"
-                      }
-                    }
-                  ]
+                  "name": "Deploy Intake"
                 }
               },
               {
@@ -51,6 +44,25 @@
                     }
                   ]
                 }
+              },
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 5.0
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "Run Shooter Low"
+                      }
+                    }
+                  ]
+                }
               }
             ]
           }
@@ -60,40 +72,15 @@
           "data": {
             "commands": [
               {
-                "type": "wait",
+                "type": "named",
                 "data": {
-                  "waitTime": 7.0
+                  "name": "ShootAndFeedWithTimeout"
                 }
               },
               {
                 "type": "named",
                 "data": {
                   "name": "Aim at Hub"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "Shoot to Hub"
-                }
-              },
-              {
-                "type": "sequential",
-                "data": {
-                  "commands": [
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 1.0
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "Feed Sequence20s"
-                      }
-                    }
-                  ]
                 }
               }
             ]
@@ -106,7 +93,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Left bump 2"
+                  "pathName": "Right trench 2"
                 }
               },
               {
@@ -155,40 +142,15 @@
           "data": {
             "commands": [
               {
-                "type": "wait",
+                "type": "named",
                 "data": {
-                  "waitTime": 15.0
+                  "name": "ShootAndFeedWithTimeout"
                 }
               },
               {
                 "type": "named",
                 "data": {
                   "name": "Aim at Hub"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "Shoot to Hub"
-                }
-              },
-              {
-                "type": "sequential",
-                "data": {
-                  "commands": [
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 1.0
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "Feed Sequence20s"
-                      }
-                    }
-                  ]
                 }
               }
             ]
@@ -198,6 +160,6 @@
     }
   },
   "resetOdom": true,
-  "folder": "Left Side Autos",
+  "folder": "Right Side Autos",
   "choreoAuto": false
 }
